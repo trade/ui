@@ -60,7 +60,7 @@ function Watchlist({ onTrade }) {
     () => [
       { key: 'symbol', header: 'Symbol', width: 110 },
       { key: 'name', header: 'Name', width: 190 },
-      { key: 'last', header: 'Last', width: 110, numeric: true },
+      { key: 'last', header: 'Last', width: 110, numeric: true, render: (r) => r.last.toFixed(2) },
       {
         key: 'chg',
         header: 'Chg',
@@ -99,7 +99,7 @@ function Watchlist({ onTrade }) {
 
 function Panel({ tick }) {
   return (
-    <p className="muted" style={{ margin: 0 }}>
+    <p className="panel-note muted">
       Panel content for this tab. Theme switches restyle the whole page with no React re-render, and the
       last tick was {tick}.
     </p>

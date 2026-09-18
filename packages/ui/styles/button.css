@@ -32,7 +32,9 @@
 .ui-btn--primary   { background: var(--ui-primary);   color: var(--ui-on-primary); }
 .ui-btn--secondary { background: var(--ui-secondary); color: var(--ui-on-secondary); }
 .ui-btn--danger    { background: var(--ui-error);     color: var(--ui-on-error); }
-.ui-btn--outline   { background: transparent; color: var(--ui-primary); border-color: var(--ui-border-control); }
+/* the secondary/outline button carries a real fill so it never dissolves into a white
+   panel — transparent-on-white had no body and read as a label, not a control */
+.ui-btn--outline   { background: var(--ui-surface-1); color: var(--ui-primary); border-color: var(--ui-border-control); }
 .ui-btn--ghost     { background: transparent; color: var(--ui-on-surface); }
 
 .ui-btn:hover:not(:disabled) { filter: brightness(0.96); }
@@ -41,9 +43,17 @@
 
 .ui-btn:active:not(:disabled) { filter: brightness(0.9); }
 
+/* Disabled is the QUIETEST state on the surface: flat grey fill, no border (the
+   border is the active affordance), muted label. Two earlier cuts both failed the
+   hierarchy — a 0.5-opacity fade of a saturated fill washed out unreadably, and a
+   near-black label made the disabled button dominate enabled ones. Muted grey
+   (#757575-class) on surface-1 is ~4.7:1 — legible, but clearly quieter than every
+   enabled label. onSurfaceMuted/surface-1 is gated by check-contrast in all themes. */
 .ui-btn:disabled,
 .ui-btn[aria-disabled='true'] {
-  opacity: var(--ui-opacity-disabled);
+  background: var(--ui-surface-1);
+  color: var(--ui-on-surface-disabled);
+  border-color: transparent;
   cursor: not-allowed;
 }
 

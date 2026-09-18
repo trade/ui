@@ -11,12 +11,12 @@ import { chromium } from 'playwright';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
-const dist = resolve(root, 'apps', 'trading', 'dist');
+const dist = resolve(root, 'apps', 'example-trading', 'dist');
 const shots = resolve(root, 'verification', 'screen');
 mkdirSync(shots, { recursive: true });
 
 if (!existsSync(resolve(dist, 'index.html'))) {
-  console.error('apps/trading/dist missing — run npm run screen:build');
+  console.error('apps/example-trading/dist missing — run npm run example-trading:build');
   process.exit(1);
 }
 
@@ -114,6 +114,45 @@ for (const vp of [{ name: 'desktop', width: 1600, height: 900 }, { name: 'narrow
     return out;
   });
   check(`${vp.name}: all three themes apply`, themes.join(' ') === 'Light->light Dark->dark Contrast->high-contrast', themes.join(' '));
+
+  // ticket guard: an order above buying power must warn inline and must not be submittable.
+  // React ignores direct .value writes, so set it through the native setter + input event.
+  const guard = await page.evaluate(async () => {
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    const qty = document.querySelector('#tk-qty');
+    const setQty = async (v) => {
+      setter.call(qty, v);
+      qty.dispatchEvent(new Event('input', { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 150));
+    };
+    await setQty('100000');
+    const warned = Boolean(document.querySelector('.ticket__warn'));
+    const buy = [...document.querySelectorAll('.ticket__actions button')]
+      .find((b) => /^(Buy|Sell) \d/.test(b.textContent.trim()));
+    const submitDisabled = buy ? buy.disabled : null;
+    await setQty('100');
+    const warnGone = !document.querySelector('.ticket__warn');
+    // Reset must restore the WHOLE ticket: side back to buy, defaults back in the inputs
+    document.querySelector(".side button[data-side='sell']").click();
+    await new Promise((r) => setTimeout(r, 120));
+    [...document.querySelectorAll('.ticket__actions button')]
+      .find((b) => b.textContent.trim() === 'Reset').click();
+    await new Promise((r) => setTimeout(r, 150));
+    const sideRestored = document.querySelector(".side button[data-side='buy']")
+      .getAttribute('aria-pressed') === 'true';
+    const qtyRestored = document.querySelector('#tk-qty').value === '100';
+    return { warned, submitDisabled, warnGone, sideRestored, qtyRestored };
+  });
+  check(
+    `${vp.name}: ticket warns and disables submit above buying power`,
+    guard.warned && guard.submitDisabled === true && guard.warnGone,
+    `warn=${guard.warned}, submitDisabled=${guard.submitDisabled}, clears when affordable=${guard.warnGone}`
+  );
+  check(
+    `${vp.name}: Reset restores side and defaults`,
+    guard.sideRestored === true && guard.qtyRestored === true,
+    `sideRestored=${guard.sideRestored}, qtyRestored=${guard.qtyRestored}`
+  );
 
   // accessibility, light then dark
   await page.evaluate(() => { for (const b of document.querySelectorAll('.top button')) if (b.textContent.trim() === 'Light') b.click(); });

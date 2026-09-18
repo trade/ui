@@ -12,14 +12,15 @@ This is the Phase 1 implementation of the `@trade/ui` proposal: the token pipeli
 cd ui
 npm install
 npm run build          # tokens → CSS + TS, then the library (ESM, CJS, d.ts, CSS)
-npm run demo           # bundles the reference demo to apps/demo/dist
+npm run example:build     # bundles the component example to apps/example/dist
 npm run verify         # 33 checks: contract, CSS, SSR, DOM interactions
-npm run verify:demo    # 10 checks: boots the built demo in a DOM and drives it
-npm run screen:build   # bundles the trading workspace screen
-npm run verify:screen  # 24 checks: virtualization, ARIA, themes, axe on the screen
+npm run verify:example    # 10 checks: boots the built example in a DOM and drives it
+npm run example-trading:build  # bundles the trading workspace example
+npm run verify:example-trading  # 26 checks: virtualization, ARIA, ticket guard, axe
 ```
 
-Open the demo: **`apps/demo/dist/index.html`** (double-click — it is a plain static file, no server needed).
+Open the examples (double-click — plain static files, no server needed):
+**`apps/example/dist/index.html`** (component reference) · **`apps/example-trading/dist/index.html`** (trading workspace).
 
 ---
 
@@ -34,8 +35,10 @@ ui/
 │     │                  DataTable, Tabs, Dialog, Feedback, ThemeProvider, Stack
 │     ├─ styles/         one CSS file per area (base, layout, button, forms, table, tabs, feedback, dialog)
 │     └─ dist/           index.js · index.cjs · index.d.ts · ui.css · components/*.css
-├─ apps/demo/            reference "watchlist + order ticket" app
-├─ scripts/              verify.mjs · verify-demo.mjs · build-demo.mjs · sample-screen.mjs
+├─ apps/                 examples — apps/example (component reference),
+│                        apps/example-trading (production-grade trading workspace)
+├─ scripts/              verify.mjs · verify-example.mjs · build-example.mjs
+│                        verify-example-trading.mjs · browser-suite.mjs · sample-screen.mjs
 ├─ CONTRIBUTING.md       the rules of changing this codebase (and their gates)
 ├─ AGENTS.md             the same contract, machine-facing
 └─ docs/                 the UI development guide (tokens, theming, components, CSS, a11y, verification)
@@ -85,11 +88,11 @@ setThemeAttribute('dark');   // writes data-theme on <html>; zero React renders
 | Whether motion exists at all | `packages/tokens/tokens.json` → `motion.enabled` (keep `false` for v1) |
 | A component's look | `packages/ui/styles/<area>.css` |
 | A component's API/behaviour | `packages/ui/src/components/<Name>.tsx` |
-| Demo content or instruments | `apps/demo/src/main.jsx` |
-| What "correct" means | `scripts/verify.mjs`, `scripts/verify-demo.mjs` |
+| Example content or instruments | `apps/example/src/main.jsx`, `apps/example-trading/src/main.jsx` |
+| What "correct" means | `scripts/verify.mjs`, `scripts/verify-example.mjs`, `scripts/verify-example-trading.mjs` |
 | What pixels should look like | `npm run baselines:update` rewrites `baselines/<platform>/`; the suite compares against it read-only every `verify:browser` run |
 
-After any change: `npm run build && npm run demo && npm run verify && npm run verify:demo`.
+After any change: `npm run build && npm run example:build && npm run verify && npm run verify:example`.
 
 ---
 
@@ -116,12 +119,14 @@ After any change: `npm run build && npm run demo && npm run verify && npm run ve
 npm run check:contract  # 12 checks: zero deps, peer-only React, exports map, artifacts
 npm run check:contrast  # 63 colour pairs across 3 themes must meet the contrast contract
 npm run check:style     # 72 checks: the CSS authoring contract (tokens-only, logical, motionless)
-npm run check:docs      # every relative link in docs/** must resolve — no dangling guide pages
+npm run check:types     # tsc --noEmit over @trade/ui — strict types are a gate, not a suggestion
+npm run check:docs      # links resolve + documented check counts agree with the suites themselves
 npm run size            # bundle budgets (ESM 8 kB, stylesheet 8 kB, types 3 kB, gzip)
 npm run verify          # 33 checks: contract, CSS, SSR, DOM interactions
-npm run verify:demo     # 10 checks: boots the real bundle in a DOM
+npm run verify:example  # 10 checks: boots the real example bundle in a DOM
 npm run harness:build   # required before verify:browser (harness/dist is gitignored)
-npm run verify:browser  # 72 checks: Chromium + Firefox + WebKit × desktop + mobile
+npm run verify:browser  # 84 checks: Chromium + Firefox + WebKit × desktop + mobile,
+                        # incl. 12 visual-regression checks vs baselines/<platform>/
 
 npm run all             # build + demo + harness + the verification suites
 npm run ci              # contract + build + demo + harness + size + every suite
@@ -129,7 +134,9 @@ npm run ci              # contract + build + demo + harness + size + every suite
 
 Every suite exits non-zero on failure, so they work as gates. GitHub Actions runs four jobs
 (`.github/workflows/ci.yml`): `build`, `size`, `verify` on Linux, and `browser-macos` to measure the
-real macOS WebKit engine. Reports land in `verification/` and are uploaded as CI artifacts.
+real macOS WebKit engine — plus a `baselines` job on manual dispatch that regenerates the linux
+baseline set in the verify container (see Visual baselines). Reports land in `verification/` and
+are uploaded as CI artifacts.
 
 ### Measurement reliability
 
@@ -144,10 +151,28 @@ numbers that move between runs is worse than no gate, so the browser suite:
 drive `requestAnimationFrame` at engine-specific cadences — Firefox measures the same fps ticking
 and idle).
 
+Visual captures are held to the same standard (ADR-005): before any screenshot the harness
+**freezes for capture** — the data feed stops, the ticking table resets to its canonical state,
+and volatile audit text (wall clock, perf figures) is rewritten in the DOM. The suite parses the
+real numbers from the in-memory log and hard-fails a run whose harness cannot prove it froze.
+On unchanged UI, two consecutive runs now produce **0 differing pixels** across all 12 captures —
+so any nonzero diff is a real change, and the 0.3% budget stays calibrated for antialiasing only.
+
 This makes runs reproducible: the WebKit ticking cadence is reported **informationally** on
 non-macOS hosts (it is the Playwright port, not Safari) and gated for real only in the
-`browser-macos` CI job, so a full local run is a clean 72/72 on every host instead of
+`browser-macos` CI job, so a full local run is a clean 84/84 on every host instead of
 disagreeing run to run.
+
+### Visual baselines
+
+`baselines/<platform>/` are versioned inputs, committed on purpose (the one reviewed exception to
+"never commit generated output"). Comparison is read-only; regeneration is explicit:
+
+- **Local:** `npm run baselines:update` — rewrites only the current platform's directory.
+- **CI:** the `baselines` job (`gh workflow run ci.yml --ref <branch>`, workflow_dispatch) runs in
+  the exact verify container — same digest-pinned image, shm and HOME — and uploads
+  `baselines-linux` as an artifact for review and manual commit. Generation environment equals
+  comparison environment by construction; adding a platform (macOS next) is mechanical.
 
 ## Git
 
@@ -161,7 +186,10 @@ normalised to LF via `.gitattributes`.
   `docs:`, `ci:`, `test:`, `chore:`) — gated by `npm run check:commits`.
 - **One concern per commit.** Some early commits bundle several fixes together; splitting them makes
   a bisect actually useful.
-- **Never commit generated binaries.** Screenshots change on every run; they belong in CI artifacts.
+- **Never commit generated binaries** (`dist/`, `verification/`) — with one reviewed exception:
+  `baselines/<platform>/` PNGs are committed on purpose. They are versioned inputs (the
+  visual-regression expected state), rewritten only by the explicit `npm run baselines:update` or
+  the CI `baselines` job, never by a compare run.
 - **Message body records the evidence** — the measurement and the command that produced it — since
   that is what makes a change reviewable months later.
 - **No credentials, no research notes, no absolute local paths.** The workspace root has its own

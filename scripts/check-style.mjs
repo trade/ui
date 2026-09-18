@@ -6,28 +6,25 @@
  * are small and few; keeping this gate mechanical means a reviewer never has to check
  * these things by eye and a machine can never let them drift.
  *
- * Scope: packages/ui/styles/*.css (hand-written only — generated output is not reviewed).
- * Exit code 0 = the contract holds.
+ * Scope: packages/ui/styles/*.css (the library) AND every app stylesheet under apps/
+ * (apps/<name>/src with a .css extension — the example apps demonstrate production
+ * practice, so they obey the same laws; ADR-001 owns the scale they read). Exit code 0 = the contract holds.
  */
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const stylesDir = resolve(here, '..', 'packages', 'ui', 'styles');
+const root = resolve(here, '..');
+const stylesDir = resolve(root, 'packages', 'ui', 'styles');
+const appsDir = resolve(root, 'apps');
 
-const files = readdirSync(stylesDir).filter((f) => f.endsWith('.css'));
-const checks = [];
-const check = (name, violations) =>
-  checks.push({ name, pass: violations.length === 0, detail: violations.slice(0, 5).join(' | ') || 'clean' });
-
-// The one sanctioned engine flag; everything else must be baseline CSS.
 const PREFIX_ALLOWLIST = new Set(['-webkit-font-smoothing']);
 
-for (const file of files) {
-  const css = readFileSync(resolve(stylesDir, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-
-  // Parse declarations once: "prop: value;" pairs.
+/** The shared law set. `namespaced` adds the library-only .ui-* rule. */
+function checkFile(checks, file, css, { namespaced }) {
+  const check = (name, violations) =>
+    checks.push({ name, pass: violations.length === 0, detail: violations.slice(0, 5).join(' | ') || 'clean' });
   const decls = [...css.matchAll(/([-\w]+)\s*:\s*([^;{}]+);/g)].map((m) => ({ prop: m[1], value: m[2].trim(), at: m[0] }));
 
   // 1. colour comes from tokens only — no literals anywhere in a declaration value
@@ -75,11 +72,14 @@ for (const file of files) {
     decls.filter(({ prop, value }) => prop === 'font-size' && !/^(var\(--ui-font-size-|inherit)/.test(value)).map(({ at }) => at)
   );
 
-  // 7. namespace: every class we author lives under .ui-
-  check(
-    `${file}: classes are namespaced .ui-*`,
-    [...css.matchAll(/(?<![\w-])\.([a-zA-Z][\w-]*)/g)].filter((m) => !/^ui-/.test(m[1]) && !/^(dark|light)$/.test(m[1])).map((m) => `.${m[1]}`)
-  );
+  // 7. namespace: library classes we author live under .ui- (app stylesheets target the
+  //    library's classes for shell integration, so this rule is library-only)
+  if (namespaced) {
+    check(
+      `${file}: classes are namespaced .ui-*`,
+      [...css.matchAll(/(?<![\w-])\.([a-zA-Z][\w-]*)/g)].filter((m) => !/^ui-/.test(m[1]) && !/^(dark|light)$/.test(m[1])).map((m) => `.${m[1]}`)
+    );
+  }
 
   // 8. no engine-specific prefixes beyond the allowlist
   check(
@@ -88,7 +88,28 @@ for (const file of files) {
   );
 }
 
+const checks = [];
+
+for (const file of readdirSync(stylesDir).filter((f) => f.endsWith('.css'))) {
+  const css = readFileSync(resolve(stylesDir, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  checkFile(checks, file, css, { namespaced: true });
+}
+
+const appSheets = [];
+if (existsSync(appsDir)) {
+  for (const app of readdirSync(appsDir)) {
+    const src = resolve(appsDir, app, 'src');
+    for (const f of existsSync(src) ? readdirSync(src).filter((f) => f.endsWith('.css')) : []) {
+      appSheets.push({ name: `${app}/src/${f}`, path: resolve(src, f) });
+    }
+  }
+}
+for (const { name, path } of appSheets) {
+  const css = readFileSync(path, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  checkFile(checks, name, css, { namespaced: false });
+}
+
 const failed = checks.filter((c) => !c.pass);
-console.log(`style contract: ${checks.length - failed.length}/${checks.length} checks passed (${files.length} stylesheets)`);
+console.log(`style contract: ${checks.length - failed.length}/${checks.length} checks passed (${readdirSync(stylesDir).filter((f) => f.endsWith('.css')).length} library + ${appSheets.length} app stylesheets)`);
 for (const c of checks) console.log(`  ${c.pass ? 'PASS' : 'FAIL'}  ${c.name}${c.pass ? '' : ' -> ' + c.detail}`);
 process.exit(failed.length ? 1 : 0);

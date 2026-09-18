@@ -58,12 +58,16 @@ const PAIRS = [
   ['onSurfaceMuted', 'surface', TEXT, 'secondary text on a card'],
   ['onSurfaceMuted', 'background', TEXT, 'secondary text on the background'],
   ['onSurfaceMuted', 'surface-1', TEXT, 'secondary text on a raised surface'],
+  // Disabled controls are exempt from WCAG 1.4.3; the floor asserts the label stays
+  // visible on its fill while remaining clearly quieter than any enabled label.
+  ['onSurfaceDisabled', 'surface-1', 2.0, 'disabled label on the disabled fill (WCAG-exempt, visibility floor)'],
   ['onSurfaceMuted', 'rowAlt', TEXT, 'secondary text on a zebra row'],
   ['positive', 'surface', TEXT, 'gain value on a card'],
   ['positive', 'rowAlt', TEXT, 'gain value on a zebra row'],
   ['negative', 'surface', TEXT, 'loss value on a card'],
   ['negative', 'rowAlt', TEXT, 'loss value on a zebra row'],
   ['primary', 'surface', TEXT, 'primary-coloured text (outline button, active tab)'],
+  ['primary', 'surface-1', TEXT, 'primary-coloured label on the outline button fill'],
   ['onPrimary', 'primary', TEXT, 'label on a filled primary button'],
   ['onSecondary', 'secondary', TEXT, 'label on a filled secondary button'],
   ['onError', 'error', TEXT, 'label on a destructive button'],

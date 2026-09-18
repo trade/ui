@@ -47,6 +47,12 @@ function makeInstruments(n) {
 }
 
 const ROW_HEIGHT = 23;
+/* Shared account model: the metrics strip and the ticket's "buying power after" must
+   agree, and the ticket needs it up front to warn before an order is rejected. */
+const ACCOUNT_BUYING_POWER = 284_120.55;
+/* One source of truth for the ticket's initial state — useState and Reset both read
+   this, so Reset can never drift from the defaults it is supposed to restore. */
+const TICKET_DEFAULTS = { side: 'buy', qty: '100', type: 'limit', tif: 'day', bracket: true };
 
 /** Currency formatting. maximumFractionDigits is required: with only minimumFractionDigits set,
  *  Intl defaults the maximum to 3, which is how "411,235.742" reached the screen. */
@@ -74,7 +80,7 @@ function TopBar({ ticketOpen, onToggleTicket }) {
       <Button variant="ghost" size="sm" density="dense" aria-pressed={ticketOpen} onClick={onToggleTicket}>
         Ticket
       </Button>
-      <div style={{ display: 'flex', gap: 4 }}>
+      <div className="top__themes">
         <Button variant="ghost" size="sm" density="dense" onClick={() => setTheme('light')}>Light</Button>
         <Button variant="ghost" size="sm" density="dense" onClick={() => setTheme('dark')}>Dark</Button>
         <Button variant="ghost" size="sm" density="dense" onClick={() => setTheme('high-contrast')}>Contrast</Button>
@@ -99,8 +105,6 @@ function Rail() {
           {label.slice(0, 4)}
         </button>
       ))}
-      <hr className="rail__rule" />
-      <button className="rail__item" title="Settings">Sett</button>
     </nav>
   );
 }
@@ -213,7 +217,9 @@ function Watchlist({ instruments, onSelect, selected }) {
     []
   );
 
-  const window = instruments.slice(range.start, range.end);
+  // visibleRows, NOT `window` — shadowing the global is how a future keyboard-handler
+  // edit silently reads `window.scrollTop` and throws only in production.
+  const visibleRows = instruments.slice(range.start, range.end);
 
   return (
     <section className="watchlist" aria-label="Watchlist">
@@ -227,7 +233,7 @@ function Watchlist({ instruments, onSelect, selected }) {
       </div>
       <DataTable
         columns={columns}
-        rows={window}
+        rows={visibleRows}
         getRowKey={(r) => r.id}
         density="dense"
         rowHeight={ROW_HEIGHT}
@@ -278,9 +284,7 @@ function Blotter() {
         {tab === 'fills' ? (
           <DataTable columns={columns} rows={rows} getRowKey={(r, i) => `${r.time}-${i}`} density="dense" />
         ) : (
-          <div style={{ padding: 16 }} className="muted">
-            Nothing working right now.
-          </div>
+          <div className="blotter__empty">Nothing working right now.</div>
         )}
       </div>
     </section>
@@ -290,12 +294,14 @@ function Blotter() {
 /* ── order ticket ─────────────────────────────────────────────────────────── */
 
 function Ticket({ instrument, open }) {
-  const [side, setSide] = useState('buy');
-  const [qty, setQty] = useState('1000');
-  const [type, setType] = useState('limit');
+  const [side, setSide] = useState(TICKET_DEFAULTS.side);
+  // the default quantity is affordable for the default instrument: the primary
+  // button renders as an ACTIVE primary on load, not greeting the user disabled
+  const [qty, setQty] = useState(TICKET_DEFAULTS.qty);
+  const [type, setType] = useState(TICKET_DEFAULTS.type);
   const [price, setPrice] = useState('');
-  const [tif, setTif] = useState('day');
-  const [bracket, setBracket] = useState(true);
+  const [tif, setTif] = useState(TICKET_DEFAULTS.tif);
+  const [bracket, setBracket] = useState(TICKET_DEFAULTS.bracket);
   const [submitted, setSubmitted] = useState(null);
 
   useEffect(() => {
@@ -306,6 +312,20 @@ function Ticket({ instrument, open }) {
   const priceError = type === 'limit' && (price === '' || Number.isNaN(limit) || limit <= 0);
   const notional = (Number(qty) || 0) * (type === 'limit' ? limit || 0 : instrument?.last || 0);
   const commission = Math.max(1, notional * 0.0001);
+  const insufficient = notional > ACCOUNT_BUYING_POWER;
+
+  // Reset restores the WHOLE ticket to TICKET_DEFAULTS — side included — and clears
+  // the last submission status. A partial reset that left Sell selected was a lie
+  // of a button.
+  const resetTicket = () => {
+    setSide(TICKET_DEFAULTS.side);
+    setQty(TICKET_DEFAULTS.qty);
+    setType(TICKET_DEFAULTS.type);
+    setPrice(instrument ? instrument.last.toFixed(2) : '');
+    setTif(TICKET_DEFAULTS.tif);
+    setBracket(TICKET_DEFAULTS.bracket);
+    setSubmitted(null);
+  };
 
   return (
     <aside className="ticket" data-open={open} aria-label="Order ticket">
@@ -377,18 +397,24 @@ function Ticket({ instrument, open }) {
         </div>
         <div className="ticket__line">
           <span className="muted">Buying power after</span>
-          <span className="num">{money(284_120.55 - notional)}</span>
+          <span className="num">{money(ACCOUNT_BUYING_POWER - notional)}</span>
         </div>
       </div>
 
+      {insufficient ? (
+        <div className="ticket__warn" role="note">
+          Order exceeds buying power — reduce the quantity.
+        </div>
+      ) : null}
+
       <div className="ticket__actions">
-        <Button variant="ghost" density="compact" onClick={() => setSubmitted(null)}>
-          Clear
+        <Button variant="outline" density="compact" onClick={resetTicket}>
+          Reset
         </Button>
         <Button
           variant={side === 'buy' ? 'primary' : 'danger'}
           density="compact"
-          disabled={priceError || !instrument}
+          disabled={priceError || !instrument || insufficient}
           onClick={() => setSubmitted({ side, qty, symbol: instrument?.symbol ?? '' })}
         >
           {side === 'buy' ? 'Buy' : 'Sell'} {qty || 0}
@@ -396,16 +422,7 @@ function Ticket({ instrument, open }) {
       </div>
 
       {submitted ? (
-        <div
-          className="tiny"
-          role="status"
-          style={{
-            marginTop: 6,
-            padding: '6px 8px',
-            borderLeft: '3px solid var(--ui-positive)',
-            background: 'var(--ui-surface-1)'
-          }}
-        >
+        <div className="ticket__status" role="status">
           Working: {submitted.side} {submitted.qty} {submitted.symbol}
         </div>
       ) : null}
@@ -446,8 +463,8 @@ function Workspace() {
         exposure += Math.abs(i.pos * i.last);
       }
     }
-    const netLiq = 284_120.55 + pnl;
-    return { pnl, positions, exposure, netLiq, pnlPct: (pnl / netLiq) * 100, buyingPower: 284_120.55 };
+    const netLiq = ACCOUNT_BUYING_POWER + pnl;
+    return { pnl, positions, exposure, netLiq, pnlPct: (pnl / netLiq) * 100, buyingPower: ACCOUNT_BUYING_POWER };
   }, [instruments]);
 
   return (

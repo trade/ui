@@ -10,6 +10,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Least privilege everywhere; no job needs write scope.
+permissions:
+  contents: read
+
 # The project has independent gates, so they run as separate jobs:
 #   build  — the package must compile and emit declarations
 #   size   — bundle budgets must hold
@@ -19,7 +23,10 @@ jobs:
     name: build
     runs-on: ubuntu-latest
     steps:
+      # full history so check:commits can validate the pushed range
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.1.0
         with:
           node-version: 22
@@ -35,6 +42,16 @@ jobs:
         run: node scripts/check-contrast.mjs
       - name: Enforce the CSS authoring contract
         run: node scripts/check-style.mjs
+      - name: Typecheck (strict, no emit)
+        run: npm run check:types
+      - name: Docs integrity (links, documented counts, exceptions)
+        run: npm run check:docs
+      - name: Commit subjects (pushed range)
+        if: github.event_name == 'push'
+        run: npm run check:commits
+      - name: Commit subjects (pull-request range)
+        if: github.event_name == 'pull_request'
+        run: node scripts/check-commits.mjs ${{ github.event.pull_request.base.sha }}..HEAD
       - name: Upload build output
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.3.1
         with:
@@ -61,33 +78,50 @@ jobs:
 
   verify:
     name: verification
+    # Runs INSIDE the digest-pinned Playwright image — the same image the baselines job
+    # regenerates baselines/linux/ in — so the browser/font environment matches baseline
+    # generation by construction. The capture itself is made deterministic by the harness
+    # freeze (ADR-005). A bare ubuntu-latest runner renders fonts differently and the
+    # visual gate would false-fail.
     runs-on: ubuntu-latest
+    # Digest-pinned (immutable) with the readable tag retained. MCR could in principle
+    # retarget a mutable tag, which would silently change the font/browser environment
+    # the committed linux baselines depend on. Digest of the v1.63.0-noble index.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+      # Firefox crashes in container jobs without adequate /dev/shm.
+      options: --shm-size=1g
     needs: build
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.1.0
         with:
           node-version: 22
-          cache: npm
       - run: npm ci
       - run: npm run build
 
       - name: Library checks (contract, CSS, SSR, DOM interactions)
         run: npm run verify
 
-      - name: Build the demo and the browser harness
+      - name: Build the examples and the browser harness
         run: |
-          npm run demo
+          npm run example:build
+          npm run example-trading:build
           npm run harness:build
 
-      - name: Demo checks (boots the real bundle in a DOM)
-        run: npm run verify:demo
+      - name: Example checks (boots the real bundles in a DOM)
+        run: npm run verify:example
 
-      - name: Install Playwright engines
-        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Trading example checks (virtualization, ARIA, axe)
+        run: npm run verify:example-trading
 
-      - name: Cross-browser suite (frame timing, layout, axe light + dark)
+      # Browsers are preinstalled in the image at the matching version; no install step.
+      # HOME must be writable by the job user for Firefox's profile bootstrap — the default
+      # /github/home makes non-root Firefox exit with "Could not find profile folder".
+      - name: Cross-browser suite (frame timing, layout, axe light + dark, visual regression)
         run: npm run verify:browser
+        env:
+          HOME: /tmp
 
       - name: Upload verification evidence
         if: always()
@@ -95,6 +129,41 @@ jobs:
         with:
           name: verification
           path: verification
+          retention-days: 14
+
+  # Baselines are versioned inputs and are never auto-pushed. This job regenerates the
+  # linux set in the EXACT environment the visual gate compares in — same container
+  # image (digest), same shm, same HOME as the verify job — so generation environment
+  # equals comparison environment by construction. Run after an intentional rendering
+  # change (Playwright image bump, harness change):
+  #   gh workflow run ci.yml --ref <branch>
+  # then download the baselines-linux artifact, review the diff, and commit it.
+  baselines:
+    name: baselines (regenerate linux in the CI environment)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    needs: build
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+      options: --shm-size=1g
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.1.0
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
+      - run: npm run harness:build
+      - name: Regenerate linux baselines (compare env == generation env)
+        run: npm run baselines:update
+        env:
+          HOME: /tmp
+      - name: Upload baselines for review and commit
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.3.1
+        with:
+          name: baselines-linux
+          path: baselines
           retention-days: 14
 
   # Playwright's WebKit on Linux/Windows is a port, not the engine users run. This job measures

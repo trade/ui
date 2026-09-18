@@ -57,3 +57,58 @@ if (badCallouts.length > 0) {
   for (const line of badCallouts) console.error(`  bad callout: ${line}`);
 }
 if (broken.length > 0 || badCallouts.length > 0) process.exit(1);
+
+// ── documented numbers and policy statements ─────────────────────────────────
+// The suite's totals are the single source of truth (CHECKS_PER_COMBO in
+// scripts/browser-suite.mjs, asserted against the real run). Documentation that
+// quotes different numbers rots contributor expectations — this repo hit exactly
+// that (72 vs 84) twice in review. Exit 1 on any drift.
+import { execSync } from 'node:child_process';
+
+const counts = execSync('node scripts/browser-suite.mjs --print-counts', { cwd: root, encoding: 'utf8' });
+const [, compareStr, updateStr] = counts.match(/compare=(\d+) update=(\d+)/) ?? [];
+const compare = Number(compareStr);
+const update = Number(updateStr);
+if (!Number.isInteger(compare) || !Number.isInteger(update)) {
+  console.error('docs counts: could not read CHECKS_PER_COMBO from browser-suite.mjs --print-counts');
+  process.exit(1);
+}
+
+const readDoc = (name) => readFileSync(join(root, name), 'utf8');
+const readme = readDoc('README.md');
+const agents = readDoc('AGENTS.md');
+const contributing = readDoc('CONTRIBUTING.md');
+
+const stale = [];
+const expectIn = (doc, docName, pattern, what) => {
+  if (!pattern.test(doc)) stale.push(`${docName}: missing ${what}`);
+};
+const forbidIn = (doc, docName, pattern, what) => {
+  if (pattern.test(doc)) stale.push(`${docName}: still contains ${what}`);
+};
+
+// The known historical drift: AGENTS.md said 72 while the suite produced 84.
+// (README's check:style row legitimately quotes its own 72 — only browser-suite rows are governed.)
+expectIn(readme, 'README.md', new RegExp(`verify:browser\\s*#\\s*${compare} checks`), `the verify:browser row total (${compare} checks)`);
+expectIn(readme, 'README.md', new RegExp(`${compare}/${compare}`), `the clean-run total (${compare}/${compare})`);
+expectIn(agents, 'AGENTS.md', new RegExp(`browser-suite\\.mjs\\s+${compare} checks`), 'the repository-map browser-suite count');
+expectIn(agents, 'AGENTS.md', /baselines\/<platform>/, 'the baselines reviewed-exception (baselines/<platform>/)');
+
+// Stale paths and script names. The apps are examples (apps/example,
+// apps/example-trading); docs pointing at the pre-restructure names send
+// contributors (and agents) into files that no longer exist.
+const staleTokens = ['apps/demo', 'apps/trading', 'verify:demo', 'verify:screen', 'screen:build', 'npm run demo', 'build-demo', 'verify-demo', 'build-trading'];
+for (const [docName, doc] of [['README.md', readme], ['AGENTS.md', agents], ['CONTRIBUTING.md', contributing], ['STATUS.md', readDoc('STATUS.md')]]) {
+  for (const token of staleTokens) {
+    if (doc.includes(token)) stale.push(`${docName}: stale reference "${token}"`);
+  }
+}
+expectIn(contributing, 'CONTRIBUTING.md', /baselines\/<platform>/, 'the baselines reviewed-exception (baselines/<platform>/)');
+expectIn(readme, 'README.md', /baselines\/<platform>/, 'the baselines reviewed-exception (baselines/<platform>/)');
+forbidIn(readme, 'README.md', /belong in CI artifacts/, 'the "screenshots belong in CI artifacts" claim (contradicts the committed baselines)');
+
+console.log(`docs counts: browser-suite ${compare} compare / ${update} update — README, AGENTS.md, CONTRIBUTING.md agree`);
+if (stale.length > 0) {
+  for (const line of stale) console.error(`  docs drift: ${line}`);
+  process.exit(1);
+}

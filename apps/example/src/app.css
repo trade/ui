@@ -1,0 +1,29 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Example app shell styles.
+
+   Same laws as the library (gated by scripts/check-style.mjs over apps/*/src/*.css):
+   tokens only, logical properties, no motion. App classes are NOT .ui-* — that
+   namespace belongs to @trade/ui; the shell targets library classes only for
+   positioning integration, never to restyle them.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+body { margin: 0; }
+
+.app-bar {
+  position: sticky; top: 0; z-index: var(--ui-z-sticky);
+  display: flex; align-items: center; gap: var(--ui-space-3);
+  padding: var(--ui-space-3) var(--ui-space-5);
+  background: var(--ui-surface);
+  border-block-end: 1px solid var(--ui-outline);
+}
+.app-bar__brand { font-weight: 600; }
+.app-bar__brand small {
+  font-weight: 400; color: var(--ui-on-surface-muted);
+  font-family: var(--ui-font-numeric); margin-inline-start: var(--ui-space-2);
+}
+.app-bar__spacer { flex: 1; }
+
+.page { max-width: 1180px; margin: 0 auto; padding: var(--ui-space-5); }
+
+.muted { color: var(--ui-on-surface-muted); font-size: var(--ui-font-size-sm); }
+.panel-note { margin: 0; }

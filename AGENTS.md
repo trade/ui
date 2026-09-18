@@ -49,20 +49,21 @@ packages/tokens/build-tokens.mjs   compiles tokens → dist/tokens.css + tokens.
 packages/ui/src/components/        one file per component; forwardRef; cx(); ...rest spread
 packages/ui/styles/                one hand-written CSS file per area; auto-discovered by build.mjs
 packages/ui/build.mjs              esbuild ESM+CJS, tsc .d.ts, concatenates tokens.css + styles
-apps/demo/src/main.jsx             the reference screen — show new components here
+apps/example/src/main.jsx          the component reference screen — show new components here
+apps/example-trading/src/main.jsx  the production-grade trading workspace example
 scripts/verify.mjs                 33 library checks (SSR, CSS, DOM interactions) — add checks here
-scripts/verify-demo.mjs            10 checks against the built demo bundle
-scripts/browser-suite.mjs          72 checks × {chromium,firefox,webkit} × {desktop,mobile}
+scripts/verify-example.mjs         10 checks against the built example bundle
+scripts/browser-suite.mjs          84 checks × {chromium,firefox,webkit} × {desktop,mobile}
 scripts/check-contract.mjs         package promises (zero deps, peer React, exports map)
 scripts/check-contrast.mjs         WCAG contrast over every theme's role pairs — extend on new pairs
-scripts/check-style.mjs            CSS authoring contract (the laws, executable)
+scripts/check-style.mjs            CSS authoring contract (the laws, executable — library AND example apps)
 ```
 
 ## The standard loop — run it for every change, however small
 
 ```
 npm run build && npm run check:contrast && npm run check:style && npm run verify
-npm run demo && npm run verify:demo            # anything touching components/demo
+npm run example:build && npm run verify:example    # anything touching the examples
 npm run verify:browser                          # anything touching styles, layout, focus
 ```
 
@@ -80,7 +81,7 @@ command is flaky". `npm run ci` runs the whole chain in order.
    `typeof window/document === 'undefined'` for any DOM access.
 4. Export from `src/index.ts`.
 5. Add interaction checks to `scripts/verify.mjs`; render it in `scripts/sample-screen.mjs`.
-6. Use it in `apps/demo/src/main.jsx` (states + densities + both themes).
+6. Use it in `apps/example/src/main.jsx` (states + densities + both themes).
 
 ## Rule zero for checks
 
@@ -94,8 +95,10 @@ rule, record it in `STATUS.md` as ungated so it stays visible.
 - Conventional prefixes (`feat:`, `fix:`, `docs:`, `ci:`, `test:`, `chore:`), subject ≤ 50 chars
   (72 hard max), imperative, one concern per commit.
 - Body carries evidence: numbers, check counts, the command that produced them.
-- Never commit generated output (`dist/`, `verification/*.json`, screenshots), credentials, or
-  absolute local paths.
+- Never commit generated output (`dist/`, `verification/*.json`, `verification/screenshots/`),
+  credentials, or absolute local paths. **Reviewed exception:** `baselines/<platform>/` PNGs are
+  committed on purpose — they are versioned inputs (the visual-regression expected state),
+  regenerated only by the explicit `npm run baselines:update`, never by a compare run.
 - **Never push, publish, create remotes, or open PRs unless the user explicitly instructs it in the
   current task.** Local commits are the default stopping point; report and wait.
 - If a CI run exists for your commit, watch it to completion and read the failures yourself before
@@ -103,8 +106,8 @@ rule, record it in `STATUS.md` as ungated so it stays visible.
 
 ## Definition of done
 
-- [ ] All gates green locally (`build`, `check:contrast`, `check:style`, `verify`, `verify:demo`,
-      `verify:browser` when relevant)
+- [ ] All gates green locally (`build`, `check:contrast`, `check:style`, `check:types`,
+      `check:docs`, `verify`, `verify:example`, `verify:browser` when relevant)
 - [ ] New states/behaviours have checks (§ Rule zero)
 - [ ] README change-guide row updated if files/knobs changed; STATUS.md updated if known issues moved
 - [ ] Committed locally with evidence; push only on explicit instruction

@@ -1,6 +1,6 @@
 /**
- * @trade/ui — demo boot verification.
- * Loads the *built* demo (the real IIFE bundle) inside jsdom, lets it render,
+ * @trade/ui — example app boot verification.
+ * Loads the *built* example (the real IIFE bundle) inside jsdom, lets it render,
  * then drives real interactions and asserts on the resulting DOM.
  */
 import { readFileSync } from 'node:fs';
@@ -9,14 +9,16 @@ import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const dist = resolve(here, '..', 'apps', 'demo', 'dist');
+const dist = resolve(here, '..', 'apps', 'example', 'dist');
 
 const html = readFileSync(resolve(dist, 'index.html'), 'utf8');
 const css = readFileSync(resolve(dist, 'ui.css'), 'utf8');
+const appCss = readFileSync(resolve(dist, 'app.css'), 'utf8');
 const js = readFileSync(resolve(dist, 'app.js'), 'utf8').replace(/<\/script/gi, '<\\/script');
 
 const page = html
   .replace(/<link rel="stylesheet" href="\.\/ui\.css" \/>/, () => `<style>${css}</style>`)
+  .replace(/<link rel="stylesheet" href="\.\/app\.css" \/>/, () => `<style>${appCss}</style>`)
   .replace(/<script src="\.\/app\.js"><\/script>/, () => `<script>${js}</script>`);
 
 const dom = new JSDOM(page, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'http://localhost/demo/' });
@@ -33,7 +35,7 @@ const check = (name, pass, detail) => results.push({ name, pass, detail });
 await wait(300);
 
 const root = doc.getElementById('root');
-check('demo boots and mounts', Boolean(root && root.children.length > 0), `#root children=${root?.children.length ?? 0}`);
+check('example boots and mounts', Boolean(root && root.children.length > 0), `#root children=${root?.children.length ?? 0}`);
 
 const bodyRows = doc.querySelectorAll('tbody tr[role="row"]');
 check('watchlist renders', bodyRows.length >= 120, `body rows=${bodyRows.length}`);

@@ -1,26 +1,27 @@
 #!/usr/bin/env node
-/** Build the static demo: bundle the app (IIFE so it opens from file://) and copy the stylesheet. */
+/** Build the trading example: bundle the app (IIFE) and copy both stylesheets. */
 import { build } from 'esbuild';
-import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
-const demo = resolve(root, 'apps', 'demo');
-const out = resolve(demo, 'dist');
+const app = resolve(root, 'apps', 'example-trading');
+const out = resolve(app, 'dist');
 mkdirSync(out, { recursive: true });
 
-const css = resolve(root, 'packages', 'ui', 'dist', 'ui.css');
-if (!existsSync(css)) {
+const uiCss = resolve(root, 'packages', 'ui', 'dist', 'ui.css');
+if (!existsSync(uiCss)) {
   console.error('missing packages/ui/dist/ui.css — run `npm run build` first');
   process.exit(1);
 }
-copyFileSync(css, resolve(out, 'ui.css'));
-copyFileSync(resolve(demo, 'src', 'index.html'), resolve(out, 'index.html'));
+copyFileSync(uiCss, resolve(out, 'ui.css'));
+copyFileSync(resolve(app, 'src', 'screen.css'), resolve(out, 'screen.css'));
+copyFileSync(resolve(app, 'src', 'index.html'), resolve(out, 'index.html'));
 
 await build({
-  entryPoints: [resolve(demo, 'src', 'main.jsx')],
+  entryPoints: [resolve(app, 'src', 'main.jsx')],
   bundle: true,
   format: 'iife',
   jsx: 'automatic',
@@ -32,16 +33,13 @@ await build({
 });
 
 const html = readFileSync(resolve(out, 'index.html'), 'utf8');
-const app = readFileSync(resolve(out, 'app.js'));
 console.log(
   JSON.stringify(
     {
       ok: true,
       entry: resolve(out, 'index.html'),
-      referencesStyles: html.includes('./ui.css'),
-      referencesScript: html.includes('./app.js'),
-      appBytes: app.length,
-      cssBytes: readFileSync(resolve(out, 'ui.css')).length
+      references: ['ui.css', 'screen.css', 'app.js'].filter((f) => html.includes(f)),
+      appBytes: readFileSync(resolve(out, 'app.js')).length
     },
     null,
     2

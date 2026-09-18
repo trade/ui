@@ -34,11 +34,6 @@ const baselines = resolve(root, 'baselines');
 const UPDATE_BASELINES = process.argv.includes('--update-baselines');
 mkdirSync(shots, { recursive: true });
 
-if (!existsSync(resolve(dist, 'index.html')) || !existsSync(resolve(dist, 'perf.js'))) {
-  console.error('harness/dist is missing. It is gitignored, so build it first:\n  npm run harness:build');
-  process.exit(1);
-}
-
 const PORT = 4174;
 const SETTLE_MS = 1500; // let the page, fonts and first paints go quiet before measuring
 const MAX_ATTEMPTS = 3;
@@ -69,6 +64,35 @@ const T = {
 // a reading this bad means the browser was throttled, not that the library is slow
 const looksThrottled = (m) => !Number.isFinite(m.staticP95) || m.staticP95 > 100 || m.p95 > 100;
 
+const ENGINES = [
+  { name: 'chromium', launcher: chromium, args: ['--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows'] },
+  { name: 'firefox', launcher: firefox, args: [] },
+  { name: 'webkit', launcher: webkit, args: [] }
+];
+const VIEWPORTS = [
+  { name: 'desktop', width: 1600, height: 900 },
+  { name: 'mobile', width: 390, height: 844 }
+];
+
+// Checks per combo. The end-of-run assertion compares this against the real total, so
+// adding a check without bumping these numbers fails the suite, and `check:docs` reads
+// the totals via --print-counts to keep README/AGENTS from drifting (the 72-vs-84 class
+// of bug). Both live before the server starts so --print-counts never binds the port.
+const CHECKS_PER_COMBO = { compare: 14, update: 13 };
+
+if (process.argv.includes('--print-counts')) {
+  const total = (mode) => CHECKS_PER_COMBO[mode] * ENGINES.length * VIEWPORTS.length;
+  console.log(`compare=${total('compare')} update=${total('update')}`);
+  process.exit(0);
+}
+
+// the harness must be built before a real run; --print-counts above is exempt (it is a
+// metadata query used by check:docs on a fresh checkout that has no dist yet)
+if (!existsSync(resolve(dist, 'index.html')) || !existsSync(resolve(dist, 'perf.js'))) {
+  console.error('harness/dist is missing. It is gitignored, so build it first:\n  npm run harness:build');
+  process.exit(1);
+}
+
 const server = createServer((req, res) => {
   const url = decodeURIComponent((req.url || '/').split('?')[0]);
   if (url === '/favicon.ico') { res.writeHead(204); res.end(); return; }
@@ -86,16 +110,6 @@ const server = createServer((req, res) => {
   res.end(readFileSync(file));
 });
 await new Promise((r) => server.listen(PORT, '127.0.0.1', r));
-
-const ENGINES = [
-  { name: 'chromium', launcher: chromium, args: ['--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows'] },
-  { name: 'firefox', launcher: firefox, args: [] },
-  { name: 'webkit', launcher: webkit, args: [] }
-];
-const VIEWPORTS = [
-  { name: 'desktop', width: 1600, height: 900 },
-  { name: 'mobile', width: 390, height: 844 }
-];
 
 /**
  * Pixel-compare the freshly captured screenshots against baselines/.
@@ -177,6 +191,16 @@ async function attempt(engine, vp, id) {  const browser = await engine.launcher.
     const staticP95 = first(/\[static\] frames=\d+ fps=[\d.]+ p95=([\d.]+)ms/);
     const axeErrored = text.includes('axe error');
 
+    // Freeze the capture: stop the feed, reset the ticking table to its canonical state,
+    // and replace volatile audit text (wall clock, perf figures) in the DOM. The perf
+    // numbers above were already parsed from the lines array, so measurement is intact —
+    // only what the screenshot will see is made deterministic. A harness that cannot
+    // freeze must fail loudly: an unfrozen capture is a nondeterministic baseline.
+    await page.evaluate(() => window.__freezeForCapture?.());
+    await page.waitForTimeout(250);
+    const frozen = await page.evaluate(() => window.__frozen === true);
+    if (!frozen) throw new Error('harness did not freeze for capture — visual capture would be nondeterministic');
+
     // The sticky header was never verified — only screenshotted at scroll position 0.
     const sticky = await page.evaluate(() => {
       const wrap = document.querySelector('.ui-table-wrap');
@@ -196,10 +220,13 @@ async function attempt(engine, vp, id) {  const browser = await engine.launcher.
       const res = await window.axe.run(document, { resultTypes: ['violations'] });
       return res.violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.length }));
     });
-    await page.screenshot({ path: resolve(shots, `${id}-dark.png`) });
+    await page.screenshot({ path: resolve(shots, `${id}-dark.png`), caret: 'hide' });
     await page.evaluate(() => window.__setTheme('light'));
     await page.waitForTimeout(300);
-    await page.screenshot({ path: resolve(shots, `${id}-light.png`) });
+    // caret: 'hide' is the Playwright default but is stated here on purpose; animations
+    // are deliberately NOT disabled — this repo bans them outright (law 2), and an illegal
+    // animation should surface in the diff rather than be silenced by the capture.
+    await page.screenshot({ path: resolve(shots, `${id}-light.png`), caret: 'hide' });
 
     // Visual regression: compare (or, only in explicit update mode, rewrite baselines).
     let visual = null;
@@ -378,4 +405,16 @@ const report = {
 writeFileSync(resolve(root, 'verification', 'browser-suite-report.json'), JSON.stringify(report, null, 2), 'utf8');
 
 console.log(`\nTOTAL: ${report.totals.passed}/${report.totals.checks} checks passed across ${results.length} combos (${report.totals.retried} retried)`);
+
+// The suite's own count contract: if a check was added or removed without bumping
+// CHECKS_PER_COMBO, the documented totals everywhere else are already wrong.
+const expectedTotal =
+  (UPDATE_BASELINES ? CHECKS_PER_COMBO.update : CHECKS_PER_COMBO.compare) * ENGINES.length * VIEWPORTS.length;
+if (report.totals.failed === 0 && report.totals.checks !== expectedTotal) {
+  console.error(
+    `CHECK COUNT CONTRACT VIOLATED: ran ${report.totals.checks} checks, expected ${expectedTotal} — ` +
+      `update CHECKS_PER_COMBO in scripts/browser-suite.mjs and the documented counts (check:docs).`
+  );
+  process.exit(1);
+}
 process.exit(report.totals.failed === 0 ? 0 : 1);
