@@ -13,10 +13,12 @@ const dist = resolve(here, '..', 'apps', 'demo', 'dist');
 
 const html = readFileSync(resolve(dist, 'index.html'), 'utf8');
 const css = readFileSync(resolve(dist, 'ui.css'), 'utf8');
+const appCss = readFileSync(resolve(dist, 'app.css'), 'utf8');
 const js = readFileSync(resolve(dist, 'app.js'), 'utf8').replace(/<\/script/gi, '<\\/script');
 
 const page = html
   .replace(/<link rel="stylesheet" href="\.\/ui\.css" \/>/, () => `<style>${css}</style>`)
+  .replace(/<link rel="stylesheet" href="\.\/app\.css" \/>/, () => `<style>${appCss}</style>`)
   .replace(/<script src="\.\/app\.js"><\/script>/, () => `<script>${js}</script>`);
 
 const dom = new JSDOM(page, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'http://localhost/demo/' });

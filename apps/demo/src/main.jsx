@@ -99,7 +99,7 @@ function Watchlist({ onTrade }) {
 
 function Panel({ tick }) {
   return (
-    <p className="muted" style={{ margin: 0 }}>
+    <p className="panel-note muted">
       Panel content for this tab. Theme switches restyle the whole page with no React re-render, and the
       last tick was {tick}.
     </p>

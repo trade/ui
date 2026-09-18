@@ -74,7 +74,7 @@ function TopBar({ ticketOpen, onToggleTicket }) {
       <Button variant="ghost" size="sm" density="dense" aria-pressed={ticketOpen} onClick={onToggleTicket}>
         Ticket
       </Button>
-      <div style={{ display: 'flex', gap: 4 }}>
+      <div className="top__themes">
         <Button variant="ghost" size="sm" density="dense" onClick={() => setTheme('light')}>Light</Button>
         <Button variant="ghost" size="sm" density="dense" onClick={() => setTheme('dark')}>Dark</Button>
         <Button variant="ghost" size="sm" density="dense" onClick={() => setTheme('high-contrast')}>Contrast</Button>
@@ -213,7 +213,9 @@ function Watchlist({ instruments, onSelect, selected }) {
     []
   );
 
-  const window = instruments.slice(range.start, range.end);
+  // visibleRows, NOT `window` — shadowing the global is how a future keyboard-handler
+  // edit silently reads `window.scrollTop` and throws only in production.
+  const visibleRows = instruments.slice(range.start, range.end);
 
   return (
     <section className="watchlist" aria-label="Watchlist">
@@ -227,7 +229,7 @@ function Watchlist({ instruments, onSelect, selected }) {
       </div>
       <DataTable
         columns={columns}
-        rows={window}
+        rows={visibleRows}
         getRowKey={(r) => r.id}
         density="dense"
         rowHeight={ROW_HEIGHT}
@@ -278,9 +280,7 @@ function Blotter() {
         {tab === 'fills' ? (
           <DataTable columns={columns} rows={rows} getRowKey={(r, i) => `${r.time}-${i}`} density="dense" />
         ) : (
-          <div style={{ padding: 16 }} className="muted">
-            Nothing working right now.
-          </div>
+          <div className="blotter__empty">Nothing working right now.</div>
         )}
       </div>
     </section>
@@ -396,16 +396,7 @@ function Ticket({ instrument, open }) {
       </div>
 
       {submitted ? (
-        <div
-          className="tiny"
-          role="status"
-          style={{
-            marginTop: 6,
-            padding: '6px 8px',
-            borderLeft: '3px solid var(--ui-positive)',
-            background: 'var(--ui-surface-1)'
-          }}
-        >
+        <div className="ticket__status" role="status">
           Working: {submitted.side} {submitted.qty} {submitted.symbol}
         </div>
       ) : null}

@@ -17,6 +17,7 @@ if (!existsSync(css)) {
   process.exit(1);
 }
 copyFileSync(css, resolve(out, 'ui.css'));
+copyFileSync(resolve(demo, 'src', 'app.css'), resolve(out, 'app.css'));
 copyFileSync(resolve(demo, 'src', 'index.html'), resolve(out, 'index.html'));
 
 await build({
