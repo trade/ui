@@ -91,3 +91,34 @@ transition or an animation.
 - The core ships no animation; the only `transition` declarations in the stylesheet set `none`.
 - A future opt-in entrypoint can consume the existing tokens without a breaking change to components.
 - Reduced-motion preferences are satisfied by construction rather than by a media query.
+
+---
+
+## ADR-005 — Visual baselines capture a frozen harness state
+
+**Status:** accepted
+
+**Context.** The visual-regression gate pixel-compares full harness screenshots against committed
+`baselines/<platform>/` sets. The harness is a live instrument: it prints its own wall-clock header,
+live perf figures, and a ticking price table. Screenshots of that content are nondeterministic —
+the tick-accumulated values and timestamps differ by host speed and run timing, which produced
+false failures on unchanged UI (webkit-mobile at 0.574% vs the 0.3% budget in CI, firefox-mobile
+at 0.39% locally, both with zero structural differences). Masking the volatile regions was the
+alternative; masks also hide real regressions that happen to fall inside them.
+
+**Decision.** The harness exposes `__freezeForCapture`: it stops the data feed, returns the table
+to its canonical initial state, and rewrites only the volatile audit lines in the DOM. The suite
+freezes after measurement (perf numbers are parsed from the in-memory log, which stays exact) and
+before every screenshot, and hard-fails any run whose harness cannot prove it froze. Volatile
+content is made deterministic rather than hidden or excluded.
+
+**Consequences.**
+- Baseline diffs contain only antialiasing noise, which the 0.3% budget was calibrated for; no
+  threshold was loosened.
+- The harness page, not just the library, is part of the capture contract — changing what it
+  renders requires regenerating baselines via the explicit `baselines:update` (locally, or the
+  CI `baselines` job that runs in the exact verification container).
+- Prices render formatted (`toFixed(2)`), like a real quote surface; raw float text is a bug, not
+  a baseline ingredient.
+- `--print-counts` and the end-of-run check-count assertion keep the suite's totals the single
+  source of truth for documented numbers.

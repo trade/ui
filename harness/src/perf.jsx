@@ -19,7 +19,9 @@ function makeRows(n) {
 
 const COLUMNS = [
   { key: 'symbol', header: 'Symbol', width: 110 },
-  { key: 'last', header: 'Last', width: 110, numeric: true },
+  // formatted like a real quote would be — a raw float ("101.41000000000001") is never
+  // acceptable output, and fixed two-decimal strings keep the visual baseline deterministic
+  { key: 'last', header: 'Last', width: 110, numeric: true, render: (r) => r.last.toFixed(2) },
   {
     key: 'chg',
     header: 'Chg',
@@ -54,9 +56,19 @@ function LiveTable({ rowCount }) {
       running = false;
       cancelAnimationFrame(raf);
     };
+    // Capture freeze for the visual baseline: stop the feed and return the table to its
+    // canonical initial state (tick 0), so every run and every host renders the exact
+    // same strings. Without this, the screenshot's LAST column depends on how many ticks
+    // elapsed before capture, and the gate false-fails on unchanged UI.
+    window.__freezeTable = () => {
+      running = false;
+      cancelAnimationFrame(raf);
+      setTick(0);
+    };
     return () => {
       running = false;
       cancelAnimationFrame(raf);
+      delete window.__freezeTable;
     };
   }, []);
 

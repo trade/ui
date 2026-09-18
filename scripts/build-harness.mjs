@@ -66,6 +66,32 @@ const html = `<!DOCTYPE html>
       }
       function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
+      // Capture freeze for the visual baseline. The audit log mixes deterministic lines
+      // (structure, layout, theme) with run- and host-dependent ones (wall-clock header,
+      // static/live perf figures). The suite parses the real numbers from the lines array
+      // below; the DOM copy must not carry them into a screenshot, or the baseline can
+      // never match across runs. Freeze rewrites only the volatile DOM lines and returns
+      // the ticking table to its canonical state; __frozen is the suite's proof.
+      window.__frozen = false;
+      window.__freezeForCapture = function () {
+        if (typeof window.__freezeTable === 'function') window.__freezeTable();
+        var el = document.getElementById('audit');
+        if (el) {
+          el.textContent = lines
+            .map(function (l) {
+              if (l.indexOf('=== @trade/ui browser harness:') === 0) {
+                return '=== @trade/ui browser harness — capture frozen for visual regression ===';
+              }
+              if (l.indexOf('[static]') === 0 || l.indexOf('[perf]') === 0) {
+                return l.slice(0, l.indexOf(']') + 1) + ' frozen for capture — live values in the verification report';
+              }
+              return l;
+            })
+            .join('\\n');
+        }
+        window.__frozen = true;
+      };
+
       window.addEventListener('load', function () {
         setTimeout(run, 700);
       });
