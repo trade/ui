@@ -300,7 +300,9 @@ for (const engine of ENGINES) {
           } else if (v.sizeMismatch) {
             add('visual regression (' + theme + ' theme)' + vNote, false, `viewport size changed: baseline ${v.baseline}, got ${v.current}`);
           } else {
-            const ok = v.ratio <= T.maxVisualDiffRatio;
+            // On a platform with no committed baselines the comparison is informational and
+            // always passes; the ratio is still reported so drift is visible.
+            const ok = !vGate || v.ratio <= T.maxVisualDiffRatio;
             add('visual regression (' + theme + ' theme)' + vNote, ok,
               `${v.diffPixels}/${v.total} px differ = ${(v.ratio * 100).toFixed(3)}% (max ${(T.maxVisualDiffRatio * 100).toFixed(1)}%)` +
               (ok ? '' : ' — if the change is intended, regenerate: npm run baselines:update'));
