@@ -34,11 +34,6 @@ const baselines = resolve(root, 'baselines');
 const UPDATE_BASELINES = process.argv.includes('--update-baselines');
 mkdirSync(shots, { recursive: true });
 
-if (!existsSync(resolve(dist, 'index.html')) || !existsSync(resolve(dist, 'perf.js'))) {
-  console.error('harness/dist is missing. It is gitignored, so build it first:\n  npm run harness:build');
-  process.exit(1);
-}
-
 const PORT = 4174;
 const SETTLE_MS = 1500; // let the page, fonts and first paints go quiet before measuring
 const MAX_ATTEMPTS = 3;
@@ -89,6 +84,13 @@ if (process.argv.includes('--print-counts')) {
   const total = (mode) => CHECKS_PER_COMBO[mode] * ENGINES.length * VIEWPORTS.length;
   console.log(`compare=${total('compare')} update=${total('update')}`);
   process.exit(0);
+}
+
+// the harness must be built before a real run; --print-counts above is exempt (it is a
+// metadata query used by check:docs on a fresh checkout that has no dist yet)
+if (!existsSync(resolve(dist, 'index.html')) || !existsSync(resolve(dist, 'perf.js'))) {
+  console.error('harness/dist is missing. It is gitignored, so build it first:\n  npm run harness:build');
+  process.exit(1);
 }
 
 const server = createServer((req, res) => {
