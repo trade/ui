@@ -94,8 +94,10 @@ rule, record it in `STATUS.md` as ungated so it stays visible.
 - Conventional prefixes (`feat:`, `fix:`, `docs:`, `ci:`, `test:`, `chore:`), subject ≤ 50 chars
   (72 hard max), imperative, one concern per commit.
 - Body carries evidence: numbers, check counts, the command that produced them.
-- Never commit generated output (`dist/`, `verification/*.json`, screenshots), credentials, or
-  absolute local paths.
+- Never commit generated output (`dist/`, `verification/*.json`, `verification/screenshots/`),
+  credentials, or absolute local paths. **Reviewed exception:** `baselines/<platform>/` PNGs are
+  committed on purpose — they are versioned inputs (the visual-regression expected state),
+  regenerated only by the explicit `npm run baselines:update`, never by a compare run.
 - **Never push, publish, create remotes, or open PRs unless the user explicitly instructs it in the
   current task.** Local commits are the default stopping point; report and wait.
 - If a CI run exists for your commit, watch it to completion and read the failures yourself before

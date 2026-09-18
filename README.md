@@ -121,7 +121,8 @@ npm run size            # bundle budgets (ESM 8 kB, stylesheet 8 kB, types 3 kB,
 npm run verify          # 33 checks: contract, CSS, SSR, DOM interactions
 npm run verify:demo     # 10 checks: boots the real bundle in a DOM
 npm run harness:build   # required before verify:browser (harness/dist is gitignored)
-npm run verify:browser  # 72 checks: Chromium + Firefox + WebKit × desktop + mobile
+npm run verify:browser  # 84 checks: Chromium + Firefox + WebKit × desktop + mobile,
+                        # incl. 12 visual-regression checks vs baselines/<platform>/
 
 npm run all             # build + demo + harness + the verification suites
 npm run ci              # contract + build + demo + harness + size + every suite
@@ -146,7 +147,7 @@ and idle).
 
 This makes runs reproducible: the WebKit ticking cadence is reported **informationally** on
 non-macOS hosts (it is the Playwright port, not Safari) and gated for real only in the
-`browser-macos` CI job, so a full local run is a clean 72/72 on every host instead of
+`browser-macos` CI job, so a full local run is a clean 84/84 on every host instead of
 disagreeing run to run.
 
 ## Git
