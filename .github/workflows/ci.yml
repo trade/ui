@@ -86,13 +86,17 @@ jobs:
       - name: Library checks (contract, CSS, SSR, DOM interactions)
         run: npm run verify
 
-      - name: Build the demo and the browser harness
+      - name: Build the examples and the browser harness
         run: |
-          npm run demo
+          npm run example:build
+          npm run example-trading:build
           npm run harness:build
 
-      - name: Demo checks (boots the real bundle in a DOM)
-        run: npm run verify:demo
+      - name: Example checks (boots the real bundles in a DOM)
+        run: npm run verify:example
+
+      - name: Trading example checks (virtualization, ARIA, axe)
+        run: npm run verify:example-trading
 
       # Browsers are preinstalled in the image at the matching version; no install step.
       # HOME must be writable by the job user for Firefox's profile bootstrap — the default

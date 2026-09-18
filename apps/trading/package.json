@@ -1,9 +1,0 @@
-{
-  "name": "trading",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Trading workspace — the screen @trade/ui exists for.",
-  "scripts": {
-    "build": "node ../../scripts/build-trading.mjs"
-  }
-}

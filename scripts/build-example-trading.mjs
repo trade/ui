@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Build the trading workspace screen: bundle the app (IIFE) and copy both stylesheets. */
+/** Build the trading example: bundle the app (IIFE) and copy both stylesheets. */
 import { build } from 'esbuild';
 import { copyFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
-const app = resolve(root, 'apps', 'trading');
+const app = resolve(root, 'apps', 'example-trading');
 const out = resolve(app, 'dist');
 mkdirSync(out, { recursive: true });
 

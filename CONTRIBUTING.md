@@ -94,7 +94,7 @@ Three tiers, compiled by `packages/tokens/build-tokens.mjs`:
 5. **Checks.** A component without tests is not done: add DOM interaction checks to
    `scripts/verify.mjs` (keyboard, ARIA, disabled states) and use it in `scripts/sample-screen.mjs`
    so it renders in the browser suites (axe + layout + themes across 3 engines × 2 viewports).
-6. **Demo.** Show it in `apps/demo` — states, densities, both themes. A component that exists only
+6. **Example.** Show it in `apps/example` — states, densities, both themes. A component that exists only
    as an export is invisible.
 
 ## 4. Cross-platform, modern baseline
@@ -125,7 +125,7 @@ The library exists for screens that re-render continuously. The hot path rules:
 
 ## 6. Definition of done
 
-`npm run build && npm run check:contrast && npm run check:style && npm run demo && npm run verify && npm run verify:demo`
+`npm run build && npm run check:contrast && npm run check:style && npm run example:build && npm run verify && npm run verify:example`
 
 — all green locally, plus `npm run verify:browser` for anything touching styles, layout, or focus
 management. `npm run ci` is the full chain.
@@ -135,7 +135,7 @@ Done also means:
 - [ ] New/changed states covered in `verify.mjs` (hover/active/focus-visible/disabled where relevant)
 - [ ] axe clean in light **and** dark
 - [ ] Works at comfortable/compact/dense if it has geometry
-- [ ] No console errors in the demo (`verify:demo` gates this)
+- [ ] No console errors in the examples (`verify:example` / `verify:example-trading` gate this)
 - [ ] README change-guide row updated if you added a file or a knob
 - [ ] STATUS.md updated if you opened, closed, or changed a known issue
 

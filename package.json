@@ -16,17 +16,17 @@
     "check:types": "tsc -p packages/ui --noEmit",
     "check:docs": "node scripts/check-docs-links.mjs",
     "check:commits": "node scripts/check-commits.mjs",
-    "verify:demo": "node scripts/verify-demo.mjs",
+    "verify:example": "node scripts/verify-example.mjs",
+    "verify:example-trading": "node scripts/verify-example-trading.mjs",
     "verify:browser": "node scripts/browser-suite.mjs",
     "baselines:update": "node scripts/browser-suite.mjs --update-baselines",
     "size": "size-limit",
     "harness:build": "node scripts/build-harness.mjs",
     "harness": "node scripts/build-harness.mjs && node scripts/serve.mjs",
-    "demo": "node scripts/build-demo.mjs",
-    "screen:build": "node scripts/build-trading.mjs",
-    "verify:screen": "node scripts/verify-screen.mjs",
-    "all": "npm run build && npm run demo && npm run harness:build && npm run verify && npm run verify:demo && npm run verify:browser",
-    "ci": "npm run check:contract && npm run build && npm run check:contrast && npm run check:style && npm run check:types && npm run check:docs && npm run check:commits && npm run demo && npm run harness:build && npm run size && npm run verify && npm run verify:demo && npm run verify:browser"
+    "example:build": "node scripts/build-example.mjs",
+    "example-trading:build": "node scripts/build-example-trading.mjs",
+    "all": "npm run build && npm run example:build && npm run example-trading:build && npm run harness:build && npm run verify && npm run verify:example && npm run verify:example-trading && npm run verify:browser",
+    "ci": "npm run check:contract && npm run build && npm run check:contrast && npm run check:style && npm run check:types && npm run check:docs && npm run check:commits && npm run example:build && npm run example-trading:build && npm run harness:build && npm run size && npm run verify && npm run verify:example && npm run verify:example-trading && npm run verify:browser"
   },
   "size-limit": [
     {

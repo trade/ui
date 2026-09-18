@@ -18,7 +18,8 @@ A working, verified component library. Not yet used by a real application.
 |---|---|---|
 | `@trade/tokens` | primitives → theme roles, compiled to static CSS + typed TS | done |
 | `@trade/ui` | 11 components, static CSS, 3 themes, no animation | done |
-| `apps/demo` | watchlist + order ticket reference screen | done |
+| `apps/example` | watchlist + order ticket component reference | done |
+| `apps/example-trading` | production-grade trading workspace example | done |
 | `harness/` + `scripts/` | self-measuring browser harness, verification suites | done |
 
 **Components:** Button, Input, Select, Field, Checkbox/Radio/Switch, DataTable + Cell, Tabs, Dialog,
@@ -44,7 +45,7 @@ component change.
 npm run ci        # contract + build + contrast + demo + harness + size + all three suites
 ```
 
-Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:demo` · `verify:browser`
+Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:example` · `verify:browser`
 · `size`. Every one exits non-zero on failure.
 
 ## Known issues

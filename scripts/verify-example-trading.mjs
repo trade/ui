@@ -11,12 +11,12 @@ import { chromium } from 'playwright';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
-const dist = resolve(root, 'apps', 'trading', 'dist');
+const dist = resolve(root, 'apps', 'example-trading', 'dist');
 const shots = resolve(root, 'verification', 'screen');
 mkdirSync(shots, { recursive: true });
 
 if (!existsSync(resolve(dist, 'index.html'))) {
-  console.error('apps/trading/dist missing — run npm run screen:build');
+  console.error('apps/example-trading/dist missing — run npm run example-trading:build');
   process.exit(1);
 }
 

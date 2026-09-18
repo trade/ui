@@ -12,14 +12,15 @@ This is the Phase 1 implementation of the `@trade/ui` proposal: the token pipeli
 cd ui
 npm install
 npm run build          # tokens → CSS + TS, then the library (ESM, CJS, d.ts, CSS)
-npm run demo           # bundles the reference demo to apps/demo/dist
+npm run example:build     # bundles the component example to apps/example/dist
 npm run verify         # 33 checks: contract, CSS, SSR, DOM interactions
-npm run verify:demo    # 10 checks: boots the built demo in a DOM and drives it
-npm run screen:build   # bundles the trading workspace screen
-npm run verify:screen  # 24 checks: virtualization, ARIA, themes, axe on the screen
+npm run verify:example    # 10 checks: boots the built example in a DOM and drives it
+npm run example-trading:build  # bundles the trading workspace example
+npm run verify:example-trading  # 24 checks: virtualization, ARIA, axe on the trading example
 ```
 
-Open the demo: **`apps/demo/dist/index.html`** (double-click — it is a plain static file, no server needed).
+Open the examples (double-click — plain static files, no server needed):
+**`apps/example/dist/index.html`** (component reference) · **`apps/example-trading/dist/index.html`** (trading workspace).
 
 ---
 
@@ -34,8 +35,10 @@ ui/
 │     │                  DataTable, Tabs, Dialog, Feedback, ThemeProvider, Stack
 │     ├─ styles/         one CSS file per area (base, layout, button, forms, table, tabs, feedback, dialog)
 │     └─ dist/           index.js · index.cjs · index.d.ts · ui.css · components/*.css
-├─ apps/demo/            reference "watchlist + order ticket" app
-├─ scripts/              verify.mjs · verify-demo.mjs · build-demo.mjs · sample-screen.mjs
+├─ apps/                 examples — apps/example (component reference),
+│                        apps/example-trading (production-grade trading workspace)
+├─ scripts/              verify.mjs · verify-example.mjs · build-example.mjs
+│                        verify-example-trading.mjs · browser-suite.mjs · sample-screen.mjs
 ├─ CONTRIBUTING.md       the rules of changing this codebase (and their gates)
 ├─ AGENTS.md             the same contract, machine-facing
 └─ docs/                 the UI development guide (tokens, theming, components, CSS, a11y, verification)
@@ -85,11 +88,11 @@ setThemeAttribute('dark');   // writes data-theme on <html>; zero React renders
 | Whether motion exists at all | `packages/tokens/tokens.json` → `motion.enabled` (keep `false` for v1) |
 | A component's look | `packages/ui/styles/<area>.css` |
 | A component's API/behaviour | `packages/ui/src/components/<Name>.tsx` |
-| Demo content or instruments | `apps/demo/src/main.jsx` |
-| What "correct" means | `scripts/verify.mjs`, `scripts/verify-demo.mjs` |
+| Example content or instruments | `apps/example/src/main.jsx`, `apps/example-trading/src/main.jsx` |
+| What "correct" means | `scripts/verify.mjs`, `scripts/verify-example.mjs`, `scripts/verify-example-trading.mjs` |
 | What pixels should look like | `npm run baselines:update` rewrites `baselines/<platform>/`; the suite compares against it read-only every `verify:browser` run |
 
-After any change: `npm run build && npm run demo && npm run verify && npm run verify:demo`.
+After any change: `npm run build && npm run example:build && npm run verify && npm run verify:example`.
 
 ---
 
@@ -120,7 +123,7 @@ npm run check:types     # tsc --noEmit over @trade/ui — strict types are a gat
 npm run check:docs      # links resolve + documented check counts agree with the suites themselves
 npm run size            # bundle budgets (ESM 8 kB, stylesheet 8 kB, types 3 kB, gzip)
 npm run verify          # 33 checks: contract, CSS, SSR, DOM interactions
-npm run verify:demo     # 10 checks: boots the real bundle in a DOM
+npm run verify:example  # 10 checks: boots the real example bundle in a DOM
 npm run harness:build   # required before verify:browser (harness/dist is gitignored)
 npm run verify:browser  # 84 checks: Chromium + Firefox + WebKit × desktop + mobile,
                         # incl. 12 visual-regression checks vs baselines/<platform>/

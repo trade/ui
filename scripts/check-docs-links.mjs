@@ -87,12 +87,22 @@ const forbidIn = (doc, docName, pattern, what) => {
   if (pattern.test(doc)) stale.push(`${docName}: still contains ${what}`);
 };
 
-// Row-specific: README's check:style row legitimately quotes its own 72 checks —
-// only the browser-suite rows are governed here.
+// The known historical drift: AGENTS.md said 72 while the suite produced 84.
+// (README's check:style row legitimately quotes its own 72 — only browser-suite rows are governed.)
 expectIn(readme, 'README.md', new RegExp(`verify:browser\\s*#\\s*${compare} checks`), `the verify:browser row total (${compare} checks)`);
 expectIn(readme, 'README.md', new RegExp(`${compare}/${compare}`), `the clean-run total (${compare}/${compare})`);
 expectIn(agents, 'AGENTS.md', new RegExp(`browser-suite\\.mjs\\s+${compare} checks`), 'the repository-map browser-suite count');
 expectIn(agents, 'AGENTS.md', /baselines\/<platform>/, 'the baselines reviewed-exception (baselines/<platform>/)');
+
+// Stale paths and script names. The apps are examples (apps/example,
+// apps/example-trading); docs pointing at the pre-restructure names send
+// contributors (and agents) into files that no longer exist.
+const staleTokens = ['apps/demo', 'apps/trading', 'verify:demo', 'verify:screen', 'screen:build', 'npm run demo', 'build-demo', 'verify-demo', 'build-trading'];
+for (const [docName, doc] of [['README.md', readme], ['AGENTS.md', agents], ['CONTRIBUTING.md', contributing], ['STATUS.md', readDoc('STATUS.md')]]) {
+  for (const token of staleTokens) {
+    if (doc.includes(token)) stale.push(`${docName}: stale reference "${token}"`);
+  }
+}
 expectIn(contributing, 'CONTRIBUTING.md', /baselines\/<platform>/, 'the baselines reviewed-exception (baselines/<platform>/)');
 expectIn(readme, 'README.md', /baselines\/<platform>/, 'the baselines reviewed-exception (baselines/<platform>/)');
 forbidIn(readme, 'README.md', /belong in CI artifacts/, 'the "screenshots belong in CI artifacts" claim (contradicts the committed baselines)');
