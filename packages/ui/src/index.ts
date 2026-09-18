@@ -23,6 +23,9 @@ export type { DataTableProps, Column, CellProps } from './components/DataTable';
 export { Tabs } from './components/Tabs';
 export type { TabsProps, TabItem } from './components/Tabs';
 
+export { Menu, MenuItem, MenuSeparator } from './components/Menu';
+export type { MenuProps, MenuItemProps, MenuSeparatorProps } from './components/Menu';
+
 export { Dialog } from './components/Dialog';
 export type { DialogProps } from './components/Dialog';
 

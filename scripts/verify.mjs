@@ -365,6 +365,52 @@ check(
 );
 await React.act(async () => keydown(document, 'Escape'));
 
+// ── menu: open, ARIA, keyboard navigation, disabled skipping, escape + outside close ──
+const menuTrigger = container.querySelector('#menu-trigger');
+await React.act(async () => {
+  menuTrigger.focus();
+  click(menuTrigger);
+});
+const menu = document.body.querySelector('[role="menu"]');
+const menuItems = menu ? [...menu.querySelectorAll('[role="menuitem"]')] : [];
+check(
+  'click opens the menu with honest ARIA',
+  Boolean(menu) &&
+    menuItems.length === 3 &&
+    menuTrigger.getAttribute('aria-expanded') === 'true' &&
+    menu.getAttribute('aria-label') === 'Actions',
+  `menu present=${Boolean(menu)}, items=${menuItems.length}, aria-expanded=${menuTrigger.getAttribute('aria-expanded')}, aria-label=${menu?.getAttribute('aria-label')}`
+);
+check(
+  'opening focuses the first enabled item (disabled skipped)',
+  document.activeElement === menuItems[0],
+  `activeElement=${document.activeElement?.id || document.activeElement?.tagName} (expected menu-reload)`
+);
+await React.act(async () => keydown(menu, 'ArrowDown'));
+check(
+  'ArrowDown skips the disabled item',
+  document.activeElement === container.querySelector('#menu-close'),
+  `activeElement=${document.activeElement?.id} (expected menu-close)`
+);
+await React.act(async () => keydown(document.querySelector('#menu-close'), 'Escape'));
+check(
+  'Escape closes the menu and restores trigger focus',
+  !document.body.querySelector('[role="menu"]') && document.activeElement === menuTrigger,
+  `menu present=${Boolean(document.body.querySelector('[role="menu"]'))}, focus restored=${document.activeElement === menuTrigger}`
+);
+await React.act(async () => {
+  menuTrigger.focus();
+  click(menuTrigger);
+});
+await React.act(async () => {
+  document.getElementById('root').dispatchEvent(new dom.window.Event('pointerdown', { bubbles: true }));
+});
+check(
+  'pointerdown outside closes the menu',
+  !document.body.querySelector('[role="menu"]'),
+  `menu present=${Boolean(document.body.querySelector('[role="menu"]'))}`
+);
+
 // ════════════ report ════════════
 const passed = results.filter((r) => r.pass).length;
 const report = {

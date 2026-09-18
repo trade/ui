@@ -17,12 +17,12 @@ A working, verified component library. Not yet used by a real application.
 | Package | Purpose | State |
 |---|---|---|
 | `@trade/tokens` | primitives → theme roles, compiled to static CSS + typed TS | done |
-| `@trade/ui` | 11 components, static CSS, 3 themes, no animation | done |
+| `@trade/ui` | 12 components, static CSS, 3 themes, no animation | done |
 | `apps/example` | watchlist + order ticket component reference | done |
 | `apps/example-trading` | production-grade trading workspace example | done |
 | `harness/` + `scripts/` | self-measuring browser harness, verification suites | done |
 
-**Components:** Button, Input, Select, Field, Checkbox/Radio/Switch, DataTable + Cell, Tabs, Dialog,
+**Components:** Button, Input, Select, Field, Checkbox/Radio/Switch, DataTable + Cell, Tabs, Menu, Dialog,
 Banner/Toast, ThemeProvider, Stack.
 
 **Themes:** light, dark, high-contrast. A theme is a role→primitive mapping; adding one requires no
@@ -31,8 +31,8 @@ component change.
 | Measured | Value |
 |---|---|
 | Runtime dependencies | **0** (React/React DOM are peers) |
-| ESM bundle | **4.34 kB** gzip (budget 8 kB) |
-| Stylesheet | **4.06 kB** gzip (budget 8 kB) |
+| ESM bundle | **5.19 kB** gzip (budget 8 kB) |
+| Stylesheet | **4.82 kB** gzip (budget 8 kB) |
 | Theme switch cost | **0 React renders** |
 | Ticking frame time, Chromium/Firefox | **p95 16.7 ms**, 0 dropped frames |
 | Ticking frame time, WebKit | **gates pass on real macOS WebKit**; the 26–36 ms seen on the Playwright port was a port artifact (resolved 2026-09-17) |
@@ -79,7 +79,7 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
 
 ## Not started
 
-- Phase 2 components: `Menu`/`Popover`, `Tooltip`, and a listbox `Select` (currently native
+- Phase 2 components: `Popover`, `Tooltip`, and a listbox `Select` (currently native
   `<select>`-backed on purpose).
 - Tick coalescing helper (`useTicks`).
 

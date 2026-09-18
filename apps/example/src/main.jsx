@@ -15,7 +15,10 @@ import {
   Dialog,
   Banner,
   Toast,
-  ToastRegion
+  ToastRegion,
+  Menu,
+  MenuItem,
+  MenuSeparator
 } from '@trade/ui';
 
 const NAMES = ['Apple Inc.', 'Microsoft Corp.', 'NVIDIA Corp.', 'Tesla Inc.', 'Amazon.com Inc.', 'Alphabet Inc.', 'Meta Platforms', 'JPMorgan Chase', 'Exxon Mobil', 'E-mini S&P 500', 'Euro / US Dollar', 'Gold Futures'];
@@ -35,14 +38,39 @@ function makeRows(n) {
   return rows;
 }
 
-function AppBar() {
+function AppBar({ onExport }) {
   const { theme, setTheme } = useTheme();
+  const [actionsOpen, setActionsOpen] = useState(false);
   return (
     <div className="app-bar">
       <span className="app-bar__brand">
         UI <small>@trade/ui</small>
       </span>
       <span className="app-bar__spacer" />
+      <span className="ui-menu-anchor">
+        <Button
+          variant="outline"
+          size="sm"
+          aria-haspopup="menu"
+          aria-expanded={actionsOpen}
+          onClick={() => setActionsOpen((v) => !v)}
+        >
+          Actions
+        </Button>
+        <Menu open={actionsOpen} onClose={() => setActionsOpen(false)} label="Actions">
+          <MenuItem
+            onClick={() => {
+              onExport?.();
+              setActionsOpen(false);
+            }}
+          >
+            Export watchlist
+          </MenuItem>
+          <MenuItem disabled>Manage columns</MenuItem>
+          <MenuSeparator />
+          <MenuItem onClick={() => setActionsOpen(false)}>Close menu</MenuItem>
+        </Menu>
+      </span>
       <Stack direction="row" gap={2} align="center">
         <span className="muted">theme: {theme}</span>
         <Button variant="ghost" size="sm" onClick={() => setTheme('light')}>Light</Button>
@@ -129,7 +157,7 @@ function App() {
 
   return (
     <ThemeProvider theme="light">
-      <AppBar />
+      <AppBar onExport={() => setToast('Watchlist exported as CSV')} />
       <div className="page">
         <Stack gap={4}>
           <Banner tone="info" title="Delayed data">
