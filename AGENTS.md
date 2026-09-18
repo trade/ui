@@ -52,10 +52,10 @@ packages/ui/build.mjs              esbuild ESM+CJS, tsc .d.ts, concatenates toke
 apps/demo/src/main.jsx             the reference screen — show new components here
 scripts/verify.mjs                 33 library checks (SSR, CSS, DOM interactions) — add checks here
 scripts/verify-demo.mjs            10 checks against the built demo bundle
-scripts/browser-suite.mjs          72 checks × {chromium,firefox,webkit} × {desktop,mobile}
+scripts/browser-suite.mjs          84 checks × {chromium,firefox,webkit} × {desktop,mobile}
 scripts/check-contract.mjs         package promises (zero deps, peer React, exports map)
 scripts/check-contrast.mjs         WCAG contrast over every theme's role pairs — extend on new pairs
-scripts/check-style.mjs            CSS authoring contract (the laws, executable)
+scripts/check-style.mjs            CSS authoring contract (the laws, executable — library AND example apps)
 ```
 
 ## The standard loop — run it for every change, however small

@@ -163,8 +163,11 @@ produced it, and the *why*, not what the diff already shows. "Made the table fas
 evidence; "p95 16.7 ms → 12.1 ms over 90 frames, `npm run verify:browser`" is. State only what you
 actually verified.
 
-Never commit generated output (`dist/`, `verification/*.json`, screenshots), credentials, or
-absolute local paths.
+Never commit generated output (`dist/`, `verification/*.json`, `verification/screenshots/`),
+credentials, or absolute local paths. **Reviewed exception:** `baselines/<platform>/` PNGs are
+committed on purpose — they are versioned inputs (the visual-regression expected state),
+regenerated only by the explicit `npm run baselines:update` or the CI `baselines` job, never by a
+compare run.
 
 ## 8. Branches and pull requests
 

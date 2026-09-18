@@ -116,7 +116,8 @@ After any change: `npm run build && npm run demo && npm run verify && npm run ve
 npm run check:contract  # 12 checks: zero deps, peer-only React, exports map, artifacts
 npm run check:contrast  # 63 colour pairs across 3 themes must meet the contrast contract
 npm run check:style     # 72 checks: the CSS authoring contract (tokens-only, logical, motionless)
-npm run check:docs      # every relative link in docs/** must resolve — no dangling guide pages
+npm run check:types     # tsc --noEmit over @trade/ui — strict types are a gate, not a suggestion
+npm run check:docs      # links resolve + documented check counts agree with the suites themselves
 npm run size            # bundle budgets (ESM 8 kB, stylesheet 8 kB, types 3 kB, gzip)
 npm run verify          # 33 checks: contract, CSS, SSR, DOM interactions
 npm run verify:demo     # 10 checks: boots the real bundle in a DOM
@@ -162,7 +163,10 @@ normalised to LF via `.gitattributes`.
   `docs:`, `ci:`, `test:`, `chore:`) — gated by `npm run check:commits`.
 - **One concern per commit.** Some early commits bundle several fixes together; splitting them makes
   a bisect actually useful.
-- **Never commit generated binaries.** Screenshots change on every run; they belong in CI artifacts.
+- **Never commit generated binaries** (`dist/`, `verification/`) — with one reviewed exception:
+  `baselines/<platform>/` PNGs are committed on purpose. They are versioned inputs (the
+  visual-regression expected state), rewritten only by the explicit `npm run baselines:update` or
+  the CI `baselines` job, never by a compare run.
 - **Message body records the evidence** — the measurement and the command that produced it — since
   that is what makes a change reviewable months later.
 - **No credentials, no research notes, no absolute local paths.** The workspace root has its own
