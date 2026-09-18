@@ -6,7 +6,8 @@
  *   - boots the built harness page and waits for its self-measurement to finish
  *   - records frame timing under ticking data, layout overflow, theme switching
  *   - runs axe-core in BOTH light and dark themes
- *   - captures screenshots as visual-regression baselines
+ *   - captures screenshots and pixel-compares them against the committed baselines/
+ *     directory (read-only to the suite; regenerate only via `npm run baselines:update`)
  *   - collects console errors and failed responses
  *
  * MEASUREMENT RELIABILITY
@@ -18,15 +19,19 @@
  * Exit code 0 = every engine met every threshold.
  */
 import { createServer } from 'node:http';
-import { readFileSync, existsSync, statSync, mkdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, existsSync, statSync, mkdirSync, writeFileSync, copyFileSync } from 'node:fs';
 import { resolve, dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { PNG } from 'pngjs';
+import pixelmatch from 'pixelmatch';
 import { chromium, firefox, webkit } from 'playwright';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
 const dist = resolve(root, 'harness', 'dist');
 const shots = resolve(root, 'verification', 'screenshots');
+const baselines = resolve(root, 'baselines');
+const UPDATE_BASELINES = process.argv.includes('--update-baselines');
 mkdirSync(shots, { recursive: true });
 
 if (!existsSync(resolve(dist, 'index.html')) || !existsSync(resolve(dist, 'perf.js'))) {
@@ -52,7 +57,13 @@ const T = {
   maxDroppedFrameRatio: 0.05,
   maxOverflowPx: 1,
   maxAxeViolations: 0,
-  maxConsoleErrors: 0
+  maxConsoleErrors: 0,
+  // Fraction of pixels allowed to differ per screenshot. Antialiasing of text and hairline
+  // borders shifts a little between identical runs on one platform; calibrated from observed
+  // run-to-run deltas (quietest engine combos < 0.01%, noisiest webkit-mobile 0.203%). 0.3%
+  // keeps ~1.5x headroom over that noise while a real regression — a shifted row, padding or
+  // theme-role change — moves orders of magnitude more pixels.
+  maxVisualDiffRatio: 0.003
 };
 
 // a reading this bad means the browser was throttled, not that the library is slow
@@ -86,9 +97,53 @@ const VIEWPORTS = [
   { name: 'mobile', width: 390, height: 844 }
 ];
 
+/**
+ * Pixel-compare the freshly captured screenshots against baselines/.
+ * Layout: baselines/<platform>/<id>-<theme>.png + baselines/manifest.json.
+ *
+ * The baselines directory is READ-ONLY here: comparison never writes it. Regenerating is
+ * the explicit `npm run baselines:update` (browser-suite.mjs --update-baselines), which
+ * writes ONLY the current platform's directory.
+ *
+ * Baselines are platform-bound (font rasterisation and antialiasing differ across OSs), so
+ * the check GATES on a platform that has baselines and is informational on one that does
+ * not — the same honesty rule the perf gates follow. Today only the platform that ran
+ * baselines:update gates; add ubuntu/macOS sets to extend gating to CI hosts.
+ */
+function loadBaselineManifest() {
+  const p = resolve(baselines, 'manifest.json');
+  return existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null;
+}
+
+const platformDir = (platform) => resolve(baselines, platform);
+
+function compareShot(platform, id, theme) {
+  const baselinePath = resolve(platformDir(platform), `${id}-${theme}.png`);
+  const currentPath = resolve(shots, `${id}-${theme}.png`);
+  if (!existsSync(baselinePath)) return { missing: true };
+  const baseline = PNG.sync.read(readFileSync(baselinePath));
+  const current = PNG.sync.read(readFileSync(currentPath));
+  if (baseline.width !== current.width || baseline.height !== current.height) {
+    return { sizeMismatch: true, baseline: `${baseline.width}x${baseline.height}`, current: `${current.width}x${current.height}` };
+  }
+  const diff = new PNG({ width: current.width, height: current.height });
+  const diffPixels = pixelmatch(current.data, baseline.data, diff.data, current.width, current.height, { threshold: 0.1 });
+  const total = current.width * current.height;
+  return { diffPixels, total, ratio: diffPixels / total };
+}
+
+const baselinePlatform = existsSync(platformDir(process.platform)) ? process.platform : loadBaselineManifest()?.latestPlatform ?? null;
+
+/** In update mode: write the current platform's baselines + manifest. Never called on a compare run. */
+function writeBaselines(id) {
+  mkdirSync(platformDir(process.platform), { recursive: true });
+  for (const theme of ['dark', 'light']) {
+    copyFileSync(resolve(shots, `${id}-${theme}.png`), resolve(platformDir(process.platform), `${id}-${theme}.png`));
+  }
+}
+
 /** One measurement attempt for a single engine × viewport. */
-async function attempt(engine, vp, id) {
-  const browser = await engine.launcher.launch(engine.args.length ? { args: engine.args } : {});
+async function attempt(engine, vp, id) {  const browser = await engine.launcher.launch(engine.args.length ? { args: engine.args } : {});
   try {
     const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
     const consoleErrors = [];
@@ -146,9 +201,22 @@ async function attempt(engine, vp, id) {
     await page.waitForTimeout(300);
     await page.screenshot({ path: resolve(shots, `${id}-light.png`) });
 
+    // Visual regression: compare (or, only in explicit update mode, rewrite baselines).
+    let visual = null;
+    if (UPDATE_BASELINES) {
+      writeBaselines(id);
+      visual = { updated: true };
+    } else {
+      visual = {
+        baselinePlatform,
+        dark: compareShot(baselinePlatform, id, 'dark'),
+        light: compareShot(baselinePlatform, id, 'light')
+      };
+    }
+
     return {
       fps, p95, over33, steadyFrames, droppedRatio, overflow, structureRows, rowcount, themeOk,
-      lightAxe, staticFps, staticP95, darkViolations, consoleErrors, badResponses, axeErrored, lines, sticky
+      lightAxe, staticFps, staticP95, darkViolations, consoleErrors, badResponses, axeErrored, lines, sticky, visual
     };
   } finally {
     await browser.close();
@@ -215,6 +283,33 @@ for (const engine of ENGINES) {
         perfInformational ? true : m.staticP95 <= T.maxP95FrameMs,
         `static p95=${m.staticP95}ms, static fps=${m.staticFps}`);
       add('sticky header stays pinned when the table scrolls', m.sticky?.ok === true, m.sticky?.ok ? `scrolled ${m.sticky.scrollTop}px, header offset ${m.sticky.offset}px` : `NOT PINNED — ${m.sticky?.reason ?? 'no reading'}`);
+
+      // Visual regression — gates only where the baselines were generated (same platform);
+      // elsewhere it is informational, like the perf gates on a mismatched host/engine.
+      if (m.visual?.updated) {
+        add('visual regression (baselines rewritten)', true, 'update mode: baselines/ and manifest rewritten — commit them');
+      } else if (m.visual) {
+        const vGate = m.visual.baselinePlatform === process.platform;
+        const vNote = vGate
+          ? ''
+          : ` [informational on this host — baselines are for ${m.visual.baselinePlatform ?? 'no committed platform'}]`;
+        for (const theme of ['dark', 'light']) {
+          const v = m.visual[theme];
+          if (v.missing) {
+            add('visual regression (' + theme + ' theme)' + vNote, !vGate, vGate ? 'NO BASELINE — run: npm run baselines:update' : 'no baseline for this platform');
+          } else if (v.sizeMismatch) {
+            add('visual regression (' + theme + ' theme)' + vNote, !vGate, `viewport size changed: baseline ${v.baseline}, got ${v.current}`);
+          } else {
+            // On a platform with no committed baselines the comparison is informational and
+            // always passes; the ratio is still reported so drift is visible.
+            const ok = !vGate || v.ratio <= T.maxVisualDiffRatio;
+            add('visual regression (' + theme + ' theme)' + vNote, ok,
+              `${v.diffPixels}/${v.total} px differ = ${(v.ratio * 100).toFixed(3)}% (max ${(T.maxVisualDiffRatio * 100).toFixed(1)}%)` +
+              (ok ? '' : ' — if the change is intended, regenerate: npm run baselines:update'));
+          }
+        }
+      }
+
       add('frame rate (informational only)', true, `fps=${m.fps} — engine cadence, not gated`);
 
       entry.fps = m.fps;
@@ -241,6 +336,22 @@ for (const engine of ENGINES) {
 }
 
 server.close();
+
+if (UPDATE_BASELINES) {
+  const previous = loadBaselineManifest() ?? { platforms: {} };
+  const platforms = { ...(previous.platforms ?? {}) };
+  platforms[process.platform] = {
+    maxVisualDiffRatio: T.maxVisualDiffRatio,
+    pixelmatchThreshold: 0.1,
+    updatedAt: new Date().toISOString()
+  };
+  writeFileSync(resolve(baselines, 'manifest.json'), JSON.stringify({
+    latestPlatform: process.platform,
+    platforms,
+    note: 'Baselines are platform-bound: baselines/<platform>/ gates visual checks on that platform only; other hosts report them as informational.'
+  }, null, 2) + '\n', 'utf8');
+  console.log(`Baselines rewritten for platform '${process.platform}' — commit baselines/ with this change.`);
+}
 
 const allChecks = results.flatMap((r) => r.checks);
 const report = {

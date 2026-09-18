@@ -56,9 +56,15 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
    Playwright-port artifact, not a Safari bug. The mirror problem remains — Chromium on the shared
    macOS runner cannot hold the perf gates (static p95 read 50 ms, which no real hardware
    produces) — so on macOS only WebKit's perf gates and other engines' perf is informational.
-2. **No visual regression.** Screenshots are generated and uploaded as CI artifacts
-   (`verification/screenshots/`, deliberately untracked — they change every run, so they were never
-   usable as baselines). Nothing compares them, so a layout regression passes CI.
+2. ~~**No visual regression.**~~ **Gate added 2026-09-18 (win32); CI gating pending ubuntu baselines.**
+   The browser suite now pixel-compares every screenshot (3 engines × 2 viewports × 2 themes)
+   against the committed, read-only `baselines/<platform>/` directory and fails on a diff above
+   0.3% of pixels — calibrated against observed run-to-run antialiasing noise (< 0.21%), and
+   verified to catch a real layout change (12/12 visual checks failed on an injected table-padding
+   change). Regeneration is the explicit `npm run baselines:update`; comparison never writes the
+   directory. Baselines are platform-bound, so visual checks gate on platforms that have baselines
+   (currently win32) and are informational elsewhere; CI runs on ubuntu, so a layout regression
+   still passes CI until an ubuntu baseline set is committed (see issue #3).
 3. **No secrets scanning.** Only keyword matching was done; the project carries no credentials.
 
 ## Not started
@@ -69,8 +75,8 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
 
 ## Next, in order
 
-1. Wire visual regression with a **read-only** `baselines/` directory that the suite compares against
-   and never overwrites.
+1. Generate and commit an **ubuntu baseline set** (`npm run baselines:update` on ubuntu, e.g. via
+   Docker with the Playwright image) so the visual gate hard-fails in CI, not only locally.
 2. Phase 2 components.
 
 A fuller optimisation roadmap (density, theme splitting, component tokens, icons, motion, publishing)

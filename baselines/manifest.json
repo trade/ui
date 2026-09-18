@@ -1,0 +1,11 @@
+{
+  "latestPlatform": "win32",
+  "platforms": {
+    "win32": {
+      "maxVisualDiffRatio": 0.003,
+      "pixelmatchThreshold": 0.1,
+      "updatedAt": "2026-09-18T16:07:31.690Z"
+    }
+  },
+  "note": "Baselines are platform-bound: baselines/<platform>/ gates visual checks on that platform only; other hosts report them as informational."
+}
