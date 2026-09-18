@@ -100,6 +100,7 @@ push('--ui-density', String(P.density.comfortable));
 for (const [k, v] of Object.entries(P.density)) push(`--ui-density-${k}`, String(v));
 for (const [k, v] of Object.entries(P.space)) push(`--ui-space-${k}`, v);
 for (const [k, v] of Object.entries(P.radius)) push(`--ui-radius-${k}`, v);
+for (const [k, v] of Object.entries(P.size ?? {})) push(`--ui-size-${kebab(k)}`, v);
 push('--ui-font-family', P.font.family);
 push('--ui-font-numeric', P.font.numeric);
 for (const [k, v] of Object.entries(P.font.size)) push(`--ui-font-size-${k}`, v);

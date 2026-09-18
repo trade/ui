@@ -410,6 +410,16 @@ check(
   !document.body.querySelector('[role="menu"]'),
   `menu present=${Boolean(document.body.querySelector('[role="menu"]'))}`
 );
+await React.act(async () => {
+  menuTrigger.focus();
+  click(menuTrigger);
+});
+await React.act(async () => click(menuTrigger));
+check(
+  'the trigger toggles the menu closed',
+  !document.body.querySelector('[role="menu"]'),
+  `menu present=${Boolean(document.body.querySelector('[role="menu"]'))}`
+);
 
 // ════════════ report ════════════
 const passed = results.filter((r) => r.pass).length;

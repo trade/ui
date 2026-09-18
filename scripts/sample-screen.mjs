@@ -103,7 +103,7 @@ export function harness(ui, h, React) {
   function Harness() {
     const [open, setOpen] = React.useState(false);
     const [menuOpen, setMenuOpen] = React.useState(false);
-    const { ThemeProvider, Stack, Button, Tabs, Dialog, DataTable, Menu, MenuItem, MenuSeparator, useTheme } = ui;
+    const { ThemeProvider, Button, Tabs, Dialog, Menu, MenuItem, MenuSeparator, useTheme } = ui;
     return h(
       ThemeProvider,
       { theme: 'light' },

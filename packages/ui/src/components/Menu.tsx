@@ -1,8 +1,12 @@
-import { forwardRef, useEffect, useRef, useState } from 'react';
-import type { HTMLAttributes, KeyboardEvent, ReactNode, Ref } from 'react';
+import { forwardRef, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { ButtonHTMLAttributes, HTMLAttributes, KeyboardEvent, ReactNode, Ref } from 'react';
 import { cx } from '../internal/cx';
 
-export interface MenuItemProps extends HTMLAttributes<HTMLButtonElement> {
+// useLayoutEffect warns on the server; the guard keeps SSR quiet while the flip
+// measurement still lands before the browser's first paint.
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
+export interface MenuItemProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   disabled?: boolean;
   children?: ReactNode;
 }
@@ -53,38 +57,48 @@ function MenuWithRef(
   const enabledItems = () =>
     Array.from(internalRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)') ?? []);
 
-  // On open: remember the trigger, focus the first item, and flip above when the panel
-  // would overflow the viewport below (real browsers only — jsdom reports zero rects).
-  useEffect(() => {
-    if (!open) return;
+  // Layout-timed open: measure from the ANCHOR's rect (the flipped CSS hangs the panel
+  // off the anchor's top edge, so the anchor is what must fit) and correct before the
+  // first paint — a passive post-commit measure made the panel visibly jump.
+  useIsomorphicLayoutEffect(() => {
+    if (!open) {
+      // closing: give focus back to the trigger unless the pointer moved it elsewhere
+      if (typeof document !== 'undefined' && document.activeElement === document.body) {
+        restoreRef.current?.focus?.();
+      }
+      setAbove(flip);
+      return;
+    }
     if (typeof document !== 'undefined') {
       restoreRef.current = document.activeElement as HTMLElement | null;
     }
     const el = internalRef.current;
-    let overflowing = false;
+    let openingAbove = flip;
     if (el && typeof window !== 'undefined') {
       const r = el.getBoundingClientRect();
-      overflowing = r.height > 0 && r.bottom > window.innerHeight && r.top - r.height >= 0;
+      const anchor = el.closest('.ui-menu-anchor');
+      if (anchor && r.height > 0) {
+        const a = anchor.getBoundingClientRect();
+        const gap = 4; // mirrors the --ui-space-1 offset in menu.css
+        const fitsBelow = window.innerHeight - a.bottom >= r.height + gap;
+        const fitsAbove = a.top - gap >= r.height;
+        openingAbove = !fitsBelow && fitsAbove;
+      }
     }
-    setAbove(overflowing || flip);
+    setAbove(openingAbove);
     enabledItems()[0]?.focus();
   }, [open, flip]);
 
-  // On close: give focus back to the trigger unless the pointer moved it elsewhere.
-  useEffect(() => {
-    if (open) return;
-    if (typeof document !== 'undefined' && document.activeElement === document.body) {
-      restoreRef.current?.focus?.();
-    }
-  }, [open]);
-
-  // Outside pointerdown closes, wherever the click lands (law: keyboard and pointer
-  // parity — Escape and Tab close from the keyboard below).
+  // Outside pointerdown closes — except pointerdowns inside the anchor, which belong
+  // to the trigger's own open/close toggle (otherwise the trigger could never close
+  // the menu: the outside handler fired first and the click reopened it).
   useEffect(() => {
     if (!open || typeof document === 'undefined') return undefined;
     const onPointerDown = (e: Event) => {
       const el = internalRef.current;
-      if (el && !el.contains(e.target as Node)) onClose();
+      if (!el) return;
+      const boundary = el.closest('.ui-menu-anchor') ?? el;
+      if (!boundary.contains(e.target as Node)) onClose();
     };
     document.addEventListener('pointerdown', onPointerDown);
     return () => document.removeEventListener('pointerdown', onPointerDown);

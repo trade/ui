@@ -10,7 +10,7 @@
   position: absolute;
   inset-block-start: calc(100% + var(--ui-space-1));
   inset-inline-start: 0;
-  min-inline-size: 180px;
+  min-inline-size: var(--ui-size-menu-min);
   background: var(--ui-surface);
   border: 1px solid var(--ui-border-control);
   border-radius: var(--ui-radius-md);
