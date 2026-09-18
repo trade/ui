@@ -10,6 +10,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Least privilege everywhere; no job needs write scope.
+permissions:
+  contents: read
+
 # The project has independent gates, so they run as separate jobs:
 #   build  — the package must compile and emit declarations
 #   size   — bundle budgets must hold
@@ -61,14 +65,19 @@ jobs:
 
   verify:
     name: verification
+    # Runs INSIDE the pinned Playwright image so the browser/font rendering environment is
+    # byte-identical to the one the committed baselines/linux/ set was generated in
+    # (mcr.microsoft.com/playwright, same tag as the playwright devDependency). A bare
+    # ubuntu-latest runner renders fonts differently and the visual gate would false-fail.
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
     needs: build
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.1.0
         with:
           node-version: 22
-          cache: npm
       - run: npm ci
       - run: npm run build
 
@@ -83,10 +92,8 @@ jobs:
       - name: Demo checks (boots the real bundle in a DOM)
         run: npm run verify:demo
 
-      - name: Install Playwright engines
-        run: npx playwright install --with-deps chromium firefox webkit
-
-      - name: Cross-browser suite (frame timing, layout, axe light + dark)
+      # Browsers are preinstalled in the image at the matching version; no install step.
+      - name: Cross-browser suite (frame timing, layout, axe light + dark, visual regression)
         run: npm run verify:browser
 
       - name: Upload verification evidence
