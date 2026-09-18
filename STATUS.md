@@ -49,11 +49,12 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
 
 ## Known issues
 
-1. ~~**WebKit ticking performance.**~~ **Resolved 2026-09-17.** The `browser-macos` CI job ran
-   ([gh run 35205539648](https://github.com/iap/trade-ui/actions/runs/35205539648)): real macOS
+1. ~~**WebKit ticking performance.**~~ **Resolved 2026-09-17; re-verified on this repo.** The
+   `browser-macos` CI job passed
+   ([gh run 35321214702](https://github.com/trade/ui/actions/runs/35321214702)): real macOS
    WebKit **passes every perf gate** (12/12 on desktop and mobile). The slow ticking was a
-   Playwright-port artifact, not a Safari bug. The same run exposed the mirror problem — Chromium on
-   the shared macOS runner cannot hold the perf gates (static p95 read 50 ms, which no real hardware
+   Playwright-port artifact, not a Safari bug. The mirror problem remains — Chromium on the shared
+   macOS runner cannot hold the perf gates (static p95 read 50 ms, which no real hardware
    produces) — so on macOS only WebKit's perf gates and other engines' perf is informational.
 2. **No visual regression.** Screenshots are generated and uploaded as CI artifacts
    (`verification/screenshots/`, deliberately untracked — they change every run, so they were never
