@@ -106,8 +106,8 @@ rule, record it in `STATUS.md` as ungated so it stays visible.
 
 ## Definition of done
 
-- [ ] All gates green locally (`build`, `check:contrast`, `check:style`, `verify`, `verify:example`,
-      `verify:browser` when relevant)
+- [ ] All gates green locally (`build`, `check:contrast`, `check:style`, `check:types`,
+      `check:docs`, `verify`, `verify:example`, `verify:browser` when relevant)
 - [ ] New states/behaviours have checks (§ Rule zero)
 - [ ] README change-guide row updated if files/knobs changed; STATUS.md updated if known issues moved
 - [ ] Committed locally with evidence; push only on explicit instruction
