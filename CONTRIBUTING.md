@@ -199,3 +199,30 @@ and focused: a series of small, merged PRs beats one large one.
 
 For the maintainers' own workflow: local commits are the default stopping point; push and PR only
 on explicit instruction (AGENTS.md § Git protocol).
+
+## 9. Writing documentation — callouts
+
+Documentation may use GitHub's five alert types as blockquote callouts (`> [!NOTE]` …). The
+vocabulary is fixed: each type maps to a **consequence for the reader**, not a mood. Pick the one
+whose consequence matches — writers don't choose by taste.
+
+| Callout | Use when skipping it… | In this repo, typically |
+|---|---|---|
+| `> [!NOTE]` | …costs nothing; background worth knowing | why an ADR exists, cross-links |
+| `> [!TIP]` | …means more work than necessary | shortcuts, `check:docs`-style helpers |
+| `> [!IMPORTANT]` | …the task at hand fails or is misunderstood | the recipe order, contract pointers |
+| `> [!WARNING]` | …hours are wasted debugging the wrong thing | gate failures that look like flakes |
+| `> [!CAUTION]` | …something **irreversible** happens | weakening a gate, history rewrites |
+
+Scarcity rules:
+
+- Callouts are **emphasis, never structure** — don't replace headings or lists with them.
+- **At most one per section.** If two sections need the same callout, say it once, in prose, at
+  the source of truth.
+- Never nest callouts or stack them back-to-back.
+- Only the five exact types above, uppercase, on the first line of the blockquote —
+  `check:docs` fails on anything else.
+
+Two honest limits: the *severity choice* is not machine-gateable (a reviewer judges whether
+`[!WARNING]` was proportionate), and alerts render only on GitHub — in plain markdown viewers they
+degrade to an ordinary blockquote, so the text must read correctly without the highlight.
