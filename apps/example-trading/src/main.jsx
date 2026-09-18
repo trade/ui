@@ -309,6 +309,17 @@ function Ticket({ instrument, open }) {
   const commission = Math.max(1, notional * 0.0001);
   const insufficient = notional > ACCOUNT_BUYING_POWER;
 
+  // Reset restores the whole ticket to its defaults and clears the last submission
+  // status — "clear" that only removed a status line was a lie of a label.
+  const resetTicket = () => {
+    setQty('1000');
+    setType('limit');
+    setPrice(instrument ? instrument.last.toFixed(2) : '');
+    setTif('day');
+    setBracket(true);
+    setSubmitted(null);
+  };
+
   return (
     <aside className="ticket" data-open={open} aria-label="Order ticket">
       <div className="ticket__head">
@@ -390,8 +401,8 @@ function Ticket({ instrument, open }) {
       ) : null}
 
       <div className="ticket__actions">
-        <Button variant="ghost" density="compact" onClick={() => setSubmitted(null)}>
-          Clear
+        <Button variant="outline" density="compact" onClick={resetTicket}>
+          Reset
         </Button>
         <Button
           variant={side === 'buy' ? 'primary' : 'danger'}

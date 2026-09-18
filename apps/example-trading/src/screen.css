@@ -138,6 +138,15 @@ body {
 .watchlist { min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
 .watchlist .ui-table-wrap { flex: 1; min-height: 0; border: 0; border-radius: 0; }
 
+/* Slim, token-coloured scrollbars: the raw browser default is a heavy dark slab that
+   reads as a foreign object on a dense data surface. Standard properties; no prefixes. */
+.watchlist .ui-table-wrap,
+.blotter .ui-table-wrap,
+.ticket {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-border-control) transparent;
+}
+
 /* ── blotter ───────────────────────────────────────────────────────────────── */
 .blotter {
   height: 176px;
