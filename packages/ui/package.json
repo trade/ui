@@ -4,7 +4,9 @@
   "description": "React components for dense, data-heavy interfaces. Static CSS, light/dark/high-contrast themes, no animation, zero runtime dependencies.",
   "type": "module",
   "sideEffects": false,
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -25,5 +27,11 @@
   "dependencies": {},
   "scripts": {
     "build": "node build.mjs"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trade/ui.git",
+    "directory": "packages/ui"
+  },
+  "license": "MIT"
 }

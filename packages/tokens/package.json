@@ -4,12 +4,20 @@
   "private": false,
   "type": "module",
   "description": "Design tokens for @trade/ui — compiles tokens.json into static CSS custom properties and typed TS.",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": "./dist/tokens.ts",
     "./tokens.css": "./dist/tokens.css"
   },
   "scripts": {
     "build": "node build-tokens.mjs"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trade/ui.git",
+    "directory": "packages/tokens"
+  },
+  "license": "MIT"
 }
