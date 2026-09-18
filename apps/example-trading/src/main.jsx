@@ -50,6 +50,9 @@ const ROW_HEIGHT = 23;
 /* Shared account model: the metrics strip and the ticket's "buying power after" must
    agree, and the ticket needs it up front to warn before an order is rejected. */
 const ACCOUNT_BUYING_POWER = 284_120.55;
+/* One source of truth for the ticket's initial state — useState and Reset both read
+   this, so Reset can never drift from the defaults it is supposed to restore. */
+const TICKET_DEFAULTS = { side: 'buy', qty: '100', type: 'limit', tif: 'day', bracket: true };
 
 /** Currency formatting. maximumFractionDigits is required: with only minimumFractionDigits set,
  *  Intl defaults the maximum to 3, which is how "411,235.742" reached the screen. */
@@ -291,14 +294,14 @@ function Blotter() {
 /* ── order ticket ─────────────────────────────────────────────────────────── */
 
 function Ticket({ instrument, open }) {
-  const [side, setSide] = useState('buy');
-  // default quantity must be affordable for the default instrument: the primary
-  // button should render as an ACTIVE primary on load, not greet the user disabled
-  const [qty, setQty] = useState('100');
-  const [type, setType] = useState('limit');
+  const [side, setSide] = useState(TICKET_DEFAULTS.side);
+  // the default quantity is affordable for the default instrument: the primary
+  // button renders as an ACTIVE primary on load, not greeting the user disabled
+  const [qty, setQty] = useState(TICKET_DEFAULTS.qty);
+  const [type, setType] = useState(TICKET_DEFAULTS.type);
   const [price, setPrice] = useState('');
-  const [tif, setTif] = useState('day');
-  const [bracket, setBracket] = useState(true);
+  const [tif, setTif] = useState(TICKET_DEFAULTS.tif);
+  const [bracket, setBracket] = useState(TICKET_DEFAULTS.bracket);
   const [submitted, setSubmitted] = useState(null);
 
   useEffect(() => {
@@ -311,14 +314,16 @@ function Ticket({ instrument, open }) {
   const commission = Math.max(1, notional * 0.0001);
   const insufficient = notional > ACCOUNT_BUYING_POWER;
 
-  // Reset restores the whole ticket to its defaults and clears the last submission
-  // status — "clear" that only removed a status line was a lie of a label.
+  // Reset restores the WHOLE ticket to TICKET_DEFAULTS — side included — and clears
+  // the last submission status. A partial reset that left Sell selected was a lie
+  // of a button.
   const resetTicket = () => {
-    setQty('1000');
-    setType('limit');
+    setSide(TICKET_DEFAULTS.side);
+    setQty(TICKET_DEFAULTS.qty);
+    setType(TICKET_DEFAULTS.type);
     setPrice(instrument ? instrument.last.toFixed(2) : '');
-    setTif('day');
-    setBracket(true);
+    setTif(TICKET_DEFAULTS.tif);
+    setBracket(TICKET_DEFAULTS.bracket);
     setSubmitted(null);
   };
 

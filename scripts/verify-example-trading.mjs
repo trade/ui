@@ -132,13 +132,26 @@ for (const vp of [{ name: 'desktop', width: 1600, height: 900 }, { name: 'narrow
     const submitDisabled = buy ? buy.disabled : null;
     await setQty('100');
     const warnGone = !document.querySelector('.ticket__warn');
-    await setQty('100');
-    return { warned, submitDisabled, warnGone };
+    // Reset must restore the WHOLE ticket: side back to buy, defaults back in the inputs
+    document.querySelector(".side button[data-side='sell']").click();
+    await new Promise((r) => setTimeout(r, 120));
+    [...document.querySelectorAll('.ticket__actions button')]
+      .find((b) => b.textContent.trim() === 'Reset').click();
+    await new Promise((r) => setTimeout(r, 150));
+    const sideRestored = document.querySelector(".side button[data-side='buy']")
+      .getAttribute('aria-pressed') === 'true';
+    const qtyRestored = document.querySelector('#tk-qty').value === '100';
+    return { warned, submitDisabled, warnGone, sideRestored, qtyRestored };
   });
   check(
     `${vp.name}: ticket warns and disables submit above buying power`,
     guard.warned && guard.submitDisabled === true && guard.warnGone,
     `warn=${guard.warned}, submitDisabled=${guard.submitDisabled}, clears when affordable=${guard.warnGone}`
+  );
+  check(
+    `${vp.name}: Reset restores side and defaults`,
+    guard.sideRestored === true && guard.qtyRestored === true,
+    `sideRestored=${guard.sideRestored}, qtyRestored=${guard.qtyRestored}`
   );
 
   // accessibility, light then dark
