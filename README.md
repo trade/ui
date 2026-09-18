@@ -87,6 +87,7 @@ setThemeAttribute('dark');   // writes data-theme on <html>; zero React renders
 | A component's API/behaviour | `packages/ui/src/components/<Name>.tsx` |
 | Demo content or instruments | `apps/demo/src/main.jsx` |
 | What "correct" means | `scripts/verify.mjs`, `scripts/verify-demo.mjs` |
+| What pixels should look like | `npm run baselines:update` rewrites `baselines/<platform>/`; the suite compares against it read-only every `verify:browser` run |
 
 After any change: `npm run build && npm run demo && npm run verify && npm run verify:demo`.
 

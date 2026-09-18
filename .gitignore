@@ -26,11 +26,10 @@ harness/dist/
 verification/*.json
 harness/results.json
 
-# regenerated browser screenshots — evidence, not baselines.
-# They were tracked briefly and changed on EVERY suite run, which produced commits whose
-# real content was 12 rewritten PNGs. They are uploaded as CI artifacts instead.
-# If true visual regression is wanted, add a separate read-only baselines/ directory that
-# the suite COMPARES against and never overwrites, and commit only that.
+# regenerated browser screenshots — evidence, not baselines. They change on EVERY suite run
+# and are uploaded as CI artifacts. Visual regression compares against the COMMITTED
+# baselines/<platform>/ directory, which the suite reads but never writes (regenerate only
+# via `npm run baselines:update`).
 verification/screenshots/
 
 # playwright
