@@ -4,12 +4,12 @@
     "win32": {
       "maxVisualDiffRatio": 0.003,
       "pixelmatchThreshold": 0.1,
-      "updatedAt": "2026-09-18T20:04:23.715Z"
+      "updatedAt": "2026-09-18T21:39:31.972Z"
     },
     "linux": {
       "maxVisualDiffRatio": 0.003,
       "pixelmatchThreshold": 0.1,
-      "updatedAt": "2026-09-18T20:45:39.256Z"
+      "updatedAt": "2026-09-18T21:41:51.389Z"
     }
   },
   "note": "Baselines are platform-bound: baselines/<platform>/ gates visual checks on that platform only; other hosts report them as informational."

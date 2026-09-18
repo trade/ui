@@ -64,6 +64,7 @@ const PAIRS = [
   ['negative', 'surface', TEXT, 'loss value on a card'],
   ['negative', 'rowAlt', TEXT, 'loss value on a zebra row'],
   ['primary', 'surface', TEXT, 'primary-coloured text (outline button, active tab)'],
+  ['primary', 'surface-1', TEXT, 'primary-coloured label on the outline button fill'],
   ['onPrimary', 'primary', TEXT, 'label on a filled primary button'],
   ['onSecondary', 'secondary', TEXT, 'label on a filled secondary button'],
   ['onError', 'error', TEXT, 'label on a destructive button'],
