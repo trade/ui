@@ -134,7 +134,9 @@ npm run ci              # contract + build + demo + harness + size + every suite
 
 Every suite exits non-zero on failure, so they work as gates. GitHub Actions runs four jobs
 (`.github/workflows/ci.yml`): `build`, `size`, `verify` on Linux, and `browser-macos` to measure the
-real macOS WebKit engine. Reports land in `verification/` and are uploaded as CI artifacts.
+real macOS WebKit engine — plus a `baselines` job on manual dispatch that regenerates the linux
+baseline set in the verify container (see Visual baselines). Reports land in `verification/` and
+are uploaded as CI artifacts.
 
 ### Measurement reliability
 
@@ -149,10 +151,28 @@ numbers that move between runs is worse than no gate, so the browser suite:
 drive `requestAnimationFrame` at engine-specific cadences — Firefox measures the same fps ticking
 and idle).
 
+Visual captures are held to the same standard (ADR-005): before any screenshot the harness
+**freezes for capture** — the data feed stops, the ticking table resets to its canonical state,
+and volatile audit text (wall clock, perf figures) is rewritten in the DOM. The suite parses the
+real numbers from the in-memory log and hard-fails a run whose harness cannot prove it froze.
+On unchanged UI, two consecutive runs now produce **0 differing pixels** across all 12 captures —
+so any nonzero diff is a real change, and the 0.3% budget stays calibrated for antialiasing only.
+
 This makes runs reproducible: the WebKit ticking cadence is reported **informationally** on
 non-macOS hosts (it is the Playwright port, not Safari) and gated for real only in the
 `browser-macos` CI job, so a full local run is a clean 84/84 on every host instead of
 disagreeing run to run.
+
+### Visual baselines
+
+`baselines/<platform>/` are versioned inputs, committed on purpose (the one reviewed exception to
+"never commit generated output"). Comparison is read-only; regeneration is explicit:
+
+- **Local:** `npm run baselines:update` — rewrites only the current platform's directory.
+- **CI:** the `baselines` job (`gh workflow run ci.yml --ref <branch>`, workflow_dispatch) runs in
+  the exact verify container — same digest-pinned image, shm and HOME — and uploads
+  `baselines-linux` as an artifact for review and manual commit. Generation environment equals
+  comparison environment by construction; adding a platform (macOS next) is mechanical.
 
 ## Git
 
