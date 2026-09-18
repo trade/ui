@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": false,
   "type": "module",
-  "description": "Design tokens for @trade/ui — compiles trade-ui.tokens.json into static CSS custom properties and typed TS.",
+  "description": "Design tokens for @trade/ui — compiles tokens.json into static CSS custom properties and typed TS.",
   "files": ["dist"],
   "exports": {
     ".": "./dist/tokens.ts",
