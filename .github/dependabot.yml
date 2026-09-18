@@ -1,0 +1,12 @@
+# Actions are SHA-pinned in the workflows, so Dependabot PRs keep those pins current;
+# npm covers the devDependency toolchain. Runtime dependencies stay at zero (ADR-002).
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
