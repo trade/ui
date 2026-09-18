@@ -1,0 +1,125 @@
+name: CI
+
+# NOTE: this repository root IS the `ui/` workspace (package `@trade/ui`).
+# If the repo is ever moved up to a parent directory, re-add a `ui/` prefix to
+# every `working-directory` and `path` below.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# The project has independent gates, so they run as separate jobs:
+#   build  — the package must compile and emit declarations
+#   size   — bundle budgets must hold
+#   verify — library checks, demo checks, and the 3-engine browser suite
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build tokens + library
+        run: npm run build
+      - name: Assert the library ships zero runtime dependencies
+        run: node scripts/check-contract.mjs
+
+      - name: Enforce the token contrast contract across every theme
+        run: node scripts/check-contrast.mjs
+      - name: Enforce the CSS authoring contract
+        run: node scripts/check-style.mjs
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: |
+            packages/ui/dist
+            packages/tokens/dist
+          retention-days: 7
+
+  size:
+    name: size budgets
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Enforce bundle budgets
+        run: npm run size
+
+  verify:
+    name: verification
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+      - name: Library checks (contract, CSS, SSR, DOM interactions)
+        run: npm run verify
+
+      - name: Build the demo and the browser harness
+        run: |
+          npm run demo
+          npm run harness:build
+
+      - name: Demo checks (boots the real bundle in a DOM)
+        run: npm run verify:demo
+
+      - name: Install Playwright engines
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Cross-browser suite (frame timing, layout, axe light + dark)
+        run: npm run verify:browser
+
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification
+          path: verification
+          retention-days: 14
+
+  # Playwright's WebKit on Linux/Windows is a port, not the engine users run. This job measures
+  # the real macOS WebKit engine to settle the outstanding dropped-frame question.
+  browser-macos:
+    name: browser (real WebKit on macOS)
+    runs-on: macos-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run harness:build
+      - name: Install Playwright engines
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Cross-browser suite (macOS WebKit)
+        run: npm run verify:browser
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-macos
+          path: verification
+          retention-days: 14

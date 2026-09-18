@@ -1,0 +1,9 @@
+{
+  "name": "demo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "@trade/ui reference demo — watchlist + order ticket.",
+  "scripts": {
+    "build": "node ../../scripts/build-demo.mjs"
+  }
+}

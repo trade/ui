@@ -1,0 +1,74 @@
+# ─────────────────────────────────────────────────────────────
+# @trade/ui — project UI
+# Nothing here is hand-edited. Every ignored path is regenerated:
+#   npm run build            → packages/*/dist
+#   npm run demo             → apps/demo/dist
+#   npm run harness          → harness/dist
+#   npm run verify / verify:browser → verification/*.json
+# ─────────────────────────────────────────────────────────────
+
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build output
+dist/
+packages/*/dist/
+build/
+*.tsbuildinfo
+*.tsbuildinfo.*
+
+# generated demo + harness bundles
+apps/*/dist/
+harness/dist/
+
+# generated verification reports (regenerated on every verify run)
+verification/*.json
+harness/results.json
+
+# regenerated browser screenshots — evidence, not baselines.
+# They were tracked briefly and changed on EVERY suite run, which produced commits whose
+# real content was 12 rewritten PNGs. They are uploaded as CI artifacts instead.
+# If true visual regression is wanted, add a separate read-only baselines/ directory that
+# the suite COMPARES against and never overwrites, and commit only that.
+verification/screenshots/
+
+# playwright
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# env & secrets — never commit these
+.env
+.env.*
+!.env.example
+
+# editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+
+# OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# caches
+.cache/
+.eslintcache
+.turbo/
+.parcel-cache/
+coverage/
+
+# orphaned screenshot folder from an earlier suite layout; nothing generates it
+verification/screen/

@@ -1,0 +1,57 @@
+/* @trade/ui — DataTable (dense, virtualizer-friendly, tabular numerals) */
+
+.ui-table-wrap {
+  border: 1px solid var(--ui-outline);
+  border-radius: var(--ui-radius-md);
+  overflow: auto;
+  background: var(--ui-surface);
+}
+
+.ui-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ui-font-size-sm);
+  contain: content;
+}
+
+.ui-table__caption { text-align: start; padding: var(--ui-space-2) var(--ui-space-3); color: var(--ui-on-surface-muted); }
+
+.ui-table th,
+.ui-table td {
+  padding: calc(6px * var(--ui-density)) calc(10px * var(--ui-density));
+  text-align: start;
+  border-bottom: 1px solid var(--ui-outline);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: var(--ui-z-sticky);
+  background: var(--ui-surface-1);
+  color: var(--ui-on-surface-muted);
+  font-weight: 600;
+  font-size: var(--ui-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ui-table--compact { --ui-density: var(--ui-density-compact); }
+.ui-table--dense   { --ui-density: var(--ui-density-dense); }
+
+.ui-table tbody tr:nth-child(even) { background: var(--ui-row-alt); }
+.ui-table tbody tr[data-focusable='true']:focus-visible,
+.ui-table tbody tr:focus-within { outline: 2px solid var(--ui-focus-ring); outline-offset: -2px; }
+
+.ui-cell--numeric {
+  text-align: end;
+  font-family: var(--ui-font-numeric);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-cell--positive { color: var(--ui-positive); }
+.ui-cell--negative { color: var(--ui-negative); }
+
+.ui-table__empty { padding: var(--ui-space-6); text-align: center; color: var(--ui-on-surface-muted); }

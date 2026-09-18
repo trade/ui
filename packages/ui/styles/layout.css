@@ -1,0 +1,11 @@
+/* @trade/ui — layout primitives */
+
+.ui-stack { display: flex; }
+.ui-stack--row { flex-direction: row; }
+.ui-stack--column { flex-direction: column; }
+.ui-stack--wrap { flex-wrap: wrap; }
+.ui-stack--center { align-items: center; }
+.ui-stack--between { justify-content: space-between; }
+.ui-stack--grow { flex: 1 1 auto; min-width: 0; }
+
+.ui-divider { border: 0; border-top: 1px solid var(--ui-outline); margin: 0; }

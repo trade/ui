@@ -1,0 +1,46 @@
+/* @trade/ui — Dialog (no scrim transition, no entry animation) */
+
+.ui-dialog__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ui-z-overlay);
+  background: var(--ui-scrim);
+  display: grid;
+  place-items: center;
+  padding: var(--ui-space-4);
+  overflow: auto;
+}
+
+.ui-dialog {
+  z-index: var(--ui-z-modal);
+  background: var(--ui-surface);
+  color: var(--ui-on-surface);
+  border-radius: var(--ui-radius-lg);
+  box-shadow: var(--ui-elevation-24);
+  width: min(560px, 100%);
+  max-height: calc(100vh - var(--ui-space-7));
+  display: flex;
+  flex-direction: column;
+  transition: none;
+}
+
+.ui-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  padding: var(--ui-space-4) var(--ui-space-5);
+  border-bottom: 1px solid var(--ui-outline);
+}
+
+.ui-dialog__title { margin: 0; font-size: var(--ui-font-size-lg); font-weight: 500; }
+
+.ui-dialog__body { padding: var(--ui-space-5); overflow: auto; }
+
+.ui-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-3) var(--ui-space-5);
+  border-top: 1px solid var(--ui-outline);
+}

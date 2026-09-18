@@ -1,0 +1,15 @@
+# Normalise line endings so a Windows checkout and a CI checkout agree.
+# Text files are stored with LF in the repository regardless of platform.
+* text=auto eol=lf
+
+# Binary assets must never be line-ending converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+# Keep these diff-friendly
+package-lock.json -diff

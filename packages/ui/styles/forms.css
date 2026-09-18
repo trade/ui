@@ -1,0 +1,48 @@
+/* @trade/ui — form controls */
+
+.ui-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ui-field__label { font-size: var(--ui-font-size-sm); color: var(--ui-on-surface-muted); }
+.ui-field__hint { font-size: var(--ui-font-size-sm); color: var(--ui-on-surface-muted); }
+.ui-field__error { font-size: var(--ui-font-size-sm); color: var(--ui-negative); }
+.ui-field--error .ui-input,
+.ui-field--error .ui-select { border-color: var(--ui-negative); }
+
+/* Control boundaries use --ui-border-control (>=3:1, WCAG 1.4.11 non-text contrast).
+   --ui-outline is for decorative dividers only and is intentionally lighter. */
+.ui-input,
+.ui-select {
+  font-family: inherit;
+  font-size: var(--ui-font-size-md);
+  line-height: var(--ui-line-md);
+  color: var(--ui-on-surface);
+  background: var(--ui-surface-1);
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-md);
+  padding: calc(8px * var(--ui-density)) calc(12px * var(--ui-density));
+  width: 100%;
+  min-width: 0;
+  transition: none;
+}
+
+.ui-input--compact, .ui-select--compact { --ui-density: var(--ui-density-compact); }
+.ui-input--dense,   .ui-select--dense   { --ui-density: var(--ui-density-dense); }
+
+.ui-input:focus-visible,
+.ui-select:focus-visible { outline: 2px solid var(--ui-focus-ring); outline-offset: 1px; }
+
+.ui-input:disabled,
+.ui-select:disabled { opacity: var(--ui-opacity-disabled); cursor: not-allowed; }
+
+.ui-input--numeric {
+  font-family: var(--ui-font-numeric);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+/* selection controls */
+.ui-check { display: inline-flex; align-items: center; gap: var(--ui-space-2); font-size: var(--ui-font-size-md); cursor: pointer; }
+.ui-check input { width: 16px; height: 16px; accent-color: var(--ui-primary); outline: 1px solid var(--ui-border-control); outline-offset: 1px; margin: 0; }
+.ui-check--disabled { opacity: var(--ui-opacity-disabled); cursor: not-allowed; }
+
+.ui-switch { display: inline-flex; align-items: center; gap: var(--ui-space-2); font-size: var(--ui-font-size-md); cursor: pointer; }
+.ui-switch input { width: 36px; height: 20px; accent-color: var(--ui-primary); outline: 1px solid var(--ui-border-control); outline-offset: 1px; margin: 0; }

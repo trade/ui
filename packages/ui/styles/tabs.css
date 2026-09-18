@@ -1,0 +1,30 @@
+/* @trade/ui — Tabs */
+
+.ui-tabs__list {
+  display: flex;
+  gap: var(--ui-space-1);
+  border-bottom: 1px solid var(--ui-outline);
+}
+
+.ui-tab {
+  font: inherit;
+  font-size: var(--ui-font-size-md);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: calc(10px * var(--ui-density)) calc(14px * var(--ui-density));
+  color: var(--ui-on-surface-muted);
+  cursor: pointer;
+  transition: none;
+}
+
+.ui-tab[aria-selected='true'] {
+  color: var(--ui-primary);
+  border-bottom-color: var(--ui-primary);
+  font-weight: 500;
+}
+
+.ui-tab:disabled { opacity: var(--ui-opacity-disabled); cursor: not-allowed; }
+
+.ui-tabs__panel { padding-top: var(--ui-space-4); }
+.ui-tabs__panel[hidden] { display: none; }

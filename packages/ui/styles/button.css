@@ -1,0 +1,50 @@
+/* @trade/ui — Button */
+
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-space-1);
+  font-family: inherit;
+  font-weight: 500;
+  line-height: 20px;
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius-md);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: none;
+  background: transparent;
+  color: inherit;
+}
+
+/* sizes */
+.ui-btn--sm { font-size: var(--ui-font-size-sm); padding: calc(4px * var(--ui-density)) calc(12px * var(--ui-density)); }
+.ui-btn--md { font-size: var(--ui-font-size-md); padding: calc(8px * var(--ui-density)) calc(16px * var(--ui-density)); }
+.ui-btn--lg { font-size: var(--ui-font-size-lg); padding: calc(10px * var(--ui-density)) calc(20px * var(--ui-density)); }
+
+/* density overrides (token-backed, no runtime maths in JS) */
+.ui-btn--compact { --ui-density: var(--ui-density-compact); }
+.ui-btn--dense   { --ui-density: var(--ui-density-dense); }
+
+.ui-btn--full { width: 100%; }
+
+/* variants */
+.ui-btn--primary   { background: var(--ui-primary);   color: var(--ui-on-primary); }
+.ui-btn--secondary { background: var(--ui-secondary); color: var(--ui-on-secondary); }
+.ui-btn--danger    { background: var(--ui-error);     color: var(--ui-on-error); }
+.ui-btn--outline   { background: transparent; color: var(--ui-primary); border-color: var(--ui-border-control); }
+.ui-btn--ghost     { background: transparent; color: var(--ui-on-surface); }
+
+.ui-btn:hover:not(:disabled) { filter: brightness(0.96); }
+.ui-btn--outline:hover:not(:disabled),
+.ui-btn--ghost:hover:not(:disabled) { background: var(--ui-hover-overlay); filter: none; }
+
+.ui-btn:active:not(:disabled) { filter: brightness(0.9); }
+
+.ui-btn:disabled,
+.ui-btn[aria-disabled='true'] {
+  opacity: var(--ui-opacity-disabled);
+  cursor: not-allowed;
+}
+
+.ui-btn--loading { cursor: progress; }
