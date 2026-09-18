@@ -298,7 +298,7 @@ for (const engine of ENGINES) {
           if (v.missing) {
             add('visual regression (' + theme + ' theme)' + vNote, !vGate, vGate ? 'NO BASELINE — run: npm run baselines:update' : 'no baseline for this platform');
           } else if (v.sizeMismatch) {
-            add('visual regression (' + theme + ' theme)' + vNote, false, `viewport size changed: baseline ${v.baseline}, got ${v.current}`);
+            add('visual regression (' + theme + ' theme)' + vNote, !vGate, `viewport size changed: baseline ${v.baseline}, got ${v.current}`);
           } else {
             // On a platform with no committed baselines the comparison is informational and
             // always passes; the ratio is still reported so drift is visible.
