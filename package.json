@@ -13,6 +13,7 @@
     "check:contract": "node scripts/check-contract.mjs",
     "check:contrast": "node scripts/check-contrast.mjs",
     "check:style": "node scripts/check-style.mjs",
+    "check:types": "tsc -p packages/ui --noEmit",
     "check:docs": "node scripts/check-docs-links.mjs",
     "check:commits": "node scripts/check-commits.mjs",
     "verify:demo": "node scripts/verify-demo.mjs",
@@ -25,7 +26,7 @@
     "screen:build": "node scripts/build-trading.mjs",
     "verify:screen": "node scripts/verify-screen.mjs",
     "all": "npm run build && npm run demo && npm run harness:build && npm run verify && npm run verify:demo && npm run verify:browser",
-    "ci": "npm run check:contract && npm run build && npm run check:contrast && npm run check:style && npm run check:docs && npm run check:commits && npm run demo && npm run harness:build && npm run size && npm run verify && npm run verify:demo && npm run verify:browser"
+    "ci": "npm run check:contract && npm run build && npm run check:contrast && npm run check:style && npm run check:types && npm run check:docs && npm run check:commits && npm run demo && npm run harness:build && npm run size && npm run verify && npm run verify:demo && npm run verify:browser"
   },
   "size-limit": [
     {
