@@ -292,7 +292,9 @@ function Blotter() {
 
 function Ticket({ instrument, open }) {
   const [side, setSide] = useState('buy');
-  const [qty, setQty] = useState('1000');
+  // default quantity must be affordable for the default instrument: the primary
+  // button should render as an ACTIVE primary on load, not greet the user disabled
+  const [qty, setQty] = useState('100');
   const [type, setType] = useState('limit');
   const [price, setPrice] = useState('');
   const [tif, setTif] = useState('day');

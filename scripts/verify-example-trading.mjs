@@ -132,7 +132,7 @@ for (const vp of [{ name: 'desktop', width: 1600, height: 900 }, { name: 'narrow
     const submitDisabled = buy ? buy.disabled : null;
     await setQty('100');
     const warnGone = !document.querySelector('.ticket__warn');
-    await setQty('1000');
+    await setQty('100');
     return { warned, submitDisabled, warnGone };
   });
   check(
