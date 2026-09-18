@@ -51,7 +51,7 @@ packages/ui/styles/                one hand-written CSS file per area; auto-disc
 packages/ui/build.mjs              esbuild ESM+CJS, tsc .d.ts, concatenates tokens.css + styles
 apps/example/src/main.jsx          the component reference screen — show new components here
 apps/example-trading/src/main.jsx  the production-grade trading workspace example
-scripts/verify.mjs                 33 library checks (SSR, CSS, DOM interactions) — add checks here
+scripts/verify.mjs                 39 library checks (SSR, CSS, DOM interactions) — add checks here
 scripts/verify-example.mjs         10 checks against the built example bundle
 scripts/browser-suite.mjs          84 checks × {chromium,firefox,webkit} × {desktop,mobile}
 scripts/check-contract.mjs         package promises (zero deps, peer React, exports map)

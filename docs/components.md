@@ -86,6 +86,13 @@ the previously focused element is restored. No entry/exit animation, by design (
 **`Banner`** — `tone: 'info' | 'success' | 'warning' | 'danger'`, `role="status"`, tone accent is
 a `border-inline-start`, never colour alone.
 
+**`Menu`** — controlled panel (`open`/`onClose`) rendered inside a `.ui-menu-anchor` wrapper
+below the trigger; auto-flips above when the viewport has no room below. `MenuItem` renders
+`role="menuitem"` buttons; Arrow keys move focus and wrap, skipping disabled items; `Home`/`End`
+jump to the ends; `Escape` closes and restores focus to the trigger; outside `pointerdown`
+closes; `Tab` closes and lets focus move on. `MenuSeparator` divides groups. The trigger should
+carry `aria-haspopup="menu"` and `aria-expanded` (see the example app's Actions menu).
+
 **`Toast` / `ToastRegion`** — toasts are `role="status" aria-live="polite"` inside
 `role="region" aria-label="Notifications"`. Deliberately **no auto-dismiss timer and no entry
 animation** in v1.

@@ -102,6 +102,8 @@ export function harness(ui, h, React) {
 
   function Harness() {
     const [open, setOpen] = React.useState(false);
+    const [menuOpen, setMenuOpen] = React.useState(false);
+    const { ThemeProvider, Button, Tabs, Dialog, Menu, MenuItem, MenuSeparator, useTheme } = ui;
     return h(
       ThemeProvider,
       { theme: 'light' },
@@ -114,6 +116,17 @@ export function harness(ui, h, React) {
         ]
       }),
       h(Button, { variant: 'primary', id: 'open-dialog', onClick: () => setOpen(true) }, 'Trade'),
+      h('div', { className: 'ui-menu-anchor' },
+        h(Button, { id: 'menu-trigger', 'aria-haspopup': 'menu', 'aria-expanded': menuOpen, onClick: () => setMenuOpen((v) => !v) }, 'Actions'),
+        h(
+          Menu,
+          { open: menuOpen, onClose: () => setMenuOpen(false), label: 'Actions' },
+          h(MenuItem, { id: 'menu-reload' }, 'Reload watchlist'),
+          h(MenuItem, { id: 'menu-disabled', disabled: true }, 'Manage columns'),
+          h(MenuSeparator, null),
+          h(MenuItem, { id: 'menu-close', onClick: () => setMenuOpen(false) }, 'Close menu')
+        )
+      ),
       h(
         Dialog,
         {
