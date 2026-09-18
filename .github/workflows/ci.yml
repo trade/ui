@@ -95,8 +95,12 @@ jobs:
         run: npm run verify:demo
 
       # Browsers are preinstalled in the image at the matching version; no install step.
+      # HOME must be writable by the job user for Firefox's profile bootstrap — the default
+      # /github/home makes non-root Firefox exit with "Could not find profile folder".
       - name: Cross-browser suite (frame timing, layout, axe light + dark, visual regression)
         run: npm run verify:browser
+        env:
+          HOME: /tmp
 
       - name: Upload verification evidence
         if: always()
