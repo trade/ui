@@ -141,10 +141,61 @@ Done also means:
 
 ## 7. Commits and evidence
 
-Conventions live in `README.md` § Git. The short version: subject ≤ 72 chars, imperative,
-conventional prefix, one concern per commit, and the body carries the *evidence* — the measurement
-and the command that produced it. "Made the table faster" is not evidence; "p95 16.7 ms → 12.1 ms
-over 90 frames, `npm run verify:browser`" is.
+Conventions live in `README.md` § Git. Subjects follow `type(scope): summary`, matching the
+`trade/ui` org convention (see its `CONTRIBUTING.md`):
+
+| Part | Rule |
+|---|---|
+| `type` | One of `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `ci` |
+| `scope` | Optional area touched, lowercase (e.g. `ui`, `tokens`, `verify`, `ci`) |
+| `summary` | Imperative mood, no trailing period, ideally under 72 characters |
+
+```
+fix(verify): gate WebKit perf only on macOS
+docs(agents): drop the duplicated file inventory
+```
+
+`ci` is an addition to the org's list (`feat fix docs chore refactor test`) — this repo's CI is a
+first-class concern and its history already uses the prefix.
+
+One concern per commit, and the body carries the *evidence* — the measurement and the command that
+produced it, and the *why*, not what the diff already shows. "Made the table faster" is not
+evidence; "p95 16.7 ms → 12.1 ms over 90 frames, `npm run verify:browser`" is. State only what you
+actually verified.
 
 Never commit generated output (`dist/`, `verification/*.json`, screenshots), credentials, or
 absolute local paths.
+
+## 8. Branches and pull requests
+
+Branches use a lowercase type prefix and a short slash-separated description, again mirroring
+`trade/ui`'s `CONTRIBUTING.md`:
+
+| Prefix | Use for |
+|---|---|
+| `feat/` | New features or capabilities |
+| `fix/` | Bug fixes |
+| `docs/` | Documentation-only changes |
+| `chore/` | Maintenance (deps, tooling, config) |
+| `refactor/` | Code changes that neither fix a bug nor add a feature |
+| `test/` | Adding or updating tests |
+
+Example: `feat/listbox-select`, `fix/table-rowindex`, `docs/tokens-guide`. Avoid parentheses and
+other shell metacharacters — git accepts them, but bash and zsh treat `(` as syntax, so
+`git push origin fix(x)` fails unless quoted every time.
+
+Pull requests:
+
+1. Fork the repository (or branch from `main` if you have write access).
+2. Create a branch with the naming convention above.
+3. Make the change; every commit follows § 7.
+4. **All gates green before opening** — `npm run ci` locally, and CI must pass on the PR itself.
+   A red PR is not a reviewable PR. PR description carries the same evidence the commit body does.
+5. Open the pull request.
+
+**Open PRs early.** Prefer opening a PR as soon as there is something reviewable, even if the
+work is unfinished — it gives visibility and allows early feedback on direction. Keep PRs small
+and focused: a series of small, merged PRs beats one large one.
+
+For the maintainers' own workflow: local commits are the default stopping point; push and PR only
+on explicit instruction (AGENTS.md § Git protocol).
