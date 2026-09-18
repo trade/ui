@@ -148,7 +148,7 @@ Conventions live in `README.md` § Git. Subjects follow `type(scope): summary`, 
 |---|---|
 | `type` | One of `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `ci` |
 | `scope` | Optional area touched, lowercase (e.g. `ui`, `tokens`, `verify`, `ci`) |
-| `summary` | Imperative mood, no trailing period, ideally under 72 characters |
+| `summary` | Imperative mood, no trailing period; **aim ≤ 50 characters, 72 hard max** |
 
 ```
 fix(verify): gate WebKit perf only on macOS

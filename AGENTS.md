@@ -91,8 +91,8 @@ rule, record it in `STATUS.md` as ungated so it stays visible.
 
 ## Git protocol
 
-- Conventional prefixes (`feat:`, `fix:`, `docs:`, `ci:`, `test:`, `chore:`), subject ≤ 72 chars,
-  imperative, one concern per commit.
+- Conventional prefixes (`feat:`, `fix:`, `docs:`, `ci:`, `test:`, `chore:`), subject ≤ 50 chars
+  (72 hard max), imperative, one concern per commit.
 - Body carries evidence: numbers, check counts, the command that produced them.
 - Never commit generated output (`dist/`, `verification/*.json`, screenshots), credentials, or
   absolute local paths.

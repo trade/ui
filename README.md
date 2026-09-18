@@ -156,8 +156,8 @@ normalised to LF via `.gitattributes`.
 
 ### Commit conventions
 
-- **Subject ≤ 72 characters**, imperative mood, conventional prefix (`feat:`, `fix:`, `docs:`, `ci:`,
-  `test:`, `chore:`). Three subjects in the early history exceed this and should not be repeated.
+- **Subject ≤ 50 characters (72 hard max)**, imperative mood, conventional prefix (`feat:`, `fix:`,
+  `docs:`, `ci:`, `test:`, `chore:`) — gated by `npm run check:commits`.
 - **One concern per commit.** Some early commits bundle several fixes together; splitting them makes
   a bisect actually useful.
 - **Never commit generated binaries.** Screenshots change on every run; they belong in CI artifacts.

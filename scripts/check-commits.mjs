@@ -1,0 +1,41 @@
+// Commit message gate: subject line of each new commit must respect the repo convention
+// (CONTRIBUTING.md § 7): aim <= 50 chars, 72 hard max, conventional `type(scope):` prefix.
+// CI checks the pushed range; locally without a range it checks HEAD only.
+import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+
+const HARD_MAX = 72;
+const PREFIX = /^(feat|fix|docs|chore|refactor|test|ci)(\([^)]+\))?: /;
+
+let range = process.argv[2];
+if (!range) {
+  const event = process.env.GITHUB_EVENT_NAME;
+  if (event === 'push' && process.env.GITHUB_EVENT_PATH) {
+    const ev = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+    if (ev.before && !/^0+$/.test(ev.before)) range = `${ev.before}..${ev.after}`;
+  }
+}
+const subjectOf = (sha) =>
+  execSync(`git log -1 --format=%s ${sha}`, { encoding: 'utf8' }).trimEnd();
+const shas = (range
+  ? execSync(`git rev-list ${range}`, { encoding: 'utf8' }).trim().split('\n')
+  : ['HEAD']
+).filter(Boolean);
+
+let bad = 0;
+for (const sha of shas) {
+  const subject = subjectOf(sha);
+  const problems = [];
+  if (subject.length > HARD_MAX) problems.push(`${subject.length} chars (hard max ${HARD_MAX})`);
+  if (!PREFIX.test(subject)) problems.push('missing conventional type(scope): prefix');
+  if (subject.length > 50) {
+    console.log(`  note: ${sha.slice(0, 7)} subject is ${subject.length} chars (aim <= 50, hard max ${HARD_MAX})`);
+  }
+  if (problems.length > 0) {
+    bad += 1;
+    console.error(`  FAIL ${sha.slice(0, 7)} "${subject}" — ${problems.join('; ')}`);
+  }
+}
+
+console.log(`commit subjects: ${shas.length - bad}/${shas.length} within the hard contract`);
+process.exit(bad > 0 ? 1 : 0);
