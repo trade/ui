@@ -1,0 +1,25 @@
+name: Feature request
+description: A new component, prop, theme, or capability
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What can't be built today, or what hurts. Not the solution — the need.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed shape
+      description: API sketch, prop names, which existing component it extends.
+  - type: checkboxes
+    id: decisions
+    attributes:
+      label: Architecture check
+      options:
+        - label: I have read DECISIONS.md — this does not conflict with a settled ADR (frozen token scale, zero runtime deps, static CSS, motion off)
+          required: true
+        - label: Public API addition only — no renames or removals of exported names/props/tokens
+          required: true

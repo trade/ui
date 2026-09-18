@@ -1,0 +1,43 @@
+# Auto-label config, consumed by actions/labeler (workflow: label.yml, SHA-pinned).
+# Two dimensions, matching CONTRIBUTING.md sections 7-8:
+#   type — from the branch prefix (feat/, fix/, docs/, chore/, refactor/, test/)
+#   area — from the changed file paths
+# Branch matchers are regexps; path matchers are globs. `documentation` covers both
+# the branch prefix and the doc paths, so it lives in both groups.
+
+# --- type (from branch prefix) ---
+enhancement:
+  - head-branch: ['^feat/']
+bug:
+  - head-branch: ['^fix/']
+documentation:
+  - head-branch: ['^docs/']
+chore:
+  - head-branch: ['^chore/']
+refactor:
+  - head-branch: ['^refactor/']
+test:
+  - head-branch: ['^test/']
+
+# --- area (from changed paths) ---
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: ['docs/**', '*.md']
+tokens:
+  - changed-files:
+      - any-glob-to-any-file: ['packages/tokens/**']
+components:
+  - changed-files:
+      - any-glob-to-any-file: ['packages/ui/src/**']
+styles:
+  - changed-files:
+      - any-glob-to-any-file: ['packages/ui/styles/**']
+verification:
+  - changed-files:
+      - any-glob-to-any-file: ['scripts/**', 'harness/**']
+demo:
+  - changed-files:
+      - any-glob-to-any-file: ['apps/**']
+ci:
+  - changed-files:
+      - any-glob-to-any-file: ['.github/**']

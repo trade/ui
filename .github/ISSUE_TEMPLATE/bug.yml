@@ -1,0 +1,35 @@
+name: Bug report
+description: Something is wrong — a gate caught it or a user did
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: Exact steps or the failing command. If a gate failed, paste its output.
+      placeholder: |
+        npm run verify:browser
+        ...
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - Component (packages/ui/src)
+        - Styles (packages/ui/styles)
+        - Tokens / theming (packages/tokens)
+        - Verification / CI (scripts, .github)
+        - Demo (apps/demo)
+        - Docs
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Browser + engine (Chromium/Firefox/WebKit), theme, density, viewport if relevant.
