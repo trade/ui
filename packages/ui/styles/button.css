@@ -52,7 +52,7 @@
 .ui-btn:disabled,
 .ui-btn[aria-disabled='true'] {
   background: var(--ui-surface-1);
-  color: var(--ui-on-surface-muted);
+  color: var(--ui-on-surface-disabled);
   border-color: transparent;
   cursor: not-allowed;
 }
