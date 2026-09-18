@@ -115,6 +115,32 @@ for (const vp of [{ name: 'desktop', width: 1600, height: 900 }, { name: 'narrow
   });
   check(`${vp.name}: all three themes apply`, themes.join(' ') === 'Light->light Dark->dark Contrast->high-contrast', themes.join(' '));
 
+  // ticket guard: an order above buying power must warn inline and must not be submittable.
+  // React ignores direct .value writes, so set it through the native setter + input event.
+  const guard = await page.evaluate(async () => {
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    const qty = document.querySelector('#tk-qty');
+    const setQty = async (v) => {
+      setter.call(qty, v);
+      qty.dispatchEvent(new Event('input', { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 150));
+    };
+    await setQty('100000');
+    const warned = Boolean(document.querySelector('.ticket__warn'));
+    const buy = [...document.querySelectorAll('.ticket__actions button')]
+      .find((b) => /^(Buy|Sell) \d/.test(b.textContent.trim()));
+    const submitDisabled = buy ? buy.disabled : null;
+    await setQty('100');
+    const warnGone = !document.querySelector('.ticket__warn');
+    await setQty('1000');
+    return { warned, submitDisabled, warnGone };
+  });
+  check(
+    `${vp.name}: ticket warns and disables submit above buying power`,
+    guard.warned && guard.submitDisabled === true && guard.warnGone,
+    `warn=${guard.warned}, submitDisabled=${guard.submitDisabled}, clears when affordable=${guard.warnGone}`
+  );
+
   // accessibility, light then dark
   await page.evaluate(() => { for (const b of document.querySelectorAll('.top button')) if (b.textContent.trim() === 'Light') b.click(); });
   await page.waitForTimeout(200);

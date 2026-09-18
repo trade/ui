@@ -99,7 +99,6 @@ body {
   font-size: var(--ui-font-size-2xs); font-weight: 500;
 }
 .rail__item[aria-current='true'] { background: var(--ui-hover-overlay); color: var(--ui-primary); }
-.rail__rule { width: 24px; border: 0; border-top: 1px solid var(--ui-outline); margin: 4px 0; }
 
 /* ── main column ───────────────────────────────────────────────────────────── */
 .main {
@@ -178,6 +177,12 @@ body {
 }
 .ticket__line { display: flex; justify-content: space-between; font-size: var(--ui-font-size-xs); }
 .ticket__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+.ticket__warn {
+  padding: var(--ui-space-1) var(--ui-space-2);
+  border-inline-start: 3px solid var(--ui-negative);
+  background: var(--ui-surface-1);
+  font-size: var(--ui-font-size-xs);
+}
 .ticket__status {
   margin-top: var(--ui-space-1);
   padding: var(--ui-space-1) var(--ui-space-2);

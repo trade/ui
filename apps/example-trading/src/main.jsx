@@ -47,6 +47,9 @@ function makeInstruments(n) {
 }
 
 const ROW_HEIGHT = 23;
+/* Shared account model: the metrics strip and the ticket's "buying power after" must
+   agree, and the ticket needs it up front to warn before an order is rejected. */
+const ACCOUNT_BUYING_POWER = 284_120.55;
 
 /** Currency formatting. maximumFractionDigits is required: with only minimumFractionDigits set,
  *  Intl defaults the maximum to 3, which is how "411,235.742" reached the screen. */
@@ -99,8 +102,6 @@ function Rail() {
           {label.slice(0, 4)}
         </button>
       ))}
-      <hr className="rail__rule" />
-      <button className="rail__item" title="Settings">Sett</button>
     </nav>
   );
 }
@@ -306,6 +307,7 @@ function Ticket({ instrument, open }) {
   const priceError = type === 'limit' && (price === '' || Number.isNaN(limit) || limit <= 0);
   const notional = (Number(qty) || 0) * (type === 'limit' ? limit || 0 : instrument?.last || 0);
   const commission = Math.max(1, notional * 0.0001);
+  const insufficient = notional > ACCOUNT_BUYING_POWER;
 
   return (
     <aside className="ticket" data-open={open} aria-label="Order ticket">
@@ -377,9 +379,15 @@ function Ticket({ instrument, open }) {
         </div>
         <div className="ticket__line">
           <span className="muted">Buying power after</span>
-          <span className="num">{money(284_120.55 - notional)}</span>
+          <span className="num">{money(ACCOUNT_BUYING_POWER - notional)}</span>
         </div>
       </div>
+
+      {insufficient ? (
+        <div className="ticket__warn" role="note">
+          Order exceeds buying power — reduce the quantity.
+        </div>
+      ) : null}
 
       <div className="ticket__actions">
         <Button variant="ghost" density="compact" onClick={() => setSubmitted(null)}>
@@ -388,7 +396,7 @@ function Ticket({ instrument, open }) {
         <Button
           variant={side === 'buy' ? 'primary' : 'danger'}
           density="compact"
-          disabled={priceError || !instrument}
+          disabled={priceError || !instrument || insufficient}
           onClick={() => setSubmitted({ side, qty, symbol: instrument?.symbol ?? '' })}
         >
           {side === 'buy' ? 'Buy' : 'Sell'} {qty || 0}
@@ -437,8 +445,8 @@ function Workspace() {
         exposure += Math.abs(i.pos * i.last);
       }
     }
-    const netLiq = 284_120.55 + pnl;
-    return { pnl, positions, exposure, netLiq, pnlPct: (pnl / netLiq) * 100, buyingPower: 284_120.55 };
+    const netLiq = ACCOUNT_BUYING_POWER + pnl;
+    return { pnl, positions, exposure, netLiq, pnlPct: (pnl / netLiq) * 100, buyingPower: ACCOUNT_BUYING_POWER };
   }, [instruments]);
 
   return (
