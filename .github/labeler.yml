@@ -2,8 +2,8 @@
 # Two dimensions, matching CONTRIBUTING.md sections 7-8:
 #   type — from the branch prefix (feat/, fix/, docs/, chore/, refactor/, test/)
 #   area — from the changed file paths
-# Branch matchers are regexps; path matchers are globs. `documentation` covers both
-# the branch prefix and the doc paths, so it lives in both groups.
+# Branch matchers are regexps; path matchers are globs. `documentation` matches the
+# branch prefix OR the doc paths, so it carries one entry of each kind.
 
 # --- type (from branch prefix) ---
 enhancement:
@@ -12,6 +12,8 @@ bug:
   - head-branch: ['^fix/']
 documentation:
   - head-branch: ['^docs/']
+  - changed-files:
+      - any-glob-to-any-file: ['docs/**', '*.md']
 chore:
   - head-branch: ['^chore/']
 refactor:
@@ -20,9 +22,6 @@ test:
   - head-branch: ['^test/']
 
 # --- area (from changed paths) ---
-documentation:
-  - changed-files:
-      - any-glob-to-any-file: ['docs/**', '*.md']
 tokens:
   - changed-files:
       - any-glob-to-any-file: ['packages/tokens/**']
