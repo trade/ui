@@ -117,8 +117,8 @@ After any change: `npm run build && npm run example:build && npm run verify && n
 
 ```powershell
 npm run check:contract  # 12 checks: zero deps, peer-only React, exports map, artifacts
-npm run check:contrast  # 63 colour pairs across 3 themes must meet the contrast contract
-npm run check:style     # 72 checks: the CSS authoring contract (tokens-only, logical, motionless)
+npm run check:contrast  # 69 colour pairs across 3 themes must meet the contrast contract
+npm run check:style     # 97 checks: the CSS authoring contract (tokens-only, logical, motionless)
 npm run check:types     # tsc --noEmit over @trade/ui — strict types are a gate, not a suggestion
 npm run check:docs      # links resolve + documented check counts agree with the suites themselves
 npm run size            # bundle budgets (ESM 8 kB, stylesheet 8 kB, types 3 kB, gzip)

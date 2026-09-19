@@ -54,13 +54,13 @@ The package promises: zero runtime dependencies in `@trade/ui` **and** `@trade/t
 React DOM are peers, not deps; `sideEffects: false`; exports map exposes import/require/types and
 `./styles.css`; publishes only `dist`; all 4 build artifacts present and non-empty.
 
-### `scripts/check-contrast.mjs` — 21 pairs × 3 themes = 63
+### `scripts/check-contrast.mjs` — 23 pairs × 3 themes = 69
 
 WCAG 1.4.3 AA (4.5:1) for text roles, 1.4.11 (3.0:1) for UI boundaries, evaluated over the token
 system per theme — before any browser runs. See [design-tokens.md](design-tokens.md). Extend
 `PAIRS` when you add a foreground/background combination.
 
-### `scripts/check-style.mjs` — 9 rules × 8 stylesheets
+### `scripts/check-style.mjs` — 97 checks over 11 stylesheets
 
 The CSS authoring contract — raw values, physical direction, z-index, shadows, motion,
 `!important`, font-size, namespacing, vendor prefixes. Enumerated in [css.md](css.md).

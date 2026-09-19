@@ -37,7 +37,7 @@ component change.
 | Ticking frame time, Chromium/Firefox | **p95 16.7 ms**, 0 dropped frames |
 | Ticking frame time, WebKit | **gates pass on real macOS WebKit**; the 26–36 ms seen on the Playwright port was a port artifact (resolved 2026-09-17) |
 | axe (light + dark, 3 engines) | **0 violations** |
-| Contrast contract | **63/63 pairs** across 3 themes |
+| Contrast contract | **69/69 pairs** across 3 themes |
 
 ## Verify it
 
@@ -88,8 +88,9 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
 1. ~~Generate an **ubuntu baseline set** so the visual gate hard-fails in CI.~~ Done 2026-09-18 —
    `baselines/linux/` regenerated in the digest-pinned `mcr.microsoft.com/playwright` container;
    the new CI `baselines` job (workflow_dispatch) regenerates the set in the exact verify
-   environment from now on. **Pending: push the branch so a CI run validates the frozen-capture
-   baselines on the ubuntu runner** (local run-to-run determinism is already 0 px).
+   environment from now on. **CI validation complete 2026-09-19** — the ubuntu `verify` job
+   (which pixel-compares against `baselines/linux/`) passed on every dependency-bump PR
+   (#11–#16) merged that day.
 2. Optional: a macOS baseline set (real WebKit) for the `browser-macos` job — the CI baselines job
    pattern makes this mechanical.
 3. Phase 2 components.
