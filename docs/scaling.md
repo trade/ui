@@ -54,14 +54,15 @@ for package promises. If a rule genuinely can't be gated, record it in
 weaken a gate to make a change pass — invariant 9 calls that the one unrecoverable mistake in
 this repo.
 
-## The standard loop
+## Verification loop
 
-Every change, however small:
+Agents follow the **verification ladder** in [AGENTS.md](../AGENTS.md) (run only what the change
+class requires; when unsure, `npm run ci`). For a multi-area human change, the full chain is:
 
 ```
 npm run build && npm run check:contrast && npm run check:style && npm run verify
-npm run demo && npm run verify:demo        # anything touching components/demo
-npm run verify:browser                     # anything touching styles, layout, focus
+npm run example:build && npm run verify:example    # anything touching the examples
+npm run verify:browser                             # anything touching styles, layout, focus
 ```
 
 Commits carry evidence — numbers, check counts, the command that produced them

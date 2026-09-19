@@ -7,13 +7,14 @@
  *
  * Exit code 0 = every check passed.
  */
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { JSDOM } from 'jsdom';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { resolveBaselinePlatform, baselineSetIsComplete } from './baseline-gate.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -420,6 +421,47 @@ check(
   !document.body.querySelector('[role="menu"]'),
   `menu present=${Boolean(document.body.querySelector('[role="menu"]'))}`
 );
+
+// ════════════ baseline gate regression checks (Rule Zero) ════════════
+{
+  const tmp = resolve(root, 'node_modules', '.tmp-baseline-test');
+  rmSync(tmp, { recursive: true, force: true });
+  mkdirSync(tmp, { recursive: true });
+
+  const eng = ['chromium', 'firefox', 'webkit'];
+  const vp = ['desktop', 'mobile'];
+
+  const seedComplete = (platform) => {
+    const p = resolve(tmp, platform);
+    mkdirSync(p, { recursive: true });
+    for (const e of eng) for (const v of vp) {
+      writeFileSync(resolve(p, `${e}-${v}-dark.png`), 'x');
+      writeFileSync(resolve(p, `${e}-${v}-light.png`), 'x');
+    }
+  };
+
+  check('baseline gate: absent set is incomplete',
+    baselineSetIsComplete(tmp, 'darwin') === false, 'missing directory');
+  seedComplete('linux');
+  rmSync(resolve(tmp, 'linux', 'webkit-mobile-dark.png'), { force: true });
+  check('baseline gate: partial set is incomplete',
+    baselineSetIsComplete(tmp, 'linux') === false, 'one missing PNG');
+  writeFileSync(resolve(tmp, 'linux', 'webkit-mobile-dark.png'), 'x');
+  check('baseline gate: complete set returns true',
+    baselineSetIsComplete(tmp, 'linux') === true, 'full set');
+  seedComplete('darwin');
+  const r1 = resolveBaselinePlatform({ hostPlatform: 'darwin', baselinesDir: tmp, manifest: { latestPlatform: 'linux' } });
+  check('baseline gate: host with own set gates on own', r1 === 'darwin', `got ${r1}`);
+  rmSync(resolve(tmp, 'darwin'), { recursive: true, force: true });
+  const r2 = resolveBaselinePlatform({ hostPlatform: 'darwin', baselinesDir: tmp, manifest: { latestPlatform: 'linux' } });
+  check('baseline gate: absent host falls back to nominated', r2 === 'linux', `got ${r2}`);
+  const r3 = resolveBaselinePlatform({ hostPlatform: 'darwin', baselinesDir: tmp, manifest: { latestPlatform: 'darwin' } });
+  check('baseline gate: absent host + absent nominated → null', r3 === null, `got ${r3}`);
+  const r4 = resolveBaselinePlatform({ hostPlatform: 'darwin', baselinesDir: tmp, manifest: null });
+  check('baseline gate: no manifest → null', r4 === null, `got ${r4}`);
+
+  rmSync(tmp, { recursive: true, force: true });
+}
 
 // ════════════ report ════════════
 const passed = results.filter((r) => r.pass).length;
