@@ -5,7 +5,7 @@
  * `harness`      is an interactive tree used by the verification DOM tests.
  */
 export function sampleScreen(ui, h) {
-  const { ThemeProvider, Stack, Button, Input, Field, Checkbox, Select, DataTable, Cell, Tabs, Dialog, Banner, Toast, ToastRegion } =
+  const { ThemeProvider, Stack, Button, Input, Field, Checkbox, Select, DataTable, Cell, Tabs, Dialog, Banner, Toast, ToastRegion, Tooltip, Popover } =
     ui;
 
   const rows = [
@@ -68,6 +68,30 @@ export function sampleScreen(ui, h) {
       h(Field, { label: 'Symbol' }, h(Input, { defaultValue: 'AAPL' })),
       h(Field, { label: 'Limit price', error: 'Enter a price above 0.00' }, h(Input, { numeric: true, invalid: true, defaultValue: '-' })),
       h(Field, { label: 'Time in force' }, h(Select, { options: [{ value: 'day', label: 'Day' }, { value: 'gtc', label: 'GTC' }] })),
+      h(
+        Field,
+        { label: 'Order type' },
+        h(Select, {
+          variant: 'listbox',
+          name: 'orderType',
+          options: [
+            { value: 'market', label: 'Market' },
+            { value: 'limit', label: 'Limit' },
+            { value: 'stop', label: 'Stop' }
+          ]
+        })
+      ),
+      h(
+        Stack,
+        { direction: 'row', gap: 3, align: 'center' },
+        h(
+          'div',
+          { className: 'ui-popover-anchor' },
+          h(Button, { variant: 'outline', size: 'sm', 'aria-haspopup': 'dialog' }, 'Leg details'),
+          h(Popover, { open: true, onClose: () => {}, label: 'Leg details' }, h('p', null, 'Popover body'))
+        ),
+        h(Tooltip, { label: 'Quantity in shares' }, h(Button, { variant: 'ghost', size: 'sm' }, 'Qty'))
+      ),
       h(Checkbox, { label: 'Bracket order', defaultChecked: true }),
       h(Banner, { tone: 'danger', title: 'Rejected' }, 'Insufficient buying power for this order.'),
       h(ToastRegion, null, h(Toast, { tone: 'success', title: 'Filled' }, 'Order 4821 completed.')),
@@ -103,7 +127,10 @@ export function harness(ui, h, React) {
   function Harness() {
     const [open, setOpen] = React.useState(false);
     const [menuOpen, setMenuOpen] = React.useState(false);
-    const { ThemeProvider, Button, Tabs, Dialog, Menu, MenuItem, MenuSeparator, useTheme } = ui;
+    const [popoverOpen, setPopoverOpen] = React.useState(false);
+    const [dialogPopoverOpen, setDialogPopoverOpen] = React.useState(false);
+    const [lbValue, setLbValue] = React.useState('day');
+    const { ThemeProvider, Button, Tabs, Dialog, Menu, MenuItem, MenuSeparator, Popover, Tooltip, Select } = ui;
     return h(
       ThemeProvider,
       { theme: 'light' },
@@ -135,7 +162,41 @@ export function harness(ui, h, React) {
           title: 'New order',
           footer: h(Button, { variant: 'primary', id: 'confirm-order', onClick: () => setOpen(false) }, 'Confirm')
         },
-        h('p', null, 'Order ticket body')
+        h('p', null, 'Order ticket body'),
+        h(
+          'div',
+          { className: 'ui-popover-anchor' },
+          h(Button, { id: 'dialog-popover-trigger', 'aria-haspopup': 'dialog', 'aria-expanded': dialogPopoverOpen, onClick: () => setDialogPopoverOpen((v) => !v) }, 'Ticket options'),
+          h(Popover, { open: dialogPopoverOpen, onClose: () => setDialogPopoverOpen(false), label: 'Ticket options' }, h('p', null, 'Nested popover'))
+        )
+      ),
+      h(
+        'div',
+        { className: 'ui-popover-anchor' },
+        h(Button, { id: 'popover-trigger', 'aria-haspopup': 'dialog', 'aria-expanded': popoverOpen, onClick: () => setPopoverOpen((v) => !v) }, 'Filters'),
+        h(
+          Popover,
+          { open: popoverOpen, onClose: () => setPopoverOpen(false), label: 'Filters' },
+          h('p', null, 'Popover body')
+        )
+      ),
+      h(Tooltip, { label: 'Maximum order size' }, h(Button, { id: 'tooltip-trigger', 'aria-describedby': 'preset-desc' }, 'Hover me')),
+      h(
+        'div',
+        null,
+        h(Select, {
+          variant: 'listbox',
+          id: 'lb-trigger',
+          value: lbValue,
+          name: 'tif',
+          onChange: (e) => setLbValue(e.target.value),
+          options: [
+            { value: 'day', label: 'Day' },
+            { value: 'gtc', label: 'GTC' },
+            { value: 'ioc', label: 'IOC', disabled: true },
+            { value: 'opg', label: 'OPG' }
+          ]
+        })
       )
     );
   }

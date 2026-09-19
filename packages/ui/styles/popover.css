@@ -1,0 +1,26 @@
+/* @trade/ui — Popover */
+
+/* the consumer wraps trigger + popover in this anchor; the panel positions against it */
+.ui-popover-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.ui-popover {
+  position: absolute;
+  inset-block-start: calc(100% + var(--ui-space-1));
+  inset-inline-start: 0;
+  min-inline-size: var(--ui-size-popover-min);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-md);
+  box-shadow: var(--ui-elevation-8);
+  padding: var(--ui-space-3);
+  z-index: var(--ui-z-popover);
+}
+
+/* flipped variant: the panel opens upward when there is no room below */
+.ui-popover--above {
+  inset-block-start: auto;
+  inset-block-end: calc(100% + var(--ui-space-1));
+}

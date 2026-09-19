@@ -1,0 +1,33 @@
+/* @trade/ui — Tooltip */
+
+/* the consumer wraps the trigger in this anchor; the tooltip positions against it */
+.ui-tooltip-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.ui-tooltip {
+  position: absolute;
+  inset-block-end: calc(100% + var(--ui-space-1));
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  max-inline-size: var(--ui-size-tooltip-max);
+  padding: var(--ui-space-1) var(--ui-space-2);
+  background: var(--ui-surface-1);
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm);
+  box-shadow: var(--ui-elevation-2);
+  color: var(--ui-on-surface);
+  font-size: var(--ui-font-size-2xs);
+  line-height: var(--ui-line-2xs);
+  text-align: center;
+  z-index: var(--ui-z-popover);
+  pointer-events: none;
+  transition: none;
+}
+
+/* below the trigger instead of above it */
+.ui-tooltip--bottom {
+  inset-block-end: auto;
+  inset-block-start: calc(100% + var(--ui-space-1));
+}
