@@ -72,9 +72,10 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
    is reviewed, then committed by hand). Baselines exist for win32 and linux, so visual checks gate
    locally **and in the ubuntu CI job**; they stay informational on macOS, which has no baseline set.
 2. ~~**No macOS baseline set.**~~ **Resolved 2026-09-19.** The `baselines-macos` CI job
-   (workflow_dispatch) regenerates `baselines/macos/` on a real macOS runner, so the `browser-macos`
-   job pixel-compares and hard-fails on diffs > 0.3% of pixels. Two consecutive green
-   `browser-macos` runs after the baseline lands close this.
+   (workflow_dispatch) regenerates `baselines/macos/` on a real macOS runner. The manifest now
+   points `latestPlatform` at `darwin`, so the `browser-macos` job hard-fails visual checks
+   until the PNGs are committed. Two consecutive green `browser-macos` runs after the baseline
+   lands close this.
 3. **No secrets scanning.** Only keyword matching was done; the project carries no credentials.
 4. **Ungated by design** (recorded per Rule zero): commit-message *bodies* (subjects are gated by
    `check:commits`; evidence-in-body is not machine-checkable); inline `style={{ }}` props in app
