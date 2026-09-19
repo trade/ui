@@ -5,7 +5,7 @@ here — can pick it up without re-deriving anything.
 
 - **What it is / how to use it:** `README.md`
 - **Why the architecture is the way it is:** `DECISIONS.md`
-- **How to change it safely (rules + gates):** `CONTRIBUTING.md`, and `AGENTS.md` for agents
+- **How to change it safely (rules + gates):** `CONTRIBUTING.md`; agents use `AGENTS.md` (invariants, context router, verification ladder)
 - **Verification and CI:** `README.md` § Verification & CI
 
 ---
