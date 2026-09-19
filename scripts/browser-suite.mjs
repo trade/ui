@@ -19,7 +19,7 @@
  * Exit code 0 = every engine met every threshold.
  */
 import { createServer } from 'node:http';
-import { readFileSync, existsSync, statSync, mkdirSync, writeFileSync, copyFileSync } from 'node:fs';
+import { readFileSync, existsSync, statSync, readdirSync, mkdirSync, writeFileSync, copyFileSync } from 'node:fs';
 import { resolve, dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PNG } from 'pngjs';
@@ -123,10 +123,34 @@ await new Promise((r) => server.listen(PORT, '127.0.0.1', r));
  * the check GATES on a platform that has baselines and is informational on one that does
  * not — the same honesty rule the perf gates follow. Today only the platform that ran
  * baselines:update gates; add ubuntu/macOS sets to extend gating to CI hosts.
+ *
+ * A platform is only allowed to GATE when its baseline directory actually contains the
+ * expected PNGs. A manifest entry for a platform whose PNGs were never committed must
+ * never be promoted to a gate: that is how a nominated-but-absent platform hard-fails
+ * every run. `gatePlatform` is null when no committed set exists for this host, which
+ * makes every visual check informational (passing) until the PNGs land — at which point
+ * it starts gating automatically, with no flag to flip and no coverage lost.
  */
 function loadBaselineManifest() {
   const p = resolve(baselines, 'manifest.json');
   return existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null;
+}
+
+/** True when baselines/<platform>/ actually contains the expected PNGs. */
+function baselineSetIsComplete(platform) {
+  const dir = resolve(baselines, platform);
+  if (!existsSync(dir)) return false;
+  try {
+    const files = readdirSync(dir);
+    return ENGINES.every((e) =>
+      VIEWPORTS.every((vp) =>
+        files.includes(`${e.name}-${vp.name}-dark.png`) &&
+        files.includes(`${e.name}-${vp.name}-light.png`)
+      )
+    );
+  } catch {
+    return false;
+  }
 }
 
 const platformDir = (platform) => resolve(baselines, platform);
@@ -141,12 +165,20 @@ function compareShot(platform, id, theme) {
     return { sizeMismatch: true, baseline: `${baseline.width}x${baseline.height}`, current: `${current.width}x${current.height}` };
   }
   const diff = new PNG({ width: current.width, height: current.height });
-  const diffPixels = pixelmatch(current.data, baseline.data, diff.data, current.width, current.height, { threshold: 0.1 });
+  const manifest = loadBaselineManifest();
+  const platformThreshold = manifest?.platforms?.[platform]?.pixelmatchThreshold ?? 0.1;
+  const diffPixels = pixelmatch(current.data, baseline.data, diff.data, current.width, current.height, { threshold: platformThreshold });
   const total = current.width * current.height;
   return { diffPixels, total, ratio: diffPixels / total };
 }
 
-const baselinePlatform = existsSync(platformDir(process.platform)) ? process.platform : loadBaselineManifest()?.latestPlatform ?? null;
+// Gate only on a platform whose baseline set is actually committed. A host whose own
+// directory is absent falls back to the manifest's latestPlatform, but only if that
+// platform's PNGs exist — otherwise the host is informational.
+const manifest = loadBaselineManifest();
+const ownSet = baselineSetIsComplete(process.platform);
+const nominatedSet = manifest ? baselineSetIsComplete(manifest.latestPlatform) : false;
+const baselinePlatform = ownSet ? process.platform : (nominatedSet ? manifest.latestPlatform : null);
 
 /** In update mode: write the current platform's baselines + manifest. Never called on a compare run. */
 function writeBaselines(id) {
@@ -316,6 +348,10 @@ for (const engine of ENGINES) {
       if (m.visual?.updated) {
         add('visual regression (baselines rewritten)', true, 'update mode: baselines/ and manifest rewritten — commit them');
       } else if (m.visual) {
+        // Gate only when a committed baseline set exists for this host. When none exists
+        // the check is informational (passing) — the host's own directory is absent AND
+        // the manifest's nominated platform has no committed PNGs, so there is nothing
+        // to compare against and failing would be a false alarm.
         const vGate = m.visual.baselinePlatform === process.platform;
         const vNote = vGate
           ? ''
