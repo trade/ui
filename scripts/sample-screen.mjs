@@ -5,7 +5,7 @@
  * `harness`      is an interactive tree used by the verification DOM tests.
  */
 export function sampleScreen(ui, h) {
-  const { ThemeProvider, Stack, Button, Input, Field, Checkbox, Select, DataTable, Cell, Tabs, Dialog, Banner, Toast, ToastRegion } =
+  const { ThemeProvider, Stack, Button, Input, Field, Checkbox, Select, DataTable, Cell, Tabs, Dialog, Banner, Toast, ToastRegion, Tooltip, Popover } =
     ui;
 
   const rows = [
@@ -68,6 +68,17 @@ export function sampleScreen(ui, h) {
       h(Field, { label: 'Symbol' }, h(Input, { defaultValue: 'AAPL' })),
       h(Field, { label: 'Limit price', error: 'Enter a price above 0.00' }, h(Input, { numeric: true, invalid: true, defaultValue: '-' })),
       h(Field, { label: 'Time in force' }, h(Select, { options: [{ value: 'day', label: 'Day' }, { value: 'gtc', label: 'GTC' }] })),
+      h(
+        Stack,
+        { direction: 'row', gap: 3, align: 'center' },
+        h(
+          'div',
+          { className: 'ui-popover-anchor' },
+          h(Button, { variant: 'outline', size: 'sm', 'aria-haspopup': 'dialog' }, 'Leg details'),
+          h(Popover, { open: true, onClose: () => {}, label: 'Leg details' }, h('p', null, 'Popover body'))
+        ),
+        h(Tooltip, { label: 'Quantity in shares' }, h(Button, { variant: 'ghost', size: 'sm' }, 'Qty'))
+      ),
       h(Checkbox, { label: 'Bracket order', defaultChecked: true }),
       h(Banner, { tone: 'danger', title: 'Rejected' }, 'Insufficient buying power for this order.'),
       h(ToastRegion, null, h(Toast, { tone: 'success', title: 'Filled' }, 'Order 4821 completed.')),
@@ -103,7 +114,8 @@ export function harness(ui, h, React) {
   function Harness() {
     const [open, setOpen] = React.useState(false);
     const [menuOpen, setMenuOpen] = React.useState(false);
-    const { ThemeProvider, Button, Tabs, Dialog, Menu, MenuItem, MenuSeparator, useTheme } = ui;
+    const [popoverOpen, setPopoverOpen] = React.useState(false);
+    const { ThemeProvider, Button, Tabs, Dialog, Menu, MenuItem, MenuSeparator, Popover, Tooltip } = ui;
     return h(
       ThemeProvider,
       { theme: 'light' },
@@ -136,7 +148,19 @@ export function harness(ui, h, React) {
           footer: h(Button, { variant: 'primary', id: 'confirm-order', onClick: () => setOpen(false) }, 'Confirm')
         },
         h('p', null, 'Order ticket body')
-      )
+      ),
+      h(
+        'div',
+        { className: 'ui-popover-anchor' },
+        h(Button, { id: 'popover-trigger', 'aria-haspopup': 'dialog', 'aria-expanded': popoverOpen, onClick: () => setPopoverOpen((v) => !v) }, 'Filters'),
+        h(
+          Popover,
+          { open: popoverOpen, onClose: () => setPopoverOpen(false), label: 'Filters' },
+          h('p', null, 'Popover body')
+        )
+      ),
+      h(Tooltip, { label: 'Maximum order size' }, h(Button, { id: 'tooltip-trigger' }, 'Hover me')),
+      h(Tooltip, { label: 'Composed handler test', onMouseEnter: () => {}, onFocus: () => {}, onKeyDown: () => {} }, h(Button, { id: 'composed-tooltip-trigger' }, 'Composed'))
     );
   }
 
