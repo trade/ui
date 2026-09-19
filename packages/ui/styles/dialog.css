@@ -30,7 +30,7 @@
   justify-content: space-between;
   gap: var(--ui-space-3);
   padding: var(--ui-space-4) var(--ui-space-5);
-  border-bottom: 1px solid var(--ui-outline);
+  border-bottom: var(--ui-size-border-width) solid var(--ui-outline);
 }
 
 .ui-dialog__title { margin: 0; font-size: var(--ui-font-size-lg); font-weight: 500; }
@@ -42,5 +42,5 @@
   justify-content: flex-end;
   gap: var(--ui-space-2);
   padding: var(--ui-space-3) var(--ui-space-5);
-  border-top: 1px solid var(--ui-outline);
+  border-top: var(--ui-size-border-width) solid var(--ui-outline);
 }

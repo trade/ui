@@ -5,7 +5,7 @@
   align-items: flex-start;
   gap: var(--ui-space-2);
   padding: calc(10px * var(--ui-density)) calc(12px * var(--ui-density));
-  border: 1px solid var(--ui-outline);
+  border: var(--ui-size-border-width) solid var(--ui-outline);
   border-radius: var(--ui-radius-md);
   background: var(--ui-surface-1);
   color: var(--ui-on-surface);

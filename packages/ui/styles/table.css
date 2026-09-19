@@ -1,7 +1,7 @@
 /* @trade/ui — DataTable (dense, virtualizer-friendly, tabular numerals) */
 
 .ui-table-wrap {
-  border: 1px solid var(--ui-outline);
+  border: var(--ui-size-border-width) solid var(--ui-outline);
   border-radius: var(--ui-radius-md);
   overflow: auto;
   background: var(--ui-surface);
@@ -20,7 +20,7 @@
 .ui-table td {
   padding: calc(6px * var(--ui-density)) calc(10px * var(--ui-density));
   text-align: start;
-  border-bottom: 1px solid var(--ui-outline);
+  border-bottom: var(--ui-size-border-width) solid var(--ui-outline);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -14,7 +14,7 @@
   max-inline-size: var(--ui-size-tooltip-max);
   padding: var(--ui-space-1) var(--ui-space-2);
   background: var(--ui-surface-1);
-  border: 1px solid var(--ui-border-control);
+  border: var(--ui-size-border-width) solid var(--ui-border-control);
   border-radius: var(--ui-radius-sm);
   box-shadow: var(--ui-elevation-2);
   color: var(--ui-on-surface);
