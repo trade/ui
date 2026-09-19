@@ -156,6 +156,9 @@ function baselineSetIsComplete(platform) {
 const platformDir = (platform) => resolve(baselines, platform);
 
 function compareShot(platform, id, theme) {
+  // platform is null when no committed baselines exist for this host or the
+  // manifest's nominated platform — comparison is informational in that case.
+  if (!platform) return { missing: true };
   const baselinePath = resolve(platformDir(platform), `${id}-${theme}.png`);
   const currentPath = resolve(shots, `${id}-${theme}.png`);
   if (!existsSync(baselinePath)) return { missing: true };
