@@ -18,7 +18,9 @@ import {
   ToastRegion,
   Menu,
   MenuItem,
-  MenuSeparator
+  MenuSeparator,
+  Popover,
+  Tooltip
 } from '@trade/ui';
 
 const NAMES = ['Apple Inc.', 'Microsoft Corp.', 'NVIDIA Corp.', 'Tesla Inc.', 'Amazon.com Inc.', 'Alphabet Inc.', 'Meta Platforms', 'JPMorgan Chase', 'Exxon Mobil', 'E-mini S&P 500', 'Euro / US Dollar', 'Gold Futures'];
@@ -136,6 +138,7 @@ function Panel({ tick }) {
 
 function App() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [symbol, setSymbol] = useState('AAPL');
   const [qty, setQty] = useState('1000');
   const [price, setPrice] = useState('');
@@ -177,6 +180,26 @@ function App() {
             <Button variant="primary" onClick={() => openTicket(null)}>New order</Button>
             <Button variant="outline" onClick={() => setToast('Watchlist refreshed')}>Refresh</Button>
             <Button variant="danger" disabled>Cancel all</Button>
+            <span className="ui-popover-anchor">
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-haspopup="dialog"
+                aria-expanded={filtersOpen}
+                onClick={() => setFiltersOpen((v) => !v)}
+              >
+                Filters
+              </Button>
+              <Popover open={filtersOpen} onClose={() => setFiltersOpen(false)} label="Watchlist filters">
+                <Stack gap={2}>
+                  <Checkbox label="Hide zero-volume rows" defaultChecked />
+                  <Checkbox label="Only instruments I hold" />
+                </Stack>
+              </Popover>
+            </span>
+            <Tooltip label="Resubmit the last rejected order" placement="bottom">
+              <Button variant="ghost" size="sm" aria-label="Resubmit last order">↻</Button>
+            </Tooltip>
             <span className="muted">Click a row to open its order ticket.</span>
           </Stack>
 
@@ -211,6 +234,8 @@ function App() {
           </Field>
           <Field label="Time in force">
             <Select
+              variant="listbox"
+              name="tif"
               value={tif}
               onChange={(e) => setTif(e.target.value)}
               options={[

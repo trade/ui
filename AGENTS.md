@@ -1,15 +1,8 @@
 # AGENTS.md — operating instructions for agents working in this repository
 
-You are changing a component system where every rule is load-bearing. This file tells you what you
-may freely do, what you must never do, and the exact workflow that makes changes safe. It is shorter
-than the human docs on purpose: it is the contract, `CONTRIBUTING.md` is the manual.
-
-## Context to load before changing anything
-
-1. `DECISIONS.md` — settled architecture. Treat every ADR as binding unless the user explicitly
-   reopens it. If a task conflicts with an ADR, stop and surface the conflict; do not work around it.
-2. `STATUS.md` — known issues and the ordered roadmap. Do work that moves this list.
-3. `CONTRIBUTING.md` § 1 "The laws" — the eight rules summarized below.
+You are changing a component system where every rule is load-bearing. This file is the contract;
+`CONTRIBUTING.md` is the human manual. Skim the invariants below first. Open other docs only when
+the router says you need them.
 
 ## Hard invariants — never do these, no exceptions, no "small" versions
 
@@ -41,6 +34,24 @@ than the human docs on purpose: it is the contract, `CONTRIBUTING.md` is the man
     affect interaction, `npm run verify` and `npm run verify:browser` must both run before you call
     it done. (Gate: axe both themes × 3 engines.)
 
+## Context router — open only what the task needs
+
+| If the task… | Open |
+|---|---|
+| Conflicts with architecture or proposes a new dependency/motion model | `DECISIONS.md` (ADRs are binding; stop and surface conflicts — do not work around them) |
+| Touches known issues, roadmap, or “what’s left” | `STATUS.md` |
+| Needs the full recipe, token tiers, or PR/commit conventions in depth | `CONTRIBUTING.md` (laws §1, recipe §3, commits §7) |
+| Needs system depth (tokens, theming, CSS, a11y, verification, perf) | `docs/<topic>.md` via `docs/README.md` |
+| Otherwise | Stay in this file; follow the verification ladder |
+
+## Path reminders
+
+| You are editing… | Remember |
+|---|---|
+| `packages/ui/styles/**` | `var(--ui-*)` only; animation/`transition` only `none`; logical props; no `!important` |
+| `packages/tokens/**` | Roles in **all three** themes as `{primitive.reference}`; extend `check-contrast.mjs` for new pairs; never hand-edit `dist/` |
+| `scripts/**` | Never loosen thresholds to land a change; new conventions get a check in the same change (rule zero); baselines only via `npm run baselines:update` |
+
 ## Repository map
 
 ```
@@ -51,24 +62,30 @@ packages/ui/styles/                one hand-written CSS file per area; auto-disc
 packages/ui/build.mjs              esbuild ESM+CJS, tsc .d.ts, concatenates tokens.css + styles
 apps/example/src/main.jsx          the component reference screen — show new components here
 apps/example-trading/src/main.jsx  the production-grade trading workspace example
-scripts/verify.mjs                 39 library checks (SSR, CSS, DOM interactions) — add checks here
-scripts/verify-example.mjs         10 checks against the built example bundle
+scripts/verify.mjs                 library checks (SSR, CSS, DOM interactions) — add checks here
+scripts/verify-example.mjs         example-bundle checks — add checks here
 scripts/browser-suite.mjs          84 checks × {chromium,firefox,webkit} × {desktop,mobile}
 scripts/check-contract.mjs         package promises (zero deps, peer React, exports map)
 scripts/check-contrast.mjs         WCAG contrast over every theme's role pairs — extend on new pairs
 scripts/check-style.mjs            CSS authoring contract (the laws, executable — library AND example apps)
 ```
 
-## The standard loop — run it for every change, however small
+## Verification ladder — run what the change class requires
 
-```
-npm run build && npm run check:contrast && npm run check:style && npm run verify
-npm run example:build && npm run verify:example    # anything touching the examples
-npm run verify:browser                          # anything touching styles, layout, focus
-```
+Non-zero exit means the work is wrong, not that the command is flaky. When unsure or multi-area,
+run `npm run ci`.
 
-Every command exits non-zero on failure; treat a non-zero exit as "the work is wrong", not "the
-command is flaky". `npm run ci` runs the whole chain in order.
+| Change class | Minimum |
+|---|---|
+| Docs / markdown only | `npm run check:docs` (full chain if docs affect counts/README) |
+| Tokens (`tokens.json` / token build) | `npm run build` && `npm run check:contrast` |
+| Library CSS / layout / focus | `npm run build` && `npm run check:style` && `npm run verify` && `npm run verify:browser` |
+| Components / public API | build + `check:style` + `check:types` + `verify`; add contrast if roles changed; example build/verify for touched apps; `verify:browser` if interaction or a11y |
+| Examples only | `npm run example:build` && `npm run verify:example` (and/or example-trading equivalents) |
+| Scripts / gates | Run the touched script(s); `check:docs` if docs quote counts; **never** loosen a threshold to pass |
+| Full release confidence | `npm run ci` |
+
+Report the commands you ran and the pass counts they printed.
 
 ## Component recipe (exact steps)
 
@@ -82,6 +99,8 @@ command is flaky". `npm run ci` runs the whole chain in order.
 4. Export from `src/index.ts`.
 5. Add interaction checks to `scripts/verify.mjs`; render it in `scripts/sample-screen.mjs`.
 6. Use it in `apps/example/src/main.jsx` (states + densities + both themes).
+
+Deep examples: `CONTRIBUTING.md` § 3.
 
 ## Rule zero for checks
 
@@ -106,8 +125,7 @@ rule, record it in `STATUS.md` as ungated so it stays visible.
 
 ## Definition of done
 
-- [ ] All gates green locally (`build`, `check:contrast`, `check:style`, `check:types`,
-      `check:docs`, `verify`, `verify:example`, `verify:browser` when relevant)
+- [ ] Ladder commands for this change class are green (or `npm run ci` if unsure)
 - [ ] New states/behaviours have checks (§ Rule zero)
 - [ ] README change-guide row updated if files/knobs changed; STATUS.md updated if known issues moved
 - [ ] Committed locally with evidence; push only on explicit instruction

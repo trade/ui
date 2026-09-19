@@ -7,13 +7,14 @@
  *
  * Exit code 0 = every check passed.
  */
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { JSDOM } from 'jsdom';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { resolveBaselinePlatform, baselineSetIsComplete } from './baseline-gate.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -140,6 +141,16 @@ check(
   'SSR: tabs + modal dialog semantics',
   /role="tablist"/.test(markup) && /aria-selected="true"/.test(markup) && /aria-modal="true"/.test(markup),
   `tablist=${/role="tablist"/.test(markup)}, selected tab=${/aria-selected="true"/.test(markup)}, modal=${/aria-modal="true"/.test(markup)}`
+);
+check(
+  'SSR: non-modal popover is honest about modality',
+  /aria-modal="false"/.test(markup) && /aria-haspopup="dialog"/.test(markup),
+  `aria-modal=false=${/aria-modal="false"/.test(markup)}, haspopup=${/aria-haspopup="dialog"/.test(markup)}`
+);
+check(
+  'SSR: listbox select announces the popup and renders the native variant alongside',
+  /aria-haspopup="listbox"/.test(markup) && (markup.match(/<select /g) ?? []).length >= 1,
+  `haspopup=listbox=${/aria-haspopup="listbox"/.test(markup)}, native selects=${(markup.match(/<select /g) ?? []).length}`
 );
 check('SSR: no inline animation in output', !/transition\s*:/.test(markup), 'inline transition count=0');
 
@@ -420,6 +431,209 @@ check(
   !document.body.querySelector('[role="menu"]'),
   `menu present=${Boolean(document.body.querySelector('[role="menu"]'))}`
 );
+
+// ── popover: open, honest ARIA, escape + outside close, focus restore ──
+const popTrigger = container.querySelector('#popover-trigger');
+await React.act(async () => {
+  popTrigger.focus();
+  click(popTrigger);
+});
+const pop = container.querySelector('[role="dialog"][aria-modal="false"]');
+check(
+  'click opens the non-modal popover with honest ARIA',
+  Boolean(pop) &&
+    pop.getAttribute('aria-label') === 'Filters' &&
+    popTrigger.getAttribute('aria-expanded') === 'true' &&
+    pop.contains(document.activeElement),
+  `popover present=${Boolean(pop)}, aria-expanded=${popTrigger.getAttribute('aria-expanded')}, focused inside=${pop ? pop.contains(document.activeElement) : false}`
+);
+await React.act(async () => keydown(pop, 'Escape'));
+check(
+  'Escape closes the popover and restores trigger focus',
+  !container.querySelector('[role="dialog"][aria-modal="false"]') && document.activeElement === popTrigger,
+  `popover present=${Boolean(container.querySelector('[role="dialog"][aria-modal="false"]'))}, focus restored=${document.activeElement === popTrigger}`
+);
+await React.act(async () => click(popTrigger));
+await React.act(async () => {
+  container.querySelector('#tooltip-trigger').dispatchEvent(new dom.window.Event('pointerdown', { bubbles: true }));
+});
+check(
+  'pointerdown outside closes the popover',
+  !container.querySelector('[role="dialog"][aria-modal="false"]'),
+  `popover present=${Boolean(container.querySelector('[role="dialog"][aria-modal="false"]'))}`
+);
+
+// ── tooltip: hover + focus show, escape hide, leave/blur hide ──
+const tipTrigger = container.querySelector('#tooltip-trigger');
+await React.act(async () => {
+  tipTrigger.dispatchEvent(new dom.window.MouseEvent('mouseover', { bubbles: true }));
+});
+let tip = container.querySelector('[role="tooltip"]');
+check(
+  'hover shows the tooltip and MERGES aria-describedby with any preset value',
+  Boolean(tip) &&
+    tipTrigger.getAttribute('aria-describedby') === `preset-desc ${tip.getAttribute('id')}`,
+  `describedby=${tipTrigger.getAttribute('aria-describedby')} (expected "preset-desc" plus the tooltip id)`
+);
+await React.act(async () => {
+  tipTrigger.dispatchEvent(new dom.window.MouseEvent('mouseout', { bubbles: true }));
+});
+await React.act(async () => {
+  tipTrigger.dispatchEvent(new dom.window.Event('focusin', { bubbles: true }));
+});
+tip = container.querySelector('[role="tooltip"]');
+check(
+  'keyboard focus shows the tooltip again',
+  Boolean(tip),
+  `tooltip present=${Boolean(tip)}`
+);
+await React.act(async () => keydown(tipTrigger, 'Escape'));
+await React.act(async () => {
+  tipTrigger.dispatchEvent(new dom.window.Event('focusout', { bubbles: true }));
+});
+check(
+  'Escape hides the tooltip and removes only its own id from aria-describedby',
+  !container.querySelector('[role="tooltip"]') && tipTrigger.getAttribute('aria-describedby') === 'preset-desc',
+  `tooltip present=${Boolean(container.querySelector('[role="tooltip"]'))}, describedby=${tipTrigger.getAttribute('aria-describedby')}`
+);
+
+// ── listbox Select: combobox semantics, keyboard selection, typeahead, honesty ──
+const lbTrigger = container.querySelector('#lb-trigger');
+// the selected value is observed through the hidden form input the listbox renders
+// for `name` — the same value a form submission would carry
+const lbValue = () => container.querySelector('input[type="hidden"][name="tif"]')?.value;
+const readLb = () => ({ expanded: lbTrigger.getAttribute('aria-expanded'), value: lbValue() });
+await React.act(async () => {
+  lbTrigger.focus();
+  click(lbTrigger);
+});
+let lbPanel = container.querySelector('[role="listbox"]');
+const lbOptions = lbPanel ? [...lbPanel.querySelectorAll('[role="option"]')] : [];
+check(
+  'click opens the listbox with combobox semantics and honest selection',
+  Boolean(lbPanel) &&
+    lbTrigger.getAttribute('aria-haspopup') === 'listbox' &&
+    lbTrigger.getAttribute('aria-expanded') === 'true' &&
+    lbOptions.length === 4 &&
+    lbOptions.filter((o) => o.getAttribute('aria-selected') === 'true').length === 1,
+  `panel=${Boolean(lbPanel)}, expanded=${readLb().expanded}, options=${lbOptions.length}`
+);
+check(
+  'the listbox trigger keeps focus (aria-activedescendant pattern)',
+  document.activeElement === lbTrigger,
+  `activeElement=${document.activeElement?.id || document.activeElement?.tagName}`
+);
+await React.act(async () => {
+  keydown(lbTrigger, 'ArrowDown');
+  keydown(lbTrigger, 'ArrowDown');
+});
+const activeAfterArrow = lbTrigger.getAttribute('aria-activedescendant');
+check(
+  'ArrowDown moves the active option, skipping the disabled one',
+  Boolean(activeAfterArrow) && !document.getElementById(activeAfterArrow).getAttribute('aria-disabled'),
+  `activedescendant=${activeAfterArrow}, disabled=${document.getElementById(activeAfterArrow)?.getAttribute('aria-disabled')}`
+);
+await React.act(async () => keydown(lbTrigger, 'Enter'));
+check(
+  'Enter commits the active option with the native onChange shape',
+  readLb().value === 'opg' && lbTrigger.getAttribute('aria-expanded') === 'false' && !container.querySelector('[role="listbox"]'),
+  `value=${readLb().value}, expanded=${readLb().expanded}, panel closed=${!container.querySelector('[role="listbox"]')}`
+);
+await React.act(async () => click(lbTrigger));
+await React.act(async () => keydown(lbTrigger, 'g'));
+const typeaheadTarget = lbTrigger.getAttribute('aria-activedescendant');
+check(
+  'typeahead jumps to the matching option',
+  typeaheadTarget && document.getElementById(typeaheadTarget)?.textContent === 'GTC',
+  `activedescendant=${typeaheadTarget} (expected the GTC option)`
+);
+await React.act(async () => keydown(lbTrigger, 'Escape'));
+check(
+  'Escape closes the listbox without committing',
+  lbTrigger.getAttribute('aria-expanded') === 'false' && readLb().value === 'opg',
+  `expanded=${readLb().expanded}, value=${readLb().value}`
+);
+await React.act(async () => click(lbTrigger));
+await React.act(async () => container.querySelectorAll('[role="option"]')[0].click());
+check(
+  'clicking an option selects it and closes the panel',
+  readLb().value === 'day' && !container.querySelector('[role="listbox"]'),
+  `value=${readLb().value}, panel closed=${!container.querySelector('[role="listbox"]')}`
+);
+await React.act(async () => click(lbTrigger));
+await React.act(async () => {
+  document.getElementById('root').dispatchEvent(new dom.window.Event('pointerdown', { bubbles: true }));
+});
+check(
+  'pointerdown outside closes the listbox',
+  !container.querySelector('[role="listbox"]') && lbTrigger.getAttribute('aria-expanded') === 'false',
+  `panel present=${Boolean(container.querySelector('[role="listbox"]'))}, expanded=${lbTrigger.getAttribute('aria-expanded')}`
+);
+
+// ── popover inside a dialog: one Escape closes only the innermost layer ──
+await React.act(async () => click(container.querySelector('#open-dialog')));
+const modal = document.body.querySelector('[role="dialog"][aria-modal="true"]');
+await React.act(async () => click(modal.querySelector('#dialog-popover-trigger')));
+const nestedPop = document.body.querySelector('[role="dialog"][aria-modal="false"]');
+check(
+  'a popover can open inside a modal dialog',
+  Boolean(modal) && Boolean(nestedPop),
+  `modal=${Boolean(modal)}, nested popover=${Boolean(nestedPop)}`
+);
+await React.act(async () => keydown(nestedPop, 'Escape'));
+check(
+  'Escape closes only the popover; the dialog stays open',
+  !document.body.querySelector('[role="dialog"][aria-modal="false"]') &&
+    Boolean(document.body.querySelector('[role="dialog"][aria-modal="true"]')),
+  `nested popover present=${Boolean(document.body.querySelector('[role="dialog"][aria-modal="false"]'))}, modal present=${Boolean(document.body.querySelector('[role="dialog"][aria-modal="true"]'))}`
+);
+await React.act(async () => keydown(document, 'Escape'));
+check(
+  'the next Escape closes the dialog',
+  !document.body.querySelector('[role="dialog"]'),
+  `dialog present=${Boolean(document.body.querySelector('[role="dialog"]'))}`
+);
+
+// ════════════ baseline gate regression checks (Rule Zero) ════════════
+{
+  const tmp = resolve(root, 'node_modules', '.tmp-baseline-test');
+  rmSync(tmp, { recursive: true, force: true });
+  mkdirSync(tmp, { recursive: true });
+
+  const eng = ['chromium', 'firefox', 'webkit'];
+  const vp = ['desktop', 'mobile'];
+
+  const seedComplete = (platform) => {
+    const p = resolve(tmp, platform);
+    mkdirSync(p, { recursive: true });
+    for (const e of eng) for (const v of vp) {
+      writeFileSync(resolve(p, `${e}-${v}-dark.png`), 'x');
+      writeFileSync(resolve(p, `${e}-${v}-light.png`), 'x');
+    }
+  };
+
+  check('baseline gate: absent set is incomplete',
+    baselineSetIsComplete(tmp, 'darwin') === false, 'missing directory');
+  seedComplete('linux');
+  rmSync(resolve(tmp, 'linux', 'webkit-mobile-dark.png'), { force: true });
+  check('baseline gate: partial set is incomplete',
+    baselineSetIsComplete(tmp, 'linux') === false, 'one missing PNG');
+  writeFileSync(resolve(tmp, 'linux', 'webkit-mobile-dark.png'), 'x');
+  check('baseline gate: complete set returns true',
+    baselineSetIsComplete(tmp, 'linux') === true, 'full set');
+  seedComplete('darwin');
+  const r1 = resolveBaselinePlatform({ hostPlatform: 'darwin', baselinesDir: tmp, manifest: { latestPlatform: 'linux' } });
+  check('baseline gate: host with own set gates on own', r1 === 'darwin', `got ${r1}`);
+  rmSync(resolve(tmp, 'darwin'), { recursive: true, force: true });
+  const r2 = resolveBaselinePlatform({ hostPlatform: 'darwin', baselinesDir: tmp, manifest: { latestPlatform: 'linux' } });
+  check('baseline gate: absent host falls back to nominated', r2 === 'linux', `got ${r2}`);
+  const r3 = resolveBaselinePlatform({ hostPlatform: 'darwin', baselinesDir: tmp, manifest: { latestPlatform: 'darwin' } });
+  check('baseline gate: absent host + absent nominated → null', r3 === null, `got ${r3}`);
+  const r4 = resolveBaselinePlatform({ hostPlatform: 'darwin', baselinesDir: tmp, manifest: null });
+  check('baseline gate: no manifest → null', r4 === null, `got ${r4}`);
+
+  rmSync(tmp, { recursive: true, force: true });
+}
 
 // ════════════ report ════════════
 const passed = results.filter((r) => r.pass).length;
