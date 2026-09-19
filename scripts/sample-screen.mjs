@@ -189,6 +189,7 @@ export function harness(ui, h, React) {
           id: 'lb-trigger',
           value: lbValue,
           name: 'tif',
+          form: 'external-form',
           onChange: (e) => setLbValue(e.target.value),
           options: [
             { value: 'day', label: 'Day' },

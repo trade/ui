@@ -503,6 +503,12 @@ const lbTrigger = container.querySelector('#lb-trigger');
 // for `name` — the same value a form submission would carry
 const lbValue = () => container.querySelector('input[type="hidden"][name="tif"]')?.value;
 const readLb = () => ({ expanded: lbTrigger.getAttribute('aria-expanded'), value: lbValue() });
+const lbHidden = container.querySelector('input[type="hidden"][name="tif"]');
+check(
+  'listbox form association lands on the hidden input, not the trigger',
+  lbHidden?.getAttribute('form') === 'external-form' && !lbTrigger.getAttribute('form'),
+  `input form=${lbHidden?.getAttribute('form')}, trigger form=${lbTrigger.getAttribute('form')}`
+);
 await React.act(async () => {
   lbTrigger.focus();
   click(lbTrigger);

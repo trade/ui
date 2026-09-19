@@ -25,8 +25,10 @@ export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement
    * aria-activedescendant navigation, typeahead, flip when the panel would overflow.
    * Field-style id/aria wiring passed to the component is forwarded to the trigger.
    * Unlike the native variant it does not participate in HTML constraint validation
-   * (a hidden input cannot be validated); it carries the value for submission when
-   * `name` is set, and mirrors the disabled state onto that input.
+   * (hidden inputs are barred from constraint validation per the HTML spec, so an
+   * empty required listbox cannot block submission — enforce that at the consumer);
+   * it carries the value for submission when `name` is set, and mirrors the
+   * disabled state and the `form` association onto that input.
    */
   variant?: 'native' | 'listbox';
 }
@@ -65,9 +67,12 @@ function SelectListbox({
   onClick,
   onKeyDown,
   // select-only attributes: required is surfaced as aria-required; the listbox
-  // variant is single-select, so `multiple` is accepted and ignored
+  // variant is single-select, so `multiple` is accepted and ignored.
+  // `form` associates the hidden submission input with an external <form>; the
+  // trigger never submits, so the attribute belongs only on the input.
   multiple,
   required,
+  form,
   ...rest
 }: Omit<SelectProps, 'variant'> & { listboxId: string; triggerRef: Ref<HTMLButtonElement> }) {
   const valueProp = rawValue != null ? String(rawValue) : undefined;
@@ -237,7 +242,9 @@ function SelectListbox({
           ▾
         </span>
       </button>
-      {name ? <input type="hidden" name={name} value={selected} disabled={disabled} /> : null}
+      {name ? (
+        <input type="hidden" name={name} value={selected} disabled={disabled} form={form} />
+      ) : null}
       {open ? (
         <div
           ref={panelRef}
