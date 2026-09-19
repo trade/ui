@@ -2,7 +2,7 @@
   "name": "ui",
   "private": true,
   "version": "0.1.0",
-  "description": "Project UI — @trade/ui component system (static CSS, light/dark/high-contrast themes, non-animated)",
+  "description": "Project UI \u2014 @trade/ui component system (static CSS, light/dark/high-contrast themes, non-animated)",
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -62,5 +62,8 @@
     "react-dom": "^19.0.0",
     "size-limit": "^14.0.0",
     "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   }
 }
