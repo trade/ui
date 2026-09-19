@@ -28,7 +28,7 @@
 .ui-input--dense,   .ui-select--dense   { --ui-density: var(--ui-density-dense); }
 
 .ui-input:focus-visible,
-.ui-select:focus-visible { outline: 2px solid var(--ui-focus-ring); outline-offset: 1px; }
+.ui-select:focus-visible { outline: 2px solid var(--ui-focus-ring); outline-offset: var(--ui-size-border-width); }
 
 .ui-input:disabled,
 .ui-select:disabled { opacity: var(--ui-opacity-disabled); cursor: not-allowed; }
@@ -91,7 +91,7 @@
 .ui-select-lb__option--active {
   background: var(--ui-hover-overlay);
   outline: var(--ui-size-border-width) solid var(--ui-focus-ring);
-  outline-offset: -1px;
+  outline-offset: calc(-1 * var(--ui-size-border-width));
 }
 .ui-select-lb__option[aria-disabled='true'] {
   color: var(--ui-on-surface-disabled);
@@ -106,8 +106,8 @@
 
 /* selection controls */
 .ui-check { display: inline-flex; align-items: center; gap: var(--ui-space-2); font-size: var(--ui-font-size-md); cursor: pointer; }
-.ui-check input { width: 16px; height: 16px; accent-color: var(--ui-primary); outline: var(--ui-size-border-width) solid var(--ui-border-control); outline-offset: 1px; margin: 0; }
+.ui-check input { width: 16px; height: 16px; accent-color: var(--ui-primary); outline: var(--ui-size-border-width) solid var(--ui-border-control); outline-offset: var(--ui-size-border-width); margin: 0; }
 .ui-check--disabled { opacity: var(--ui-opacity-disabled); cursor: not-allowed; }
 
 .ui-switch { display: inline-flex; align-items: center; gap: var(--ui-space-2); font-size: var(--ui-font-size-md); cursor: pointer; }
-.ui-switch input { width: 36px; height: 20px; accent-color: var(--ui-primary); outline: var(--ui-size-border-width) solid var(--ui-border-control); outline-offset: 1px; margin: 0; }
+.ui-switch input { width: 36px; height: 20px; accent-color: var(--ui-primary); outline: var(--ui-size-border-width) solid var(--ui-border-control); outline-offset: var(--ui-size-border-width); margin: 0; }
