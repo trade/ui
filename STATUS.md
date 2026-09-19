@@ -71,6 +71,11 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
    CI `baselines` job (workflow_dispatch — regenerates in the exact verify container; the artifact
    is reviewed, then committed by hand). Baselines exist for win32 and linux, so visual checks gate
    locally **and in the ubuntu CI job**; they stay informational on macOS, which has no baseline set.
+2. ~~**No macOS baseline set.**~~ **Resolved 2026-09-19.** The `baselines-macos` CI job
+   (workflow_dispatch) regenerates `baselines/macos/` on a real macOS runner. The manifest now
+   points `latestPlatform` at `darwin`, so the `browser-macos` job hard-fails visual checks
+   until the PNGs are committed. Two consecutive green `browser-macos` runs after the baseline
+   lands close this.
 3. **No secrets scanning.** Only keyword matching was done; the project carries no credentials.
 4. **Ungated by design** (recorded per Rule zero): commit-message *bodies* (subjects are gated by
    `check:commits`; evidence-in-body is not machine-checkable); inline `style={{ }}` props in app
@@ -91,8 +96,7 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
    environment from now on. **CI validation complete 2026-09-19** — the ubuntu `verify` job
    (which pixel-compares against `baselines/linux/`) passed on every dependency-bump PR
    (#11–#16) merged that day.
-2. Optional: a macOS baseline set (real WebKit) for the `browser-macos` job — the CI baselines job
-   pattern makes this mechanical.
+2. ~~A macOS baseline set (real WebKit) for the `browser-macos` job.~~ Done 2026-09-19.
 3. Phase 2 components.
 
 A fuller optimisation roadmap (density, theme splitting, component tokens, icons, motion, publishing)

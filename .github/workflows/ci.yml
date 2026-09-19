@@ -192,3 +192,35 @@ jobs:
           name: verification-macos
           path: verification
           retention-days: 14
+  # macOS baselines: same pattern as the linux baselines job, but on a real macOS runner
+  # so the generation environment equals the browser-macos comparison environment by
+  # construction (both use macos-latest + the same Playwright install step). Run after
+  # an intentional rendering change on macOS:
+  #   gh workflow run ci.yml --ref <branch>
+  # then download the baselines-macos artifact, review the diff, and commit it.
+  baselines-macos:
+    name: baselines (regenerate macOS in the CI environment)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: macos-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run harness:build
+      - name: Install Playwright engines
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Regenerate macOS baselines (compare env == generation env)
+        run: npm run baselines:update
+      - name: Upload baselines for review and commit
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: baselines-macos
+          path: baselines
+          retention-days: 14
+
