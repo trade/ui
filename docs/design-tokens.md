@@ -82,7 +82,7 @@ rendered pages, so unrendered states are covered too:
 - **3.0:1** (WCAG 1.4.11) for UI boundaries: `focusRing` on `surface`/`background`,
   `borderControl` on `surface`/`surface-1`/`background`.
 
-That is 21 pair definitions × 3 fully-resolvable themes = **63 evaluations**, all passing. The
+That is 23 pair definitions × 3 fully-resolvable themes = **69 evaluations**, all passing. The
 failure message says it all: *"Fix the token mapping, not the test."*
 
 When you add a foreground/background combination to a component, add its pair to `PAIRS` in the
