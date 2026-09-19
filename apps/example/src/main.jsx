@@ -175,7 +175,7 @@ function App() {
 
           <Stack direction="row" gap={3} align="center" wrap>
             <Button variant="primary" onClick={() => openTicket(null)}>New order</Button>
-            <Button variant="outline" size="sm" onClick={() => setToast('Watchlist refreshed')}>Refresh</Button>
+            <Button variant="outline" onClick={() => setToast('Watchlist refreshed')}>Refresh</Button>
             <Button variant="danger" disabled>Cancel all</Button>
             <span className="muted">Click a row to open its order ticket.</span>
           </Stack>
