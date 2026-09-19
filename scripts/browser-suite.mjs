@@ -19,7 +19,7 @@
  * Exit code 0 = every engine met every threshold.
  */
 import { createServer } from 'node:http';
-import { readFileSync, existsSync, statSync, readdirSync, mkdirSync, writeFileSync, copyFileSync } from 'node:fs';
+import { readFileSync, existsSync, statSync, mkdirSync, writeFileSync, copyFileSync } from 'node:fs';
 import { resolve, dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PNG } from 'pngjs';
