@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 import { chromium, firefox, webkit } from 'playwright';
+import { resolveBaselinePlatform } from './baseline-gate.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -136,23 +137,6 @@ function loadBaselineManifest() {
   return existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null;
 }
 
-/** True when baselines/<platform>/ actually contains the expected PNGs. */
-function baselineSetIsComplete(platform) {
-  const dir = resolve(baselines, platform);
-  if (!existsSync(dir)) return false;
-  try {
-    const files = readdirSync(dir);
-    return ENGINES.every((e) =>
-      VIEWPORTS.every((vp) =>
-        files.includes(`${e.name}-${vp.name}-dark.png`) &&
-        files.includes(`${e.name}-${vp.name}-light.png`)
-      )
-    );
-  } catch {
-    return false;
-  }
-}
-
 const platformDir = (platform) => resolve(baselines, platform);
 
 function compareShot(platform, id, theme) {
@@ -170,18 +154,21 @@ function compareShot(platform, id, theme) {
   const diff = new PNG({ width: current.width, height: current.height });
   const manifest = loadBaselineManifest();
   const platformThreshold = manifest?.platforms?.[platform]?.pixelmatchThreshold ?? 0.1;
+  const platformMaxRatio = manifest?.platforms?.[platform]?.maxVisualDiffRatio ?? 0.003;
   const diffPixels = pixelmatch(current.data, baseline.data, diff.data, current.width, current.height, { threshold: platformThreshold });
   const total = current.width * current.height;
-  return { diffPixels, total, ratio: diffPixels / total };
+  return { diffPixels, total, ratio: diffPixels / total, maxRatio: platformMaxRatio };
 }
 
 // Gate only on a platform whose baseline set is actually committed. A host whose own
 // directory is absent falls back to the manifest's latestPlatform, but only if that
 // platform's PNGs exist — otherwise the host is informational.
 const manifest = loadBaselineManifest();
-const ownSet = baselineSetIsComplete(process.platform);
-const nominatedSet = manifest ? baselineSetIsComplete(manifest.latestPlatform) : false;
-const baselinePlatform = ownSet ? process.platform : (nominatedSet ? manifest.latestPlatform : null);
+const baselinePlatform = resolveBaselinePlatform({
+  hostPlatform: process.platform,
+  baselinesDir: baselines,
+  manifest
+});
 
 /** In update mode: write the current platform's baselines + manifest. Never called on a compare run. */
 function writeBaselines(id) {
@@ -368,9 +355,9 @@ for (const engine of ENGINES) {
           } else {
             // On a platform with no committed baselines the comparison is informational and
             // always passes; the ratio is still reported so drift is visible.
-            const ok = !vGate || v.ratio <= T.maxVisualDiffRatio;
+            const ok = !vGate || v.ratio <= v.maxRatio;
             add('visual regression (' + theme + ' theme)' + vNote, ok,
-              `${v.diffPixels}/${v.total} px differ = ${(v.ratio * 100).toFixed(3)}% (max ${(T.maxVisualDiffRatio * 100).toFixed(1)}%)` +
+              `${v.diffPixels}/${v.total} px differ = ${(v.ratio * 100).toFixed(3)}% (max ${(v.maxRatio * 100).toFixed(1)}%)` +
               (ok ? '' : ' — if the change is intended, regenerate: npm run baselines:update'));
           }
         }

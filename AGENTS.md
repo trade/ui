@@ -77,7 +77,7 @@ run `npm run ci`.
 
 | Change class | Minimum |
 |---|---|
-| Docs / markdown only | `npm run check:docs` |
+| Docs / markdown only | `npm run check:docs` (full chain if docs affect counts/README) |
 | Tokens (`tokens.json` / token build) | `npm run build` && `npm run check:contrast` |
 | Library CSS / layout / focus | `npm run build` && `npm run check:style` && `npm run verify` && `npm run verify:browser` |
 | Components / public API | build + `check:style` + `check:types` + `verify`; add contrast if roles changed; example build/verify for touched apps; `verify:browser` if interaction or a11y |
