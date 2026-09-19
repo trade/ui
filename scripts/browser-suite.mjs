@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 import { chromium, firefox, webkit } from 'playwright';
+import { resolveBaselinePlatform } from './baseline-gate.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -123,6 +124,13 @@ await new Promise((r) => server.listen(PORT, '127.0.0.1', r));
  * the check GATES on a platform that has baselines and is informational on one that does
  * not — the same honesty rule the perf gates follow. Today only the platform that ran
  * baselines:update gates; add ubuntu/macOS sets to extend gating to CI hosts.
+ *
+ * A platform is only allowed to GATE when its baseline directory actually contains the
+ * expected PNGs. A manifest entry for a platform whose PNGs were never committed must
+ * never be promoted to a gate: that is how a nominated-but-absent platform hard-fails
+ * every run. `gatePlatform` is null when no committed set exists for this host, which
+ * makes every visual check informational (passing) until the PNGs land — at which point
+ * it starts gating automatically, with no flag to flip and no coverage lost.
  */
 function loadBaselineManifest() {
   const p = resolve(baselines, 'manifest.json');
@@ -132,6 +140,9 @@ function loadBaselineManifest() {
 const platformDir = (platform) => resolve(baselines, platform);
 
 function compareShot(platform, id, theme) {
+  // platform is null when no committed baselines exist for this host or the
+  // manifest's nominated platform — comparison is informational in that case.
+  if (!platform) return { missing: true };
   const baselinePath = resolve(platformDir(platform), `${id}-${theme}.png`);
   const currentPath = resolve(shots, `${id}-${theme}.png`);
   if (!existsSync(baselinePath)) return { missing: true };
@@ -141,12 +152,23 @@ function compareShot(platform, id, theme) {
     return { sizeMismatch: true, baseline: `${baseline.width}x${baseline.height}`, current: `${current.width}x${current.height}` };
   }
   const diff = new PNG({ width: current.width, height: current.height });
-  const diffPixels = pixelmatch(current.data, baseline.data, diff.data, current.width, current.height, { threshold: 0.1 });
+  const manifest = loadBaselineManifest();
+  const platformThreshold = manifest?.platforms?.[platform]?.pixelmatchThreshold ?? 0.1;
+  const platformMaxRatio = manifest?.platforms?.[platform]?.maxVisualDiffRatio ?? 0.003;
+  const diffPixels = pixelmatch(current.data, baseline.data, diff.data, current.width, current.height, { threshold: platformThreshold });
   const total = current.width * current.height;
-  return { diffPixels, total, ratio: diffPixels / total };
+  return { diffPixels, total, ratio: diffPixels / total, maxRatio: platformMaxRatio };
 }
 
-const baselinePlatform = existsSync(platformDir(process.platform)) ? process.platform : loadBaselineManifest()?.latestPlatform ?? null;
+// Gate only on a platform whose baseline set is actually committed. A host whose own
+// directory is absent falls back to the manifest's latestPlatform, but only if that
+// platform's PNGs exist — otherwise the host is informational.
+const manifest = loadBaselineManifest();
+const baselinePlatform = resolveBaselinePlatform({
+  hostPlatform: process.platform,
+  baselinesDir: baselines,
+  manifest
+});
 
 /** In update mode: write the current platform's baselines + manifest. Never called on a compare run. */
 function writeBaselines(id) {
@@ -316,6 +338,10 @@ for (const engine of ENGINES) {
       if (m.visual?.updated) {
         add('visual regression (baselines rewritten)', true, 'update mode: baselines/ and manifest rewritten — commit them');
       } else if (m.visual) {
+        // Gate only when a committed baseline set exists for this host. When none exists
+        // the check is informational (passing) — the host's own directory is absent AND
+        // the manifest's nominated platform has no committed PNGs, so there is nothing
+        // to compare against and failing would be a false alarm.
         const vGate = m.visual.baselinePlatform === process.platform;
         const vNote = vGate
           ? ''
@@ -329,9 +355,9 @@ for (const engine of ENGINES) {
           } else {
             // On a platform with no committed baselines the comparison is informational and
             // always passes; the ratio is still reported so drift is visible.
-            const ok = !vGate || v.ratio <= T.maxVisualDiffRatio;
+            const ok = !vGate || v.ratio <= v.maxRatio;
             add('visual regression (' + theme + ' theme)' + vNote, ok,
-              `${v.diffPixels}/${v.total} px differ = ${(v.ratio * 100).toFixed(3)}% (max ${(T.maxVisualDiffRatio * 100).toFixed(1)}%)` +
+              `${v.diffPixels}/${v.total} px differ = ${(v.ratio * 100).toFixed(3)}% (max ${(v.maxRatio * 100).toFixed(1)}%)` +
               (ok ? '' : ' — if the change is intended, regenerate: npm run baselines:update'));
           }
         }
