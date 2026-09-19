@@ -70,25 +70,20 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
    pixels** across all 12 captures. Regeneration is the explicit `npm run baselines:update` or the
    CI `baselines` job (workflow_dispatch — regenerates in the exact verify container; the artifact
    is reviewed, then committed by hand). Baselines exist for win32 and linux, so visual checks gate
-   locally **and in the ubuntu CI job**; they stay informational on macOS, which has no baseline set.
-2. ~~**No macOS baseline set.**~~ **Partially resolved 2026-09-19 — the job exists, the
-   PNGs do not.** The `baselines-macos` CI job (workflow_dispatch) regenerates
-   `baselines/macos/` on a real macOS runner, and `manifest.json` points `latestPlatform`
-   at `darwin`. **No `baselines/darwin/` PNGs have ever been committed** (verified on
-   `origin/main`, `origin/feat/popover-tooltip`, `origin/feat/select-listbox` and the
-   working tree: zero files), so the `browser-macos` job hard-fails every visual check
-   with `NO BASELINE` — see known issue 3.
+   locally **and in the ubuntu CI job**; macOS gates on `baselines/darwin/` (see item 2).
+2. ~~**No macOS baseline set.**~~ **Resolved 2026-09-19.** The `baselines-macos` CI job
+   (workflow_dispatch) regenerated the full 12-PNG `baselines/darwin/` set on a real macOS
+   runner ([run 35458736319](https://github.com/trade/ui/actions/runs/35458736319)), the
+   artifact was reviewed and committed by hand with the matching `manifest.json` entry.
+   `latestPlatform: darwin` is now backed by a complete set, so the `browser-macos` job
+   gates for real (a nominated-but-absent platform can never gate — see item 4).
 3. **No secrets scanning.** Only keyword matching was done; the project carries no credentials.
-4. **MacOS visual gate blocked on missing `baselines/darwin/` PNGs.** `manifest.json` nominates
-   `darwin` as the gating platform, but no PNGs were ever committed, so the `browser-macos` job
-   hard-fails every combo with `NO BASELINE` (72/84 on PRs #24 and #25). Root cause was a
-   structural hole in `scripts/browser-suite.mjs`: a platform was treated as a gate whenever
-   `manifest.latestPlatform` named it, regardless of whether its PNGs existed, which is the
-   opposite of the suite's own contract ("gates on a platform that has baselines"). Fixed on
-   `fix/browser-baseline-gate`: `baselineSetIsComplete()` now requires the PNGs to actually be
-   present, so a nominated-but-absent platform can never gate. Visual checks are informational
-   (passing) until the PNGs land, then gate automatically. Regenerate with the
-   `baselines-macos` workflow_dispatch job, review the artifact, and commit it.
+4. ~~**MacOS visual gate blocked on missing `baselines/darwin/` PNGs.**~~ **Resolved
+   2026-09-19.** The structural hole in `scripts/browser-suite.mjs` (a platform gated whenever
+   `manifest.latestPlatform` named it, PNGs or not — the opposite of the suite's contract) was
+   fixed by `baselineSetIsComplete()`, which requires the PNGs to actually be present, and the
+   `baselines/darwin/` set itself is now committed (item 2), so macOS visual checks gate
+   instead of passing informationally.
 5. **`baselines/win32/` is committed but never exercised in CI.** No Windows job generates or
    compares against it; the linux job gates and macOS will gate once PNGs land. Either add a
    Windows job or mark win32 as legacy.
