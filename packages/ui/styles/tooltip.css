@@ -9,8 +9,8 @@
 .ui-tooltip {
   position: absolute;
   inset-block-end: calc(100% + var(--ui-space-1));
-  inset-inline-start: 50%;
-  transform: translateX(-50%);
+  inset-inline-start: var(--ui-size-center);
+  transform: translateX(calc(-1 * var(--ui-size-center)));
   max-inline-size: var(--ui-size-tooltip-max);
   padding: var(--ui-space-1) var(--ui-space-2);
   background: var(--ui-surface-1);
