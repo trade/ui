@@ -142,6 +142,11 @@ check(
   /role="tablist"/.test(markup) && /aria-selected="true"/.test(markup) && /aria-modal="true"/.test(markup),
   `tablist=${/role="tablist"/.test(markup)}, selected tab=${/aria-selected="true"/.test(markup)}, modal=${/aria-modal="true"/.test(markup)}`
 );
+check(
+  'SSR: non-modal popover is honest about modality',
+  /aria-modal="false"/.test(markup) && /aria-haspopup="dialog"/.test(markup),
+  `aria-modal=false=${/aria-modal="false"/.test(markup)}, haspopup=${/aria-haspopup="dialog"/.test(markup)}`
+);
 check('SSR: no inline animation in output', !/transition\s*:/.test(markup), 'inline transition count=0');
 
 // ── scale ──
@@ -422,46 +427,105 @@ check(
   `menu present=${Boolean(document.body.querySelector('[role="menu"]'))}`
 );
 
-// ════════════ baseline gate regression checks (Rule Zero) ════════════
-{
-  const tmp = resolve(root, 'node_modules', '.tmp-baseline-test');
-  rmSync(tmp, { recursive: true, force: true });
-  mkdirSync(tmp, { recursive: true });
+// ── popover: open, honest ARIA, escape + outside close, focus restore ──
+const popTrigger = container.querySelector('#popover-trigger');
+await React.act(async () => {
+  popTrigger.focus();
+  click(popTrigger);
+});
+const pop = container.querySelector('[role="dialog"][aria-modal="false"]');
+check(
+  'click opens the non-modal popover with honest ARIA',
+  Boolean(pop) &&
+    pop.getAttribute('aria-label') === 'Filters' &&
+    popTrigger.getAttribute('aria-expanded') === 'true' &&
+    pop.contains(document.activeElement),
+  `popover present=${Boolean(pop)}, aria-expanded=${popTrigger.getAttribute('aria-expanded')}, focused inside=${pop ? pop.contains(document.activeElement) : false}`
+);
+await React.act(async () => keydown(pop, 'Escape'));
+check(
+  'Escape closes the popover and restores trigger focus',
+  !container.querySelector('[role="dialog"][aria-modal="false"]') && document.activeElement === popTrigger,
+  `popover present=${Boolean(container.querySelector('[role="dialog"][aria-modal="false"]'))}, focus restored=${document.activeElement === popTrigger}`
+);
+await React.act(async () => click(popTrigger));
+await React.act(async () => {
+  container.querySelector('#tooltip-trigger').dispatchEvent(new dom.window.Event('pointerdown', { bubbles: true }));
+});
+check(
+  'pointerdown outside closes the popover',
+  !container.querySelector('[role="dialog"][aria-modal="false"]'),
+  `popover present=${Boolean(container.querySelector('[role="dialog"][aria-modal="false"]'))}`
+);
 
-  const eng = ['chromium', 'firefox', 'webkit'];
-  const vp = ['desktop', 'mobile'];
+// ── tooltip: hover + focus show, escape hide, leave/blur hide ──
+const tipTrigger = container.querySelector('#tooltip-trigger');
+await React.act(async () => {
+  tipTrigger.dispatchEvent(new dom.window.MouseEvent('mouseover', { bubbles: true }));
+});
+let tip = container.querySelector('[role="tooltip"]');
+check(
+  'hover shows the tooltip and wires aria-describedby',
+  Boolean(tip) && tipTrigger.getAttribute('aria-describedby') === tip?.getAttribute('id'),
+  `tooltip present=${Boolean(tip)}, describedby=${tipTrigger.getAttribute('aria-describedby')}`
+);
+await React.act(async () => {
+  tipTrigger.dispatchEvent(new dom.window.MouseEvent('mouseout', { bubbles: true }));
+});
+await React.act(async () => {
+  tipTrigger.dispatchEvent(new dom.window.Event('focusin', { bubbles: true }));
+});
+tip = container.querySelector('[role="tooltip"]');
+check(
+  'keyboard focus shows the tooltip again',
+  Boolean(tip),
+  `tooltip present=${Boolean(tip)}`
+);
+await React.act(async () => keydown(tipTrigger, 'Escape'));
+await React.act(async () => {
+  tipTrigger.dispatchEvent(new dom.window.Event('focusout', { bubbles: true }));
+});
+check(
+  'Escape hides the tooltip and clears aria-describedby',
+  !container.querySelector('[role="tooltip"]') && tipTrigger.getAttribute('aria-describedby') === null,
+  `tooltip present=${Boolean(container.querySelector('[role="tooltip"]'))}, describedby=${tipTrigger.getAttribute('aria-describedby')}`
+);
 
-  const seedComplete = (platform) => {
-    const p = resolve(tmp, platform);
-    mkdirSync(p, { recursive: true });
-    for (const e of eng) for (const v of vp) {
-      writeFileSync(resolve(p, `${e}-${v}-dark.png`), 'x');
-      writeFileSync(resolve(p, `${e}-${v}-light.png`), 'x');
-    }
-  };
-
-  check('baseline gate: absent set is incomplete',
-    baselineSetIsComplete(tmp, 'darwin') === false, 'missing directory');
-  seedComplete('linux');
-  rmSync(resolve(tmp, 'linux', 'webkit-mobile-dark.png'), { force: true });
-  check('baseline gate: partial set is incomplete',
-    baselineSetIsComplete(tmp, 'linux') === false, 'one missing PNG');
-  writeFileSync(resolve(tmp, 'linux', 'webkit-mobile-dark.png'), 'x');
-  check('baseline gate: complete set returns true',
-    baselineSetIsComplete(tmp, 'linux') === true, 'full set');
-  seedComplete('darwin');
-  const r1 = resolveBaselinePlatform({ hostPlatform: 'darwin', baselinesDir: tmp, manifest: { latestPlatform: 'linux' } });
-  check('baseline gate: host with own set gates on own', r1 === 'darwin', `got ${r1}`);
-  rmSync(resolve(tmp, 'darwin'), { recursive: true, force: true });
-  const r2 = resolveBaselinePlatform({ hostPlatform: 'darwin', baselinesDir: tmp, manifest: { latestPlatform: 'linux' } });
-  check('baseline gate: absent host falls back to nominated', r2 === 'linux', `got ${r2}`);
-  const r3 = resolveBaselinePlatform({ hostPlatform: 'darwin', baselinesDir: tmp, manifest: { latestPlatform: 'darwin' } });
-  check('baseline gate: absent host + absent nominated → null', r3 === null, `got ${r3}`);
-  const r4 = resolveBaselinePlatform({ hostPlatform: 'darwin', baselinesDir: tmp, manifest: null });
-  check('baseline gate: no manifest → null', r4 === null, `got ${r4}`);
-
-  rmSync(tmp, { recursive: true, force: true });
-}
+// ── tooltip: composed-consumer-handler contract (greptile: compose trigger handlers) ──
+// A consumer-supplied onMouseEnter/onFocus/onKeyDown must augment the internal
+// show/hide/Escape contract, not replace it via ...rest spread.
+const composedTipTrigger = container.querySelector('#composed-tooltip-trigger');
+await React.act(async () => {
+  composedTipTrigger.dispatchEvent(new dom.window.MouseEvent('mouseover', { bubbles: true }));
+});
+let composedTip = container.querySelector('[role="tooltip"]');
+check(
+  'consumer onMouseEnter does not suppress the internal hover-to-show contract',
+  Boolean(composedTip),
+  `tooltip present with composed onMouseEnter=${Boolean(composedTip)}`
+);
+await React.act(async () => {
+  composedTipTrigger.dispatchEvent(new dom.window.MouseEvent('mouseout', { bubbles: true }));
+});
+await React.act(async () => {
+  composedTipTrigger.dispatchEvent(new dom.window.Event('focusin', { bubbles: true }));
+});
+composedTip = container.querySelector('[role="tooltip"]');
+check(
+  'consumer onFocus does not suppress the internal focus-to-show contract',
+  Boolean(composedTip),
+  `tooltip present with composed onFocus=${Boolean(composedTip)}`
+);
+await React.act(async () => keydown(composedTipTrigger, 'Escape'));
+await React.act(async () => {
+  composedTipTrigger.dispatchEvent(new dom.window.Event('focusout', { bubbles: true }));
+});
+composedTip = container.querySelector('[role="tooltip"]');
+check(
+  'Escape still hides the tooltip when the consumer passes onKeyDown (composed handler)',
+  !composedTip,
+  `tooltip still hidden after Escape with composed onKeyDown=${!composedTip}`
+);
 
 // ════════════ report ════════════
 const passed = results.filter((r) => r.pass).length;

@@ -29,6 +29,12 @@ export type { MenuProps, MenuItemProps, MenuSeparatorProps } from './components/
 export { Dialog } from './components/Dialog';
 export type { DialogProps } from './components/Dialog';
 
+export { Popover } from './components/Popover';
+export type { PopoverProps } from './components/Popover';
+
+export { Tooltip } from './components/Tooltip';
+export type { TooltipProps } from './components/Tooltip';
+
 export { Banner, Toast, ToastRegion } from './components/Feedback';
 export type { BannerProps, ToastProps, ToastRegionProps, FeedbackTone } from './components/Feedback';
 
