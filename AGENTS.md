@@ -124,6 +124,15 @@ rule, record it in `STATUS.md` as ungated so it stays visible.
   current task.** Local commits are the default stopping point; report and wait.
 - If a CI run exists for your commit, watch it to completion and read the failures yourself before
   reporting success.
+- **A green check is not a review.** `Greptile Review`, CodeQL and `github-code-quality` all report
+  *pass* while attaching non-blocking findings. Before merging, read all three sources of review
+  comments — the user's own, the bots', and Greptile's: its inline comments
+  (`gh api repos/{owner}/{repo}/pulls/<n>/comments`), its cross-file list (the "Comments Outside Diff"
+  issue comment) and each thread's resolution state (`reviewThreads { isResolved }`). Verify every
+  finding against the code before acting on it — bot findings are sometimes false positives (a live
+  `useTheme` was once reported unused). Re-check after every push: a fix can introduce a new finding and
+  a resolved thread can reopen. Never merge on "all checks green" alone. No gate can enforce this one,
+  so STATUS.md records it as ungated.
 
 ## Definition of done
 
