@@ -282,6 +282,20 @@ check(
 );
 await React.act(async () => dlgRoot.unmount());
 
+// ── Field: a consumer-supplied aria-describedby is preserved and extended, not replaced ──
+const fieldHost = document.createElement('div');
+document.body.appendChild(fieldHost);
+const fieldRoot = createRoot(fieldHost);
+await React.act(async () => fieldRoot.render(h(ui.Field, { label: 'Price', error: 'Required' }, h(ui.Input, { 'aria-describedby': 'preset-help' }))));
+const fieldInput = fieldHost.querySelector('input');
+const fieldDescribedBy = fieldInput?.getAttribute('aria-describedby') ?? '';
+check(
+  'Field merges a consumer aria-describedby with its own error id',
+  fieldDescribedBy.split(' ').includes('preset-help') && /ui-field-.*-error/.test(fieldDescribedBy),
+  `describedby="${fieldDescribedBy}"`
+);
+await React.act(async () => fieldRoot.unmount());
+
 await React.act(async () => click([...container.querySelectorAll('button')].find((b) => b.textContent === 'Dark')));
 check(
   'provider theme toggle applies data-theme to <html>',

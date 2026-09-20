@@ -8,7 +8,7 @@ gaps.
 
 ## The suites
 
-### `scripts/verify.mjs` — 70 library checks
+### `scripts/verify.mjs` — 71 library checks
 
 Two phases, exits non-zero on any failure, prints a JSON report.
 
