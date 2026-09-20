@@ -125,14 +125,20 @@ rule, record it in `STATUS.md` as ungated so it stays visible.
 - If a CI run exists for your commit, watch it to completion and read the failures yourself before
   reporting success.
 - **A green check is not a review.** `Greptile Review`, CodeQL and `github-code-quality` all report
-  *pass* while attaching non-blocking findings. Before merging, read all three sources of review
-  comments — the user's own, the bots', and Greptile's: its inline comments
-  (`gh api repos/{owner}/{repo}/pulls/<n>/comments`), its cross-file list (the "Comments Outside Diff"
-  issue comment) and each thread's resolution state (`reviewThreads { isResolved }`). Verify every
-  finding against the code before acting on it — bot findings are sometimes false positives (a live
-  `useTheme` was once reported unused). Re-check after every push: a fix can introduce a new finding and
-  a resolved thread can reopen. Never merge on "all checks green" alone. No gate can enforce this one,
-  so STATUS.md records it as ungated.
+  *pass* while attaching non-blocking findings. Read every review source before merging — these
+  are the whole protocol, so nothing has to be guessed or retyped from memory:
+  - inline review comments: `gh api repos/{owner}/{repo}/pulls/<n>/comments`
+  - every issue-level comment, including Greptile's "Comments Outside Diff" cross-file list:
+    `gh api repos/{owner}/{repo}/issues/<n>/comments`
+  - review states: `gh api repos/{owner}/{repo}/pulls/<n>/reviews`
+  - thread resolution: `gh api graphql -f query='{repository(owner:"OWNER",name:"REPO"){pullRequest(number:<n>){reviewThreads(first:50){nodes{isResolved isOutdated path}}}}}'`
+    (PowerShell users: put the query in a file and pass `-F query=@query.graphql`)
+  - committed alerts: `gh api "repos/{owner}/{repo}/code-scanning/alerts?state=open"`
+
+  Verify every finding against the code before acting on it — bot findings are sometimes false
+  positives (a live `useTheme` was once reported unused). Re-check after every push: a fix can introduce a
+  new finding and a resolved thread can reopen. Never merge on "all checks green" alone. No gate can
+  enforce this one, so STATUS.md records it as ungated.
 
 ## Definition of done
 

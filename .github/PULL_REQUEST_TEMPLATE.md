@@ -11,9 +11,10 @@
 ## Checklist
 
 - [ ] `npm run ci` green locally (and on this PR's CI run)
-- [ ] Review comments triaged — the user's, `github-code-quality`'s and Greptile's (inline,
-      cross-file list, thread resolution), **not just the check status**: `Greptile Review` reports
-      *pass* while attaching findings that a merge would otherwise sail past
+- [ ] Review comments triaged — the user's, Greptile's, `github-code-quality`'s and CodeQL's
+      (inline, cross-file list, thread resolution, code-scanning alerts), **not just the check
+      status**: `Greptile Review` reports *pass* while attaching findings, and CodeQL blocks only on
+      errors, so a merge would otherwise sail past them (AGENTS.md git protocol has every command)
 - [ ] `npm run verify:browser` run — required if anything touched styles, layout, or focus paths
 - [ ] New states/behaviours have checks (Rule zero: a rule without a gate rots)
 - [ ] New foreground/background pairs added to `check-contrast.mjs`
