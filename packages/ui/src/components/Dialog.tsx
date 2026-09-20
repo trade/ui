@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef } from 'react';
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cx } from '../internal/cx';
@@ -12,6 +12,10 @@ export interface DialogProps {
   className?: string;
   closeLabel?: string;
 }
+
+// useLayoutEffect warns on the server; the guard keeps SSR quiet while the ref sync still lands
+// synchronously after commit, before the browser can dispatch an event against it.
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
@@ -31,7 +35,10 @@ export function Dialog({ open, onClose, title, children, footer, className, clos
   // container, so focus inside the modal was reset to the dialog on every re-render and the
   // document keydown listener was torn down and re-added each render.
   const onCloseRef = useRef(onClose);
-  useEffect(() => {
+  // A layout effect, not a passive one: the document keydown listener reads this ref synchronously,
+  // and an Escape can be dispatched after commit but before passive effects, which would call the
+  // previous onClose (Greptile P2 on #35).
+  useIsomorphicLayoutEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
 
