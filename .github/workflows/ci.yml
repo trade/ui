@@ -46,6 +46,8 @@ jobs:
         run: npm run check:types
       - name: Docs integrity (links, documented counts, exceptions)
         run: npm run check:docs
+      - name: Perf retry policy (every branch, pinned 25 ms budget)
+        run: npm run check:perf-policy
       - name: Commit subjects (pushed range)
         if: github.event_name == 'push'
         run: npm run check:commits
