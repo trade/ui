@@ -83,7 +83,10 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
    `manifest.latestPlatform` named it, PNGs or not — the opposite of the suite's contract) was
    fixed by `baselineSetIsComplete()`, which requires the PNGs to actually be present, and the
    `baselines/darwin/` set itself is now committed (item 2), so macOS visual checks gate
-   instead of passing informationally.
+   instead of passing informationally. PR #26 (`fix/browser-baseline-gate`), which carried
+   the original fix on a pre-#24 fork, was closed 2026-09-21 as superseded: its scripts/docs
+   are byte-identical on main, its component deletions would regress #24, and its unique
+   content — the 8 `baseline gate: *` verify checks — ships with #25.
 5. **`baselines/win32/` is committed but never exercised in CI.** No Windows job generates or
    compares against it; the linux job gates and macOS will gate once PNGs land. Either add a
    Windows job or mark win32 as legacy.
