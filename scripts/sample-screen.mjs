@@ -181,6 +181,7 @@ export function harness(ui, h, React) {
         )
       ),
       h(Tooltip, { label: 'Maximum order size' }, h(Button, { id: 'tooltip-trigger', 'aria-describedby': 'preset-desc' }, 'Hover me')),
+      h(Tooltip, { label: 'Composed handler test', onMouseEnter: () => {}, onFocus: () => {}, onKeyDown: () => {} }, h(Button, { id: 'composed-tooltip-trigger' }, 'Composed')),
       h(
         'div',
         null,

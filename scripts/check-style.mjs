@@ -86,6 +86,14 @@ function checkFile(checks, file, css, { namespaced }) {
     `${file}: no vendor prefixes (allowlist: -webkit-font-smoothing)`,
     [...new Set([...css.matchAll(/-(?:webkit|moz|ms|o)-[\w-]+/g)].map((m) => m[0]))].filter((p) => !PREFIX_ALLOWLIST.has(p))
   );
+
+  // 9. a stylesheet that ships is a resolved stylesheet — leftover git conflict
+  //  markers are malformed CSS the browser silently recovers from (last
+  //  declaration wins), so a botched merge must fail the gate, not the diff
+  check(
+    `${file}: no merge-conflict markers`,
+    [...css.matchAll(/^(?:<{7}|={7}|>{7})/gm)].map((m) => m[0])
+  );
 }
 
 const checks = [];

@@ -497,6 +497,42 @@ check(
   `tooltip present=${Boolean(container.querySelector('[role="tooltip"]'))}, describedby=${tipTrigger.getAttribute('aria-describedby')}`
 );
 
+// ── tooltip: composed-consumer-handler contract (greptile: compose trigger handlers) ──
+// A consumer-supplied onMouseEnter/onFocus/onKeyDown must augment the internal
+// show/hide/Escape contract, not replace it via ...rest spread.
+const composedTipTrigger = container.querySelector('#composed-tooltip-trigger');
+await React.act(async () => {
+  composedTipTrigger.dispatchEvent(new dom.window.MouseEvent('mouseover', { bubbles: true }));
+});
+let composedTip = container.querySelector('[role="tooltip"]');
+check(
+  'consumer onMouseEnter does not suppress the internal hover-to-show contract',
+  Boolean(composedTip),
+  `tooltip present with composed onMouseEnter=${Boolean(composedTip)}`
+);
+await React.act(async () => {
+  composedTipTrigger.dispatchEvent(new dom.window.MouseEvent('mouseout', { bubbles: true }));
+});
+await React.act(async () => {
+  composedTipTrigger.dispatchEvent(new dom.window.Event('focusin', { bubbles: true }));
+});
+composedTip = container.querySelector('[role="tooltip"]');
+check(
+  'consumer onFocus does not suppress the internal focus-to-show contract',
+  Boolean(composedTip),
+  `tooltip present with composed onFocus=${Boolean(composedTip)}`
+);
+await React.act(async () => keydown(composedTipTrigger, 'Escape'));
+await React.act(async () => {
+  composedTipTrigger.dispatchEvent(new dom.window.Event('focusout', { bubbles: true }));
+});
+composedTip = container.querySelector('[role="tooltip"]');
+check(
+  'Escape still hides the tooltip when the consumer passes onKeyDown (composed handler)',
+  !composedTip,
+  `tooltip still hidden after Escape with composed onKeyDown=${!composedTip}`
+);
+
 // ── listbox Select: combobox semantics, keyboard selection, typeahead, honesty ──
 const lbTrigger = container.querySelector('#lb-trigger');
 // the selected value is observed through the hidden form input the listbox renders
