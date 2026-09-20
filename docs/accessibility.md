@@ -19,6 +19,8 @@ Per-component, as implemented (and asserted by `scripts/verify.mjs`):
 | **DataTable** | `Tab` | scroll container is a tab stop; rows get tab stops with `focusableRows` |
 | **Checkbox/Radio/Switch** | native | Space toggles; arrow keys across radio groups; Switch is `role="switch"` |
 | **Select** | native | fully native `<select>` keyboard support, by design (ADR-002) |
+| | `listbox` variant | combobox pattern: arrows / `Home` / `End` with disabled skipping, typeahead,
+`Enter`/`Space` commit, `Escape` closes (without escaping a parent Dialog/Popover), `Tab` closes |
 
 Deliberate gap, documented: DataTable ships **no built-in arrow-key row navigation** — rows are
 tab stops, nothing more. Phase 2 work.

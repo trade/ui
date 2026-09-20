@@ -66,7 +66,7 @@ scrollbars, form glyphs. This was a fixed bug, not an accident; see the commit h
 
 ## Adding a theme
 
-1. Add a `themes.<name>` object to `packages/tokens/tokens.json` with the **identical 21-role
+1. Add a `themes.<name>` object to `packages/tokens/tokens.json` with the **identical 22-role
    set**, every role a `{primitive.reference}` — no literals, no extra or missing roles. The
    build fails on divergence; do not weaken it.
 2. `npm run build` — the emitter generates the `[data-theme="…"]` block and picks `color-scheme`

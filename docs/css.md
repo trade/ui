@@ -7,7 +7,7 @@ values, [verification.md](verification.md) for the gate wiring.
 
 ## File layout
 
-One hand-written file per area in `packages/ui/styles/` (8 files, ~320 lines total):
+One hand-written file per area in `packages/ui/styles/` (11 files, ~444 lines total):
 
 | File | Covers |
 |---|---|
@@ -19,6 +19,9 @@ One hand-written file per area in `packages/ui/styles/` (8 files, ~320 lines tot
 | `tabs.css` | tab list, `[aria-selected='true']` state, panel |
 | `feedback.css` | `.ui-banner` tones, `.ui-toast(-region)` |
 | `dialog.css` | scrim, dialog frame, header/body/footer |
+| `menu.css` | `.ui-menu*` panel, items, separators |
+| `popover.css` | `.ui-popover` non-modal anchored panel |
+| `tooltip.css` | `.ui-tooltip` (no transition, by law) |
 
 ## The build
 
@@ -31,7 +34,7 @@ picked up with zero build edits unless cascade order matters. Each file is also 
 
 ## The authoring contract
 
-Nine checks per stylesheet in `scripts/check-style.mjs` (scope: hand-written
+Ten checks per library stylesheet, nine per app stylesheet, in `scripts/check-style.mjs` (scope: hand-written
 `packages/ui/styles/*.css` only — generated output is excluded):
 
 1. **No raw colour literals** — no hex, `rgb()`/`hsl()`, `white`/`black`. Colour only via

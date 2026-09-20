@@ -43,9 +43,11 @@ state changes are one paint.
 P/L); `invalid` sets `aria-invalid`; preserves a consumer-supplied `aria-describedby` explicitly.
 
 **`Select`** — `options: {value, label, disabled?}[]`, optional `placeholder` rendered as an
-empty-value `<option>`. v1 is **native-select backed on purpose**: dependency-free, fully
-accessible, consistent across browsers (ADR-002). A listbox Select is Phase 2 (see
-[STATUS.md](../STATUS.md)).
+empty-value `<option>`. The default is **native-select backed on purpose**: dependency-free,
+fully accessible, consistent across browsers (ADR-002). `variant="listbox"` ships the
+hand-rolled combobox behind the same `options`/`value`/`onChange` API (merged in #25), with
+arrow/Home/End navigation, typeahead, honest `aria-activedescendant`, and a hidden input for
+form parity (see [STATUS.md](../STATUS.md)).
 
 **`Field`** — wraps exactly one control and auto-wires it: generates an id (`ui-field-<useId>`),
 clones the child with `id`, `aria-describedby` (error id wins over hint id) and

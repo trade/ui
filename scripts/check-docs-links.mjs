@@ -88,7 +88,9 @@ const forbidIn = (doc, docName, pattern, what) => {
 };
 
 // The known historical drift: AGENTS.md said 72 while the suite produced 84.
-// (README's check:style row legitimately quotes its own 72 — only browser-suite rows are governed.)
+// Only the browser-suite total is machine-verified here (it is the one count a suite prints);
+// the verify/check:style/check:contract counts were fixed by hand, which is exactly how they had
+// drifted — the staleTokens scan below is the backstop for the ones that did.
 expectIn(readme, 'README.md', new RegExp(`verify:browser\\s*#\\s*${compare} checks`), `the verify:browser row total (${compare} checks)`);
 expectIn(readme, 'README.md', new RegExp(`${compare}/${compare}`), `the clean-run total (${compare}/${compare})`);
 expectIn(agents, 'AGENTS.md', new RegExp(`browser-suite\\.mjs\\s+${compare} checks`), 'the repository-map browser-suite count');
@@ -97,17 +99,53 @@ expectIn(agents, 'AGENTS.md', /baselines\/<platform>/, 'the baselines reviewed-e
 // Stale paths and script names. The apps are examples (apps/example,
 // apps/example-trading); docs pointing at the pre-restructure names send
 // contributors (and agents) into files that no longer exist.
-const staleTokens = ['apps/demo', 'apps/trading', 'verify:demo', 'verify:screen', 'screen:build', 'npm run demo', 'build-demo', 'verify-demo', 'build-trading'];
-for (const [docName, doc] of [['README.md', readme], ['AGENTS.md', agents], ['CONTRIBUTING.md', contributing], ['STATUS.md', readDoc('STATUS.md')]]) {
+// Scan EVERY markdown file, not a hand-listed four: docs/ and .github/ carried pre-restructure
+// names (apps/demo, verify-demo) for weeks because this list only covered README/AGENTS/
+// CONTRIBUTING/STATUS. Suite-printed numbers are governed below; names and figures no suite
+// prints depend on this list staying honest.
+const staleTokens = [
+  'apps/demo', 'apps/trading', 'verify:demo', 'verify:screen', 'screen:build',
+  'npm run demo', 'build-demo', 'verify-demo', 'build-trading',
+  '39 library checks', '97 checks over', '12 checks × 6 combos = 72',
+  '4.34', '4.06 kB', '4.2 KB gzip',
+  '21 roles', '114 custom properties', '8 files, ~320', '26 checks: virtualization',
+  '20 steps'
+];
+for (const file of markdownFiles) {
+  const doc = readFileSync(file, 'utf8');
+  const docName = relative(root, file);
   for (const token of staleTokens) {
     if (doc.includes(token)) stale.push(`${docName}: stale reference "${token}"`);
   }
 }
 expectIn(contributing, 'CONTRIBUTING.md', /baselines\/<platform>/, 'the baselines reviewed-exception (baselines/<platform>/)');
 expectIn(readme, 'README.md', /baselines\/<platform>/, 'the baselines reviewed-exception (baselines/<platform>/)');
+
+// The perf-retry policy is a gate, so it must be described where the retry is documented and
+// wired into the chain that runs it (Rule zero: a rule without a gate rots).
+const verification = readDoc('docs/verification.md');
+const performanceDoc = readDoc('docs/performance.md');
+const pkg = readDoc('package.json');
+expectIn(verification, 'docs/verification.md', new RegExp('browser-suite\\.mjs[^\\n]*= ' + compare), 'the browser-suite per-combo total (= ' + compare + ')');
+expectIn(verification, 'docs/verification.md', /perf-policy\.mjs/, 'the perf-policy module');
+expectIn(performanceDoc, 'docs/performance.md', /perf-policy\.mjs/, 'the perf-policy module');
+expectIn(pkg, 'package.json', /"check:perf-policy":/, 'the check:perf-policy script');
+expectIn(pkg, 'package.json', /check:perf-policy && npm run check:commits/, 'check:perf-policy wired into the ci chain');
+const workflow = readDoc('.github/workflows/ci.yml');
+expectIn(workflow, '.github/workflows/ci.yml', /npm run check:perf-policy/, 'the perf-policy gate in the CI build job');
+// The new gate's own total is quoted in README; read it from the gate rather than trusting the prose.
+const policyCount = Number(
+  (execSync('node scripts/check-perf-policy.mjs', { cwd: root, encoding: 'utf8' }).match(/perf policy: (\d+)\//) ?? [])[1]
+);
+if (!Number.isInteger(policyCount)) {
+  console.error('docs counts: could not read the check:perf-policy total');
+  process.exit(1);
+}
+expectIn(readme, 'README.md', new RegExp(`check:perf-policy\\s*#\\s*${policyCount} checks`), `the check:perf-policy row total (${policyCount} checks)`);
 forbidIn(readme, 'README.md', /belong in CI artifacts/, 'the "screenshots belong in CI artifacts" claim (contradicts the committed baselines)');
 
-console.log(`docs counts: browser-suite ${compare} compare / ${update} update — README, AGENTS.md, CONTRIBUTING.md agree`);
+console.log(`docs counts: browser-suite ${compare} compare / ${update} update — README, AGENTS.md, CONTRIBUTING.md,
+  docs/verification.md agree; stale-name scan covers all ${markdownFiles.length} markdown files`);
 if (stale.length > 0) {
   for (const line of stale) console.error(`  docs drift: ${line}`);
   process.exit(1);
