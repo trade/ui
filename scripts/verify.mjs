@@ -262,6 +262,26 @@ check(
   `dialog still present=${Boolean(document.body.querySelector('[role="dialog"]'))}`
 );
 
+// ── dialog: a parent re-render must not reset focus inside the open modal (Rule zero:
+// the unstable-onClose fix needs a regression check) ──
+const dlgHost = document.createElement('div');
+document.body.appendChild(dlgHost);
+function DialogReprobe() {
+  const [open, setOpen] = React.useState(true);
+  return h(ui.Dialog, { open, onClose: () => setOpen(false), title: 'Ticket' }, h('button', { id: 'dlg-action' }, 'Confirm'));
+}
+const dlgRoot = createRoot(dlgHost);
+await React.act(async () => dlgRoot.render(h(DialogReprobe)));
+const dlgAction = document.body.querySelector('#dlg-action');
+await React.act(async () => dlgAction.focus());
+await React.act(async () => dlgRoot.render(h(DialogReprobe)));
+check(
+  're-rendering a parent with a fresh onClose keeps focus on the control inside the open dialog',
+  document.activeElement === dlgAction,
+  `activeElement=${document.activeElement?.id || document.activeElement?.tagName} (expected dlg-action)`
+);
+await React.act(async () => dlgRoot.unmount());
+
 await React.act(async () => click([...container.querySelectorAll('button')].find((b) => b.textContent === 'Dark')));
 check(
   'provider theme toggle applies data-theme to <html>',

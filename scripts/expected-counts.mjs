@@ -9,7 +9,7 @@
 // Before this, only the browser suite's totals were gated and three docs drifted: verify 39 vs 69,
 // check:style 97 vs 128, verify:example-trading 26 vs 28 (issue #31).
 export const EXPECTED_COUNTS = {
-  verify: 69,
+  verify: 70,
   style: 128,
   trading: 28
 };

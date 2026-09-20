@@ -25,6 +25,16 @@ export function Dialog({ open, onClose, title, children, footer, className, clos
   const ref = useRef<HTMLDivElement | null>(null);
   const previouslyFocused = useRef<Element | null>(null);
 
+  // Hold onClose in a ref and depend only on `open`. Depending on the onClose identity re-ran this
+  // effect on every parent re-render (a consumer passing an inline handler creates a new identity
+  // each render): the cleanup restored focus to the pre-open element and the body re-focused the
+  // container, so focus inside the modal was reset to the dialog on every re-render and the
+  // document keydown listener was torn down and re-added each render.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (!open) return;
     previouslyFocused.current = typeof document !== 'undefined' ? document.activeElement : null;
@@ -32,7 +42,7 @@ export function Dialog({ open, onClose, title, children, footer, className, clos
     // focusing the first control can surprise users on destructive dialogs.
     ref.current?.focus();
     const onKey = (e: globalThis.KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
     };
     document.addEventListener('keydown', onKey);
     return () => {
@@ -40,7 +50,7 @@ export function Dialog({ open, onClose, title, children, footer, className, clos
       const prev = previouslyFocused.current;
       if (prev && prev instanceof HTMLElement) prev.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
