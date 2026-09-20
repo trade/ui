@@ -11,16 +11,22 @@ const docsDir = join(root, 'docs');
 const ALERT = /^>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*$/;
 
 const markdownFiles = [];
-(function walk(dir) {
+function walk(dir) {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) walk(full);
     else if (entry.endsWith('.md')) markdownFiles.push(full);
   }
-})(docsDir);
+}
+walk(docsDir);
 for (const f of readdirSync(root)) {
   if (f.endsWith('.md')) markdownFiles.push(join(root, f));
 }
+// .github/**/*.md is repository-facing (the PR template and issue forms) and had drifted unnoticed
+// because discovery only walked docs/ plus root-level files - a dangling link there passed the gate
+// while the identical link in README failed it (Greptile P2 on #33).
+const githubDir = join(root, '.github');
+if (existsSync(githubDir)) walk(githubDir);
 
 const LINK = /\[[^\]]*\]\(([^)\s]+)\)/g;
 const ALERT_USE = /^\s*>\s*\[!([A-Za-z-]+)\]/;

@@ -15,6 +15,20 @@
  * silently.
  */
 
+// The knobs themselves live here too, so the budget a verdict ENFORCES and the budget the report
+// DECLARES cannot drift apart: the suite builds its context with perfContext() and writes
+// T.maxP95FrameMs from MAX_P95_FRAME_MS. (An earlier revision pinned only the declaration, and
+// doubling the context budget passed every check - Greptile P2 on #33.)
+export const MAX_P95_FRAME_MS = 25;
+export const MARGINAL_SLACK_MS = 5;
+export const HOST_OVERLOAD = { droppedRatio: 0.25, staticP95Ms: 40 };
+export const perfContext = (platform, engineName) => ({
+  platform,
+  engineName,
+  budgetMs: MAX_P95_FRAME_MS,
+  slackMs: MARGINAL_SLACK_MS
+});
+
 // A reading this bad means the browser was throttled, not that the library is slow.
 export const looksThrottled = (r) => !Number.isFinite(r.staticP95) || r.staticP95 > 100 || r.p95 > 100;
 

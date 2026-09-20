@@ -22,7 +22,11 @@ import {
   isOverloadSignal,
   needsRetry,
   tickingWithinBudget,
-  staticWithinBudget
+  staticWithinBudget,
+  perfContext,
+  MAX_P95_FRAME_MS,
+  MARGINAL_SLACK_MS,
+  HOST_OVERLOAD
 } from './perf-policy.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -94,9 +98,17 @@ eq('a 101 ms p95 is throttled', looksThrottled(reading({ p95: 101 })), true);
 
 // --- 8. pins: the suite must use this policy, and the gate must not move silently ---
 const suite = readFileSync(resolve(root, 'scripts/browser-suite.mjs'), 'utf8');
-const budgetMatch = suite.match(/maxP95FrameMs:\s*(\d+)/);
-check('browser-suite declares a numeric perf budget', Boolean(budgetMatch), budgetMatch ? `maxP95FrameMs: ${budgetMatch[1]}` : 'not found');
-eq('the suite budget still equals the pinned 25 ms', Number(budgetMatch?.[1]), BUDGET);
+// The budget the verdicts ENFORCE must be the budget the report DECLARES. Pinning only the
+// declaration let a doubled context budget pass every check (Greptile P2 on #33), so the suite
+// now writes both from the module and this asserts the passthrough.
+check('browser-suite writes its budget from the module', /maxP95FrameMs: MAX_P95_FRAME_MS/.test(suite), 'maxP95FrameMs: MAX_P95_FRAME_MS');
+check('browser-suite builds its context through the module', /perfContext\(process\.platform, engine\.name\)/.test(suite), 'perfContext(process.platform, engine.name)');
+check('browser-suite declares no budget of its own', !/budgetMs/.test(suite), 'no budgetMs in the suite');
+eq('the module budget is 25 ms', MAX_P95_FRAME_MS, BUDGET);
+eq('the module slack is 5 ms', MARGINAL_SLACK_MS, SLACK);
+eq('the module overload knobs are 0.25 / 40', HOST_OVERLOAD.droppedRatio + '/' + HOST_OVERLOAD.staticP95Ms, OVERLOAD.droppedRatio + '/' + OVERLOAD.staticP95Ms);
+eq('perfContext carries the module budget', perfContext('darwin', 'webkit').budgetMs, MAX_P95_FRAME_MS);
+eq('perfContext carries the module slack', perfContext('darwin', 'webkit').slackMs, MARGINAL_SLACK_MS);
 check('browser-suite imports the perf policy module', /from\s+['"]\.\/perf-policy\.mjs['"]/.test(suite), "import from './perf-policy.mjs'");
 check('browser-suite routes the retry decision through needsRetry', /needsRetry\(reading/.test(suite), 'needsRetry(reading, ...) call');
 check(
@@ -126,15 +138,8 @@ eq('a throttled static reading is throttled (staticP95 101)', looksThrottled(rea
 eq('a static reading at the ceiling is not throttled (100)', looksThrottled(reading({ staticP95: 100 })), false);
 eq('a missing static reading is throttled', looksThrottled({ p95: 16.7 }), true);
 
-// --- 11. the knobs the suite feeds the module are pinned too; validating the module with the
-//         gate's own constants would leave the suite free to loosen its inputs ---
-const pinned = (re) => {
-  const m = suite.match(re);
-  return m ? Number(m[1]) : NaN;
-};
-eq('the suite slack knob is pinned at 5 ms', pinned(/MARGINAL_PERF_SLACK_MS = (\d+)/), SLACK);
-eq('the suite overload dropped-ratio knob is pinned at 0.25', pinned(/HOST_OVERLOAD_DROPPED_RATIO = ([0-9.]+)/), OVERLOAD.droppedRatio);
-eq('the suite overload static-p95 knob is pinned at 40 ms', pinned(/HOST_OVERLOAD_STATIC_P95_MS = (\d+)/), OVERLOAD.staticP95Ms);
+// The suite has no knobs of its own any more - it writes T.maxP95FrameMs from the module and
+// builds its context with perfContext(), both asserted above.
 
 // --- 12. single source of truth: the suite's verdicts must run through this module, and no
 //         predicate may be re-derived locally (the earlier text guard only caught the exact

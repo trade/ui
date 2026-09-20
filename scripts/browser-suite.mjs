@@ -33,7 +33,10 @@ import {
   isOverloadSignal,
   needsRetry,
   tickingWithinBudget,
-  staticWithinBudget
+  staticWithinBudget,
+  perfContext,
+  MAX_P95_FRAME_MS,
+  HOST_OVERLOAD
 } from './perf-policy.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -58,7 +61,7 @@ const T = {
   // false failures on p95=22 ms readings whose cadence was a healthy 59 fps. 25 ms still catches a
   // real regression (a genuine problem shows up as 30-40 ms and a rising dropped-frame ratio),
   // while 33 ms -- a missed vsync -- is what the dropped-frame gate is for.
-  maxP95FrameMs: 25,
+  maxP95FrameMs: MAX_P95_FRAME_MS,
   maxDroppedFrameRatio: 0.05,
   maxOverflowPx: 1,
   maxAxeViolations: 0,
@@ -71,19 +74,11 @@ const T = {
   maxVisualDiffRatio: 0.003
 };
 
-// The retry rules live in ./perf-policy.mjs so scripts/check-perf-policy.mjs can exercise every
-// branch deterministically; the suite owns only the knob values and the per-run host state.
-const MARGINAL_PERF_SLACK_MS = 5;
-const HOST_OVERLOAD_DROPPED_RATIO = 0.25;
-const HOST_OVERLOAD_STATIC_P95_MS = 40;
+// The retry rules AND the knobs live in ./perf-policy.mjs, so the budget a verdict enforces cannot
+// drift from the budget the report declares; the suite owns only the per-run host state.
 const loadSignals = [];
 const hostOverloaded = () => loadSignals.some(Boolean);
-const policyContext = (engine) => ({
-  platform: process.platform,
-  engineName: engine.name,
-  budgetMs: T.maxP95FrameMs,
-  slackMs: MARGINAL_PERF_SLACK_MS
-});
+const policyContext = (engine) => perfContext(process.platform, engine.name);
 
 const ENGINES = [
   { name: 'chromium', launcher: chromium, args: ['--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows'] },
@@ -313,7 +308,7 @@ for (const engine of ENGINES) {
       }
     }
 
-    loadSignals.push(isOverloadSignal(m, { droppedRatio: HOST_OVERLOAD_DROPPED_RATIO, staticP95Ms: HOST_OVERLOAD_STATIC_P95_MS }));
+    loadSignals.push(isOverloadSignal(m, HOST_OVERLOAD));
 
     if (!m) {
       entry.checks.push({ name: 'run completed', pass: false, detail: entry.errors.join('; ') || 'no reading' });
