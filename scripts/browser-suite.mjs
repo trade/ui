@@ -83,6 +83,24 @@ const betterReading = (current, candidate, engine) =>
   (looksThrottled(current) && !looksThrottled(candidate)) ||
   (perfGated(engine.name) && overPerfBudget(current) && !overPerfBudget(candidate));
 
+// A gated perf reading is also distrusted when another combo in the same run already read
+// catastrophically - on a shared CI runner the whole box thrashes together. In the run that failed
+// webkit-mobile at 34 ms with a 5.2% dropped-frame ratio, chromium on the same box read 57.9%
+// dropped (no real hardware produces that), while the *informational* engine class is exactly what
+// exists to absorb a host that cannot hold thresholds. A genuine single-engine regression looks the
+// opposite way - the other engines stay healthy - so this cannot mask one.
+const HOST_OVERLOAD_DROPPED_RATIO = 0.25;
+const HOST_OVERLOAD_STATIC_P95_MS = 40;
+const loadSignals = [];
+const hostOverloaded = () => loadSignals.some(Boolean);
+const recordLoadSignal = (m) => {
+  if (m) loadSignals.push(m.droppedRatio > HOST_OVERLOAD_DROPPED_RATIO || m.staticP95 > HOST_OVERLOAD_STATIC_P95_MS);
+};
+const needsRetry = (reading, engine) =>
+  looksThrottled(reading) ||
+  marginalPerfOverBudget(reading, engine) ||
+  (perfGated(engine.name) && overPerfBudget(reading) && hostOverloaded());
+
 const ENGINES = [
   { name: 'chromium', launcher: chromium, args: ['--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows'] },
   { name: 'firefox', launcher: firefox, args: [] },
@@ -303,13 +321,15 @@ for (const engine of ENGINES) {
       try {
         const reading = await attempt(engine, vp, id);
         if (m === null || betterReading(m, reading, engine)) m = reading;
-        const retry = looksThrottled(reading) || marginalPerfOverBudget(reading, engine);
+        const retry = needsRetry(reading, engine);
         if (!retry) break; // a clean reading; stop retrying
         await new Promise((r) => setTimeout(r, RETRY_BACKOFF_MS)); // let the host settle
       } catch (e) {
         entry.errors.push(String(e.message || e).slice(0, 200));
       }
     }
+
+    recordLoadSignal(m);
 
     if (!m) {
       entry.checks.push({ name: 'run completed', pass: false, detail: entry.errors.join('; ') || 'no reading' });
@@ -433,7 +453,7 @@ const report = {
   reliability: {
     settleMs: SETTLE_MS,
     maxAttempts: MAX_ATTEMPTS,
-    note: 'combos are retried when a reading looks OS-throttled or when a gated perf reading is only marginally over budget; the better attempt is kept',
+    note: 'combos are retried when a reading looks OS-throttled, when a gated perf reading is only marginally over budget, or when an earlier combo showed the host is overloaded; the better attempt is kept',
     knownUnstable: 'webkit dropped-frame ratio on non-macOS hosts (port engine) and every engine except webkit on the shared macOS runner — reported but not gated'
   },
   thresholds: T,

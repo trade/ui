@@ -98,10 +98,14 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
 8. **macOS WebKit ticking p95 is marginal on the shared runner.** The same commit read p95=26 ms
    against the 25 ms budget on two of three `browser-macos` runs (163-165 frames, gh run
    35529998527) and passed on the third; the ubuntu `verify` job and a local win32 run were green
-   throughout. A gated reading within 5 ms of the budget is now re-measured like a throttled one,
-   and the p95 is printed for every combo whether it passes or fails, so the margin is visible
-   before it trips (`scripts/browser-suite.mjs`). A real regression — 30-40 ms with a rising
-   dropped-frame ratio — still fails on every attempt.
+   throughout. The next failing run (PR #28) showed why: chromium on the same box read a 57.9%
+   dropped-frame ratio - no real hardware does that - so the shared runner was thrashing and
+   WebKit's gated reading degraded with it. A gated reading within 5 ms of the budget, or one taken
+   after another combo in the same run read catastrophically (dropped ratio > 25% or static p95 >
+   40 ms), is now re-measured like a throttled one, and the p95 prints for every combo whether it
+   passes or fails, so the margin is visible before it trips (`scripts/browser-suite.mjs`). A real
+   single-engine regression - 30-40 ms with a rising dropped-frame ratio while the other engines
+   stay healthy - still fails on every attempt.
 
 ## Not started
 
