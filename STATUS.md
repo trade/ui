@@ -17,13 +17,14 @@ A working, verified component library. Not yet used by a real application.
 | Package | Purpose | State |
 |---|---|---|
 | `@trade/tokens` | primitives → theme roles, compiled to static CSS + typed TS | done |
-| `@trade/ui` | 12 components, static CSS, 3 themes, no animation | done |
+| `@trade/ui` | 14 components, static CSS, 3 themes, no animation | done |
 | `apps/example` | watchlist + order ticket component reference | done |
 | `apps/example-trading` | production-grade trading workspace example | done |
 | `harness/` + `scripts/` | self-measuring browser harness, verification suites | done |
 
-**Components:** Button, Input, Select, Field, Checkbox/Radio/Switch, DataTable + Cell, Tabs, Menu, Dialog,
-Banner/Toast, ThemeProvider, Stack.
+**Components:** Button, Input, Select (native `<select>`, plus a listbox variant), Field,
+Checkbox/Radio/Switch, DataTable + Cell, Tabs, Menu, Popover, Tooltip, Dialog, Banner/Toast,
+ThemeProvider, Stack.
 
 **Themes:** light, dark, high-contrast. A theme is a role→primitive mapping; adding one requires no
 component change.
@@ -31,8 +32,8 @@ component change.
 | Measured | Value |
 |---|---|
 | Runtime dependencies | **0** (React/React DOM are peers) |
-| ESM bundle | **5.19 kB** gzip (budget 8 kB) |
-| Stylesheet | **4.82 kB** gzip (budget 8 kB) |
+| ESM bundle | **7.78 kB** gzip (budget 8 kB) |
+| Stylesheet | **5.47 kB** gzip (budget 8 kB) |
 | Theme switch cost | **0 React renders** |
 | Ticking frame time, Chromium/Firefox | **p95 16.7 ms**, 0 dropped frames |
 | Ticking frame time, WebKit | **gates pass on real macOS WebKit**; the 26–36 ms seen on the Playwright port was a port artifact (resolved 2026-09-17) |
@@ -70,35 +71,33 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
    pixels** across all 12 captures. Regeneration is the explicit `npm run baselines:update` or the
    CI `baselines` job (workflow_dispatch — regenerates in the exact verify container; the artifact
    is reviewed, then committed by hand). Baselines exist for win32 and linux, so visual checks gate
-   locally **and in the ubuntu CI job**; macOS gates on `baselines/darwin/` (see item 2).
-2. ~~**No macOS baseline set.**~~ **Resolved 2026-09-19.** The `baselines-macos` CI job
+   locally **and in the ubuntu CI job**; macOS gates on `baselines/darwin/` (see item 3).
+3. ~~**No macOS baseline set.**~~ **Resolved 2026-09-19.** The `baselines-macos` CI job
    (workflow_dispatch) regenerated the full 12-PNG `baselines/darwin/` set on a real macOS
    runner ([run 35458736319](https://github.com/trade/ui/actions/runs/35458736319)), the
    artifact was reviewed and committed by hand with the matching `manifest.json` entry.
    `latestPlatform: darwin` is now backed by a complete set, so the `browser-macos` job
-   gates for real (a nominated-but-absent platform can never gate — see item 4).
-3. **No secrets scanning.** Only keyword matching was done; the project carries no credentials.
-4. ~~**MacOS visual gate blocked on missing `baselines/darwin/` PNGs.**~~ **Resolved
+   gates for real (a nominated-but-absent platform can never gate — see item 5).
+4. **No secrets scanning.** Only keyword matching was done; the project carries no credentials.
+5. ~~**MacOS visual gate blocked on missing `baselines/darwin/` PNGs.**~~ **Resolved
    2026-09-19.** The structural hole in `scripts/browser-suite.mjs` (a platform gated whenever
    `manifest.latestPlatform` named it, PNGs or not — the opposite of the suite's contract) was
    fixed by `baselineSetIsComplete()`, which requires the PNGs to actually be present, and the
-   `baselines/darwin/` set itself is now committed (item 2), so macOS visual checks gate
+   `baselines/darwin/` set itself is now committed (item 3), so macOS visual checks gate
    instead of passing informationally. PR #26 (`fix/browser-baseline-gate`), which carried
    the original fix on a pre-#24 fork, was closed 2026-09-21 as superseded: its scripts/docs
    are byte-identical on main, its component deletions would regress #24, and its unique
    content — the 8 `baseline gate: *` verify checks — ships with #25.
-5. **`baselines/win32/` is committed but never exercised in CI.** No Windows job generates or
-   compares against it; the linux job gates and macOS will gate once PNGs land. Either add a
+6. **`baselines/win32/` is committed but never exercised in CI.** No Windows job generates or
+   compares against it; the linux and macOS jobs gate; win32 does not. Either add a
    Windows job or mark win32 as legacy.
-6. **Ungated by design** (recorded per Rule zero): commit-message *bodies* (subjects are gated by
+7. **Ungated by design** (recorded per Rule zero): commit-message *bodies* (subjects are gated by
    `check:commits`; evidence-in-body is not machine-checkable); inline `style={{ }}` props in app
    JSX (app stylesheets are gated by `check:style`; inline JSX styles are convention only); the
    harness page's own inline styles (instrument chrome, generated by `build-harness.mjs`).
 
 ## Not started
 
-- Phase 2 components: `Popover`, `Tooltip`, and a listbox `Select` (currently native
-  `<select>`-backed on purpose).
 - Tick coalescing helper (`useTicks`).
 
 ## Next, in order
@@ -110,7 +109,9 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
    (which pixel-compares against `baselines/linux/`) passed on every dependency-bump PR
    (#11–#16) merged that day.
 2. ~~A macOS baseline set (real WebKit) for the `browser-macos` job.~~ Done 2026-09-19.
-3. Phase 2 components.
+3. Phase 2 components. **`Popover` and `Tooltip` shipped 2026-09-18** (PR #24) and the
+   **listbox `Select` variant shipped 2026-09-20** (PR #25) — library checks 46 → 69, 14
+   components. The remaining Phase 2 item is `useTicks` (issue #7).
 
 A fuller optimisation roadmap (density, theme splitting, component tokens, icons, motion, publishing)
 was produced during the build; the items above are the ones that block or de-risk the others.
