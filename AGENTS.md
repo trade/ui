@@ -124,6 +124,23 @@ rule, record it in `STATUS.md` as ungated so it stays visible.
   current task.** Local commits are the default stopping point; report and wait.
 - If a CI run exists for your commit, watch it to completion and read the failures yourself before
   reporting success.
+- **A green check is not a review.** `Greptile Review`, CodeQL and `github-code-quality` all report
+  *pass* while attaching non-blocking findings. Read every review source before merging — these
+  are the whole protocol, and every one of them pages, so a single call is never the whole answer:
+  - inline review comments: `gh api --paginate repos/{owner}/{repo}/pulls/<n>/comments`
+  - every issue-level comment, including Greptile's "Comments Outside Diff" cross-file list:
+    `gh api --paginate repos/{owner}/{repo}/issues/<n>/comments`
+  - review states: `gh api --paginate repos/{owner}/{repo}/pulls/<n>/reviews`
+  - thread resolution: `gh api graphql -f query='{repository(owner:"OWNER",name:"REPO"){pullRequest(number:<n>){reviewThreads(first:100){pageInfo{hasNextPage endCursor}nodes{isResolved isOutdated path}}}}}'`,
+    then repeat with `after:"<endCursor>"` while `hasNextPage` is true. On PowerShell pass the query
+    as a file with `-F query=@query.graphql`, written without a BOM (`Set-Content -Encoding UTF8`
+    adds one, and gh rejects the file).
+  - committed alerts: `gh api --paginate "repos/{owner}/{repo}/code-scanning/alerts?state=open"`
+
+  Verify every finding against the code before acting on it — bot findings are sometimes false
+  positives (a live `useTheme` was once reported unused). Re-check after every push: a fix can introduce a
+  new finding and a resolved thread can reopen. Never merge on "all checks green" alone. No gate can
+  enforce this one, so STATUS.md records it as ungated.
 
 ## Definition of done
 
