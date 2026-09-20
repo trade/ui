@@ -4,6 +4,7 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join, dirname, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { EXPECTED_COUNTS } from './expected-counts.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const docsDir = join(root, 'docs');
@@ -148,10 +149,32 @@ if (!Number.isInteger(policyCount)) {
   process.exit(1);
 }
 expectIn(readme, 'README.md', new RegExp(`check:perf-policy\\s*#\\s*${policyCount} checks`), `the check:perf-policy row total (${policyCount} checks)`);
+
+// The remaining quoted counts (issue #31). The totals live in scripts/expected-counts.mjs, each suite
+// asserts its own total against that module on every run, and these doc rows are gated against the
+// same numbers - so a wrong count fails either the suite or this check, never neither.
+const expectCount = (doc, docName, pattern, expected, what, minMatches = 1) => {
+  const found = [...doc.matchAll(pattern)].map((m) => Number(m[1]));
+  if (found.length < minMatches) stale.push(`${docName}: ${what} not found (${found.length} of ${minMatches})`);
+  for (const value of found) {
+    if (value !== expected) stale.push(`${docName}: ${what} says ${value}, the suite declares ${expected}`);
+  }
+};
+// README quotes the verify total twice (quick start and the verification block); both are gated.
+expectCount(readme, 'README.md', /npm run verify\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.verify, 'the verify row total', 2);
+expectCount(readme, 'README.md', /npm run check:style\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.style, 'the check:style row total');
+expectCount(readme, 'README.md', /npm run verify:example-trading\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.trading, 'the verify:example-trading row total');
+expectCount(verification, 'docs/verification.md', /verify\.mjs`[^\n]*?(\d+) library checks/g, EXPECTED_COUNTS.verify, 'the verify total');
+expectCount(verification, 'docs/verification.md', /check-style\.mjs`[^\n]*?(\d+) checks over/g, EXPECTED_COUNTS.style, 'the check:style total');
+expectCount(verification, 'docs/verification.md', /verify-example\.mjs`[^\n]*?(\d+) checks/g, 10, 'the verify:example total');
 forbidIn(readme, 'README.md', /belong in CI artifacts/, 'the "screenshots belong in CI artifacts" claim (contradicts the committed baselines)');
 
-console.log(`docs counts: browser-suite ${compare} compare / ${update} update — README, AGENTS.md, CONTRIBUTING.md,
-  docs/verification.md agree; stale-name scan covers all ${markdownFiles.length} markdown files`);
+console.log(
+  `docs counts: browser-suite ${compare} compare / ${update} update, verify ${EXPECTED_COUNTS.verify}, `
+  + `style ${EXPECTED_COUNTS.style}, trading ${EXPECTED_COUNTS.trading}, perf-policy ${policyCount} — `
+  + `README, AGENTS.md, CONTRIBUTING.md and docs/verification.md agree; `
+  + `stale-name scan covers all ${markdownFiles.length} markdown files`
+);
 if (stale.length > 0) {
   for (const line of stale) console.error(`  docs drift: ${line}`);
   process.exit(1);

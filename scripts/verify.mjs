@@ -15,6 +15,7 @@ import { JSDOM } from 'jsdom';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { resolveBaselinePlatform, baselineSetIsComplete } from './baseline-gate.mjs';
+import { EXPECTED_COUNTS } from './expected-counts.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -688,5 +689,12 @@ const report = {
   sizes: { 'index.js': jsGz, 'index.cjs': cjsGz, 'ui.css': cssGz, unit: 'gzip bytes' },
   results
 };
+if (results.length !== EXPECTED_COUNTS.verify) {
+  console.error(
+    `verify: ${results.length} checks ran but scripts/expected-counts.mjs declares ${EXPECTED_COUNTS.verify}. `
+    + 'Update that number and the docs it feeds in the same change, then run check:docs.'
+  );
+  process.exit(1);
+}
 console.log(JSON.stringify(report, null, 2));
 process.exit(report.failed === 0 ? 0 : 1);

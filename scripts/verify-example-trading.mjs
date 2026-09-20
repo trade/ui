@@ -8,6 +8,7 @@ import { readFileSync, existsSync, statSync, mkdirSync, writeFileSync } from 'no
 import { resolve, dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { EXPECTED_COUNTS } from './expected-counts.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -185,6 +186,13 @@ for (const vp of [{ name: 'desktop', width: 1600, height: 900 }, { name: 'narrow
 await browser.close();
 server.close();
 
+if (results.length !== EXPECTED_COUNTS.trading) {
+  console.error(
+    `trading suite: ${results.length} checks ran but scripts/expected-counts.mjs declares ${EXPECTED_COUNTS.trading}. `
+    + 'Update that number and the docs it feeds in the same change, then run check:docs.'
+  );
+  process.exit(1);
+}
 const passed = results.filter((r) => r.pass).length;
 const report = { checkedAt: new Date().toISOString(), total: results.length, passed, failed: results.length - passed, results };
 writeFileSync(resolve(root, 'verification', 'screen-report.json'), JSON.stringify(report, null, 2), 'utf8');

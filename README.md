@@ -108,8 +108,6 @@ After any change: `npm run build && npm run example:build && npm run verify && n
 
 ## Known limitations (Phase 1)
 
-- `Select` is native-`<select>` backed by default for correctness and zero dependencies; `variant="listbox"`
-  ships the custom combobox behind the same API (merged in #25).
 - No virtualizer is shipped — `DataTable` is virtualizer-friendly (`rowCount` keeps ARIA honest) so consumers plug in their own.
 - The examples bundle React into an IIFE for convenience; the library itself is 7.78 kB gzip and depends on nothing.
 
