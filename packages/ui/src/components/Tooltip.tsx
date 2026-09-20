@@ -8,7 +8,7 @@ export interface TooltipProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'chi
   /** Which side of the trigger the tooltip appears on. */
   placement?: 'top' | 'bottom';
   /** The single element that triggers the tooltip on hover and keyboard focus. */
-  children: ReactElement<HTMLAttributes<HTMLElement>>;
+  children: ReactNode;
 }
 
 /**
@@ -30,6 +30,9 @@ export const Tooltip = /* @__PURE__ */ forwardRef(function Tooltip(
   };
   const hide = () => setOpen(false);
 
+  // internal show/hide/Escape contract composes with consumer handlers — the
+  // extracted props must never fall through to {...rest}, which would overwrite
+  // the internal behavior (greptile P1, proven by execution on PR #25)
   const handleKeyDown = (e: KeyboardEvent<HTMLSpanElement>) => {
     if (e.key === 'Escape' && open) {
       e.stopPropagation();
@@ -52,13 +55,12 @@ export const Tooltip = /* @__PURE__ */ forwardRef(function Tooltip(
     >
       {isValidElement(children) && open
         ? cloneElement(children as ReactElement<{ 'aria-describedby'?: string }>, {
-            'aria-describedby':
-              [
-                (children.props as { 'aria-describedby'?: string })['aria-describedby'],
-                id
-              ]
-                .filter(Boolean)
-                .join(' ')
+            'aria-describedby': [
+              (children.props as { 'aria-describedby'?: string })['aria-describedby'],
+              id
+            ]
+              .filter(Boolean)
+              .join(' ')
           })
         : children}
       {open && !hiddenByEscape ? (

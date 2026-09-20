@@ -69,6 +69,19 @@ export function sampleScreen(ui, h) {
       h(Field, { label: 'Limit price', error: 'Enter a price above 0.00' }, h(Input, { numeric: true, invalid: true, defaultValue: '-' })),
       h(Field, { label: 'Time in force' }, h(Select, { options: [{ value: 'day', label: 'Day' }, { value: 'gtc', label: 'GTC' }] })),
       h(
+        Field,
+        { label: 'Order type' },
+        h(Select, {
+          variant: 'listbox',
+          name: 'orderType',
+          options: [
+            { value: 'market', label: 'Market' },
+            { value: 'limit', label: 'Limit' },
+            { value: 'stop', label: 'Stop' }
+          ]
+        })
+      ),
+      h(
         Stack,
         { direction: 'row', gap: 3, align: 'center' },
         h(
@@ -115,7 +128,9 @@ export function harness(ui, h, React) {
     const [open, setOpen] = React.useState(false);
     const [menuOpen, setMenuOpen] = React.useState(false);
     const [popoverOpen, setPopoverOpen] = React.useState(false);
-    const { ThemeProvider, Button, Tabs, Dialog, Menu, MenuItem, MenuSeparator, Popover, Tooltip } = ui;
+    const [dialogPopoverOpen, setDialogPopoverOpen] = React.useState(false);
+    const [lbValue, setLbValue] = React.useState('day');
+    const { ThemeProvider, Button, Tabs, Dialog, Menu, MenuItem, MenuSeparator, Popover, Tooltip, Select } = ui;
     return h(
       ThemeProvider,
       { theme: 'light' },
@@ -147,7 +162,13 @@ export function harness(ui, h, React) {
           title: 'New order',
           footer: h(Button, { variant: 'primary', id: 'confirm-order', onClick: () => setOpen(false) }, 'Confirm')
         },
-        h('p', null, 'Order ticket body')
+        h('p', null, 'Order ticket body'),
+        h(
+          'div',
+          { className: 'ui-popover-anchor' },
+          h(Button, { id: 'dialog-popover-trigger', 'aria-haspopup': 'dialog', 'aria-expanded': dialogPopoverOpen, onClick: () => setDialogPopoverOpen((v) => !v) }, 'Ticket options'),
+          h(Popover, { open: dialogPopoverOpen, onClose: () => setDialogPopoverOpen(false), label: 'Ticket options' }, h('p', null, 'Nested popover'))
+        )
       ),
       h(
         'div',
@@ -159,8 +180,26 @@ export function harness(ui, h, React) {
           h('p', null, 'Popover body')
         )
       ),
-      h(Tooltip, { label: 'Maximum order size' }, h(Button, { id: 'tooltip-trigger' }, 'Hover me')),
-      h(Tooltip, { label: 'Composed handler test', onMouseEnter: () => {}, onFocus: () => {}, onKeyDown: () => {} }, h(Button, { id: 'composed-tooltip-trigger' }, 'Composed'))
+      h(Tooltip, { label: 'Maximum order size' }, h(Button, { id: 'tooltip-trigger', 'aria-describedby': 'preset-desc' }, 'Hover me')),
+      h(Tooltip, { label: 'Composed handler test', onMouseEnter: () => {}, onFocus: () => {}, onKeyDown: () => {} }, h(Button, { id: 'composed-tooltip-trigger' }, 'Composed')),
+      h(
+        'div',
+        null,
+        h(Select, {
+          variant: 'listbox',
+          id: 'lb-trigger',
+          value: lbValue,
+          name: 'tif',
+          form: 'external-form',
+          onChange: (e) => setLbValue(e.target.value),
+          options: [
+            { value: 'day', label: 'Day' },
+            { value: 'gtc', label: 'GTC' },
+            { value: 'ioc', label: 'IOC', disabled: true },
+            { value: 'opg', label: 'OPG' }
+          ]
+        })
+      )
     );
   }
 

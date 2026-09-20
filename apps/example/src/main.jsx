@@ -234,6 +234,8 @@ function App() {
           </Field>
           <Field label="Time in force">
             <Select
+              variant="listbox"
+              name="tif"
               value={tif}
               onChange={(e) => setTif(e.target.value)}
               options={[

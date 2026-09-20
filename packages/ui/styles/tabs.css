@@ -3,7 +3,7 @@
 .ui-tabs__list {
   display: flex;
   gap: var(--ui-space-1);
-  border-bottom: 1px solid var(--ui-outline);
+  border-bottom: var(--ui-size-border-width) solid var(--ui-outline);
 }
 
 .ui-tab {

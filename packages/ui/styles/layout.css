@@ -8,4 +8,4 @@
 .ui-stack--between { justify-content: space-between; }
 .ui-stack--grow { flex: 1 1 auto; min-width: 0; }
 
-.ui-divider { border: 0; border-top: 1px solid var(--ui-outline); margin: 0; }
+.ui-divider { border: 0; border-top: var(--ui-size-border-width) solid var(--ui-outline); margin: 0; }

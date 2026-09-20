@@ -74,7 +74,11 @@ export const Popover = /* @__PURE__ */ forwardRef(function Popover(
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     onKeyDown?.(e);
     if (e.key === 'Escape') {
+      // contain the event: a Popover nested in a Dialog must close alone, and the
+      // Dialog's document-level listener must not see this Escape
       e.preventDefault();
+      e.stopPropagation();
+      e.nativeEvent.stopImmediatePropagation();
       onClose();
     } else if (e.key === 'Tab') {
       // non-modal: let focus leave naturally; the popover just stops being open

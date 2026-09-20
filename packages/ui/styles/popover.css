@@ -12,7 +12,7 @@
   inset-inline-start: 0;
   min-inline-size: var(--ui-size-popover-min);
   background: var(--ui-surface);
-  border: 1px solid var(--ui-border-control);
+  border: var(--ui-size-border-width) solid var(--ui-border-control);
   border-radius: var(--ui-radius-md);
   box-shadow: var(--ui-elevation-8);
   padding: var(--ui-space-3);
