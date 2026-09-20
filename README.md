@@ -13,10 +13,10 @@ cd ui
 npm install
 npm run build          # tokens → CSS + TS, then the library (ESM, CJS, d.ts, CSS)
 npm run example:build     # bundles the component example to apps/example/dist
-npm run verify         # 39 checks: contract, CSS, SSR, DOM interactions
+npm run verify         # 69 checks: contract, CSS, SSR, DOM interactions
 npm run verify:example    # 10 checks: boots the built example in a DOM and drives it
 npm run example-trading:build  # bundles the trading workspace example
-npm run verify:example-trading  # 26 checks: virtualization, ARIA, ticket guard, axe
+npm run verify:example-trading  # 28 checks: virtualization, ARIA, ticket guard, axe, 2 viewports
 ```
 
 Open the examples (double-click — plain static files, no server needed):
@@ -32,8 +32,8 @@ ui/
 │  ├─ tokens/            @trade/tokens — tokens.json → tokens.css + tokens.ts (no deps)
 │  └─ ui/                @trade/ui     — components, styles, build
 │     ├─ src/components/ Button, Input, Select, Field, SelectionControls,
-│     │                  DataTable, Tabs, Menu, Dialog, Feedback, ThemeProvider, Stack
-│     ├─ styles/         one CSS file per area (base, layout, button, forms, table, tabs, feedback, dialog, menu)
+│     │                  DataTable, Tabs, Menu, Popover, Tooltip, Dialog, Feedback, ThemeProvider, Stack
+│     ├─ styles/         one CSS file per area (base, layout, button, forms, table, tabs, feedback, dialog, menu, popover, tooltip)
 │     └─ dist/           index.js · index.cjs · index.d.ts · ui.css · components/*.css
 ├─ apps/                 examples — apps/example (component reference),
 │                        apps/example-trading (production-grade trading workspace)
@@ -108,21 +108,20 @@ After any change: `npm run build && npm run example:build && npm run verify && n
 
 ## Known limitations (Phase 1)
 
-- `Select` is native-`<select>` backed for correctness and zero dependencies; a custom listbox is Phase 2.
 - No virtualizer is shipped — `DataTable` is virtualizer-friendly (`rowCount` keeps ARIA honest) so consumers plug in their own.
-- `Popover` and `Tooltip` are not built yet (`Menu` shipped).
-- The demo bundles React into a 237 KB IIFE for convenience; the library itself is 4.2 KB gzip and depends on nothing.
+- The examples bundle React into an IIFE for convenience; the library itself is 7.78 kB gzip and depends on nothing.
 
 ## Verification & CI
 
 ```powershell
 npm run check:contract  # 12 checks: zero deps, peer-only React, exports map, artifacts
 npm run check:contrast  # 69 colour pairs across 3 themes must meet the contrast contract
-npm run check:style     # 97 checks: the CSS authoring contract (tokens-only, logical, motionless)
+npm run check:style     # 128 checks: the CSS authoring contract (tokens-only, logical, motionless)
 npm run check:types     # tsc --noEmit over @trade/ui — strict types are a gate, not a suggestion
 npm run check:docs      # links resolve + documented check counts agree with the suites themselves
+npm run check:perf-policy  # 71 checks: the perf-retry rules, the gated verdicts, the pinned knobs
 npm run size            # bundle budgets (ESM 8 kB, stylesheet 8 kB, types 3 kB, gzip)
-npm run verify          # 39 checks: contract, CSS, SSR, DOM interactions
+npm run verify          # 69 checks: contract, CSS, SSR, DOM interactions
 npm run verify:example  # 10 checks: boots the real example bundle in a DOM
 npm run harness:build   # required before verify:browser (harness/dist is gitignored)
 npm run verify:browser  # 84 checks: Chromium + Firefox + WebKit × desktop + mobile,
@@ -146,7 +145,10 @@ numbers that move between runs is worse than no gate, so the browser suite:
 
 - launches Chromium with background-throttling disabled,
 - settles 1500 ms after the page finishes before measuring,
-- retries a combo once when a reading looks throttled, keeping the better attempt, and
+- re-measures a combo when a reading looks throttled, when a gated reading is only marginally
+  over budget, or when an earlier combo in the same run read catastrophically (the host is
+  thrashing) - keeping the better attempt (`scripts/perf-policy.mjs`, checked by
+  `npm run check:perf-policy`), and
 - gates on **p95 frame delta** and the **dropped-frame ratio**, not absolute fps (headless engines
 drive `requestAnimationFrame` at engine-specific cadences — Firefox measures the same fps ticking
 and idle).

@@ -36,7 +36,7 @@ ADR-001: the scale is owned and versioned in this repo, frozen, and does not tra
 initial values were derived from Material Design 2 at project start; the derivation is recorded for
 explainability only. Extending a scale is an architecture decision, not a drive-by diff.
 
-**Colour — neutral** (20 steps): `0 #ffffff` through `1000 #000000`, including non-round steps
+**Colour — neutral** (19 steps): `0 #ffffff` through `1000 #000000`, including non-round steps
 (`25`, `35`, `150`, `750`, `850`, `875`) that exist to make the exact role mappings work.
 
 **Accents** (3–4 steps each): indigo, teal, green, red, amber, blue — e.g. indigo
@@ -61,14 +61,14 @@ afterthought. See [css.md](css.md#density).
 
 ## Themes and roles
 
-A theme is a **role → primitive mapping**. There are 21 roles per theme (`background`, `surface`,
-`surface-1`, `rowAlt`, `onSurface`, `onSurfaceMuted`, `primary`, `onPrimary`, `secondary`,
-`onSecondary`, `positive`, `negative`, `warning`, `error`, `onError`, `info`, `focusRing`,
-`borderControl`, `outline`, `hoverOverlay`, `scrim`), identical across `light`, `dark` and
+A theme is a **role → primitive mapping**. There are 22 roles per theme (`background`, `surface`,
+`surface-1`, `rowAlt`, `onSurface`, `onSurfaceMuted`, `onSurfaceDisabled`, `primary`, `onPrimary`,
+`secondary`, `onSecondary`, `positive`, `negative`, `warning`, `error`, `onError`, `info`,
+`focusRing`, `borderControl`, `outline`, `hoverOverlay`, `scrim`), identical across `light`, `dark` and
 `high-contrast`. The build **fails hard** if a theme has an extra or missing role, or if a role is
 a literal instead of a reference: `literalRolesInDefaultTheme: 0`.
 
-The build verifies, per run: 44 primitive refs, 3 themes × 21 roles, 114 custom properties,
+The build verifies, per run: 44 primitive refs, 3 themes × 22 roles, 124 custom properties,
 zero literal roles.
 
 ## The contrast contract

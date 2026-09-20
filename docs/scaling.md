@@ -20,11 +20,11 @@ this page explains the mechanics. Related: [design-tokens.md](design-tokens.md),
 5. **Checks** — interaction checks in `scripts/verify.mjs`, render it in
    `scripts/sample-screen.mjs` so it flows through the browser suites (axe, layout, themes, 3
    engines × 2 viewports).
-6. **Demo** — show it in `apps/demo/src/main.jsx` with states, densities, both themes.
+6. **Example** — show it in `apps/example/src/main.jsx` with states, densities, both themes.
 
 ## Adding a theme
 
-A theme is a role→primitive mapping ([theming.md](theming.md)): add the identical 21-role set to
+A theme is a role→primitive mapping ([theming.md](theming.md)): add the identical 22-role set to
 `tokens.json` (every role a `{primitive.reference}`), rebuild, extend
 `scripts/check-contrast.mjs`, add the name to the `ThemeName` union. No component changes. The
 build fails on role-set divergence — never weaken it.
@@ -42,8 +42,8 @@ Spacing, radius, type, elevation changes are **architecture decisions** (ADR-001
 | Whether motion exists | `tokens.json → motion.enabled` (keep `false` for v1) |
 | A component's look | `packages/ui/styles/<area>.css` |
 | A component's API/behaviour | `packages/ui/src/components/<Name>.tsx` |
-| Demo content | `apps/demo/src/main.jsx` |
-| What "correct" means | `scripts/verify.mjs`, `scripts/verify-demo.mjs` |
+| Example content | `apps/example/src/main.jsx` |
+| What "correct" means | `scripts/verify.mjs`, `scripts/verify-example.mjs` |
 
 ## Rule zero: every rule gets a gate
 
@@ -70,10 +70,10 @@ Commits carry evidence — numbers, check counts, the command that produced them
 
 ## What's next (from STATUS.md)
 
-- **Visual regression** with a read-only `baselines/` directory the suite compares against and
-  never overwrites — screenshots today are evidence, not baselines.
-- **Phase 2 components**: `Menu`/`Popover`, `Tooltip`, a listbox `Select` (native-select backed
-  on purpose until then), and the `useTicks` coalescing helper.
+- **Visual regression**: shipped (ADR-005) — the suite pixel-compares against the committed,
+  read-only `baselines/<platform>/` sets and never overwrites them (PRs #8/#9, #23).
+- **Phase 2 components**: `Menu`, `Popover`, `Tooltip` and the listbox `Select` all shipped
+  (#17, #24, #25); the `useTicks` coalescing helper is what remains (issue #7).
 - Density, theme splitting, component tokens, icons, motion, publishing: the fuller roadmap was
   produced during the build; the two items above are what unblock the rest.
 

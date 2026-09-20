@@ -9,8 +9,8 @@ Measured numbers live in [STATUS.md](../STATUS.md); the methodology is in `harne
 
 | Artifact | Budget (gzip) | Measured |
 |---|---|---|
-| `@trade/ui` ESM bundle | 8 kB | **4.34 kB** |
-| Stylesheet (all components) | 8 kB | **4.06 kB** |
+| `@trade/ui` ESM bundle | 8 kB | **7.78 kB** |
+| Stylesheet (all components) | 8 kB | **5.47 kB** |
 | Generated types | 3 kB | under |
 
 Zero runtime dependencies (ADR-002) is the first performance decision: no dependency graph, no
@@ -52,8 +52,9 @@ Benchmarks on `window`:
 The inlined self-audit then records structure (rows rendered vs `aria-rowcount`), layout
 overflow, theme switch, static + ticking benchmarks, and axe violations, and POSTs the JSON to
 `/results`. `browser-suite.mjs` runs it in 6 combos (3 engines × 2 viewports), settles 1500 ms,
-retries up to 3× with backoff when a reading looks throttled (p95 > 100 ms), keeping the better
-attempt. Why 25 ms and not 20, why the retry exists, and the WebKit-port vs real-macOS-WebKit
+re-measures a combo when a reading looks throttled (p95 > 100 ms), when a gated reading is only
+marginally over budget, or when an earlier combo in the same run read catastrophically, keeping the
+better attempt (`scripts/perf-policy.mjs`, checked by `check:perf-policy`). Why 25 ms and not 20, why the retry exists, and the WebKit-port vs real-macOS-WebKit
 story: [verification.md](verification.md) and [STATUS.md](../STATUS.md).
 
 ## Virtualization contract

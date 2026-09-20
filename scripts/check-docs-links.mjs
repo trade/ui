@@ -4,6 +4,7 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join, dirname, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { EXPECTED_COUNTS } from './expected-counts.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const docsDir = join(root, 'docs');
@@ -11,16 +12,22 @@ const docsDir = join(root, 'docs');
 const ALERT = /^>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*$/;
 
 const markdownFiles = [];
-(function walk(dir) {
+function walk(dir) {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) walk(full);
     else if (entry.endsWith('.md')) markdownFiles.push(full);
   }
-})(docsDir);
+}
+walk(docsDir);
 for (const f of readdirSync(root)) {
   if (f.endsWith('.md')) markdownFiles.push(join(root, f));
 }
+// .github/**/*.md is repository-facing (the PR template and issue forms) and had drifted unnoticed
+// because discovery only walked docs/ plus root-level files - a dangling link there passed the gate
+// while the identical link in README failed it (Greptile P2 on #33).
+const githubDir = join(root, '.github');
+if (existsSync(githubDir)) walk(githubDir);
 
 const LINK = /\[[^\]]*\]\(([^)\s]+)\)/g;
 const ALERT_USE = /^\s*>\s*\[!([A-Za-z-]+)\]/;
@@ -88,7 +95,9 @@ const forbidIn = (doc, docName, pattern, what) => {
 };
 
 // The known historical drift: AGENTS.md said 72 while the suite produced 84.
-// (README's check:style row legitimately quotes its own 72 — only browser-suite rows are governed.)
+// Only the browser-suite total is machine-verified here (it is the one count a suite prints);
+// the verify/check:style/check:contract counts were fixed by hand, which is exactly how they had
+// drifted — the staleTokens scan below is the backstop for the ones that did.
 expectIn(readme, 'README.md', new RegExp(`verify:browser\\s*#\\s*${compare} checks`), `the verify:browser row total (${compare} checks)`);
 expectIn(readme, 'README.md', new RegExp(`${compare}/${compare}`), `the clean-run total (${compare}/${compare})`);
 expectIn(agents, 'AGENTS.md', new RegExp(`browser-suite\\.mjs\\s+${compare} checks`), 'the repository-map browser-suite count');
@@ -97,17 +106,75 @@ expectIn(agents, 'AGENTS.md', /baselines\/<platform>/, 'the baselines reviewed-e
 // Stale paths and script names. The apps are examples (apps/example,
 // apps/example-trading); docs pointing at the pre-restructure names send
 // contributors (and agents) into files that no longer exist.
-const staleTokens = ['apps/demo', 'apps/trading', 'verify:demo', 'verify:screen', 'screen:build', 'npm run demo', 'build-demo', 'verify-demo', 'build-trading'];
-for (const [docName, doc] of [['README.md', readme], ['AGENTS.md', agents], ['CONTRIBUTING.md', contributing], ['STATUS.md', readDoc('STATUS.md')]]) {
+// Scan EVERY markdown file, not a hand-listed four: docs/ and .github/ carried pre-restructure
+// names (apps/demo, verify-demo) for weeks because this list only covered README/AGENTS/
+// CONTRIBUTING/STATUS. Suite-printed numbers are governed below; names and figures no suite
+// prints depend on this list staying honest.
+const staleTokens = [
+  'apps/demo', 'apps/trading', 'verify:demo', 'verify:screen', 'screen:build',
+  'npm run demo', 'build-demo', 'verify-demo', 'build-trading',
+  '39 library checks', '97 checks over', '12 checks × 6 combos = 72',
+  '4.34', '4.06 kB', '4.2 KB gzip',
+  '21 roles', '114 custom properties', '8 files, ~320', '26 checks: virtualization',
+  '20 steps'
+];
+for (const file of markdownFiles) {
+  const doc = readFileSync(file, 'utf8');
+  const docName = relative(root, file);
   for (const token of staleTokens) {
     if (doc.includes(token)) stale.push(`${docName}: stale reference "${token}"`);
   }
 }
 expectIn(contributing, 'CONTRIBUTING.md', /baselines\/<platform>/, 'the baselines reviewed-exception (baselines/<platform>/)');
 expectIn(readme, 'README.md', /baselines\/<platform>/, 'the baselines reviewed-exception (baselines/<platform>/)');
+
+// The perf-retry policy is a gate, so it must be described where the retry is documented and
+// wired into the chain that runs it (Rule zero: a rule without a gate rots).
+const verification = readDoc('docs/verification.md');
+const performanceDoc = readDoc('docs/performance.md');
+const pkg = readDoc('package.json');
+expectIn(verification, 'docs/verification.md', new RegExp('browser-suite\\.mjs[^\\n]*= ' + compare), 'the browser-suite per-combo total (= ' + compare + ')');
+expectIn(verification, 'docs/verification.md', /perf-policy\.mjs/, 'the perf-policy module');
+expectIn(performanceDoc, 'docs/performance.md', /perf-policy\.mjs/, 'the perf-policy module');
+expectIn(pkg, 'package.json', /"check:perf-policy":/, 'the check:perf-policy script');
+expectIn(pkg, 'package.json', /check:perf-policy && npm run check:commits/, 'check:perf-policy wired into the ci chain');
+const workflow = readDoc('.github/workflows/ci.yml');
+expectIn(workflow, '.github/workflows/ci.yml', /npm run check:perf-policy/, 'the perf-policy gate in the CI build job');
+// The new gate's own total is quoted in README; read it from the gate rather than trusting the prose.
+const policyCount = Number(
+  (execSync('node scripts/check-perf-policy.mjs', { cwd: root, encoding: 'utf8' }).match(/perf policy: (\d+)\//) ?? [])[1]
+);
+if (!Number.isInteger(policyCount)) {
+  console.error('docs counts: could not read the check:perf-policy total');
+  process.exit(1);
+}
+expectIn(readme, 'README.md', new RegExp(`check:perf-policy\\s*#\\s*${policyCount} checks`), `the check:perf-policy row total (${policyCount} checks)`);
+
+// The remaining quoted counts (issue #31). The totals live in scripts/expected-counts.mjs, each suite
+// asserts its own total against that module on every run, and these doc rows are gated against the
+// same numbers - so a wrong count fails either the suite or this check, never neither.
+const expectCount = (doc, docName, pattern, expected, what, minMatches = 1) => {
+  const found = [...doc.matchAll(pattern)].map((m) => Number(m[1]));
+  if (found.length < minMatches) stale.push(`${docName}: ${what} not found (${found.length} of ${minMatches})`);
+  for (const value of found) {
+    if (value !== expected) stale.push(`${docName}: ${what} says ${value}, the suite declares ${expected}`);
+  }
+};
+// README quotes the verify total twice (quick start and the verification block); both are gated.
+expectCount(readme, 'README.md', /npm run verify\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.verify, 'the verify row total', 2);
+expectCount(readme, 'README.md', /npm run check:style\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.style, 'the check:style row total');
+expectCount(readme, 'README.md', /npm run verify:example-trading\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.trading, 'the verify:example-trading row total');
+expectCount(verification, 'docs/verification.md', /verify\.mjs`[^\n]*?(\d+) library checks/g, EXPECTED_COUNTS.verify, 'the verify total');
+expectCount(verification, 'docs/verification.md', /check-style\.mjs`[^\n]*?(\d+) checks over/g, EXPECTED_COUNTS.style, 'the check:style total');
+expectCount(verification, 'docs/verification.md', /verify-example\.mjs`[^\n]*?(\d+) checks/g, 10, 'the verify:example total');
 forbidIn(readme, 'README.md', /belong in CI artifacts/, 'the "screenshots belong in CI artifacts" claim (contradicts the committed baselines)');
 
-console.log(`docs counts: browser-suite ${compare} compare / ${update} update — README, AGENTS.md, CONTRIBUTING.md agree`);
+console.log(
+  `docs counts: browser-suite ${compare} compare / ${update} update, verify ${EXPECTED_COUNTS.verify}, `
+  + `style ${EXPECTED_COUNTS.style}, trading ${EXPECTED_COUNTS.trading}, perf-policy ${policyCount} — `
+  + `README, AGENTS.md, CONTRIBUTING.md and docs/verification.md agree; `
+  + `stale-name scan covers all ${markdownFiles.length} markdown files`
+);
 if (stale.length > 0) {
   for (const line of stale) console.error(`  docs drift: ${line}`);
   process.exit(1);

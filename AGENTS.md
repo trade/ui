@@ -65,6 +65,8 @@ apps/example-trading/src/main.jsx  the production-grade trading workspace exampl
 scripts/verify.mjs                 library checks (SSR, CSS, DOM interactions) — add checks here
 scripts/verify-example.mjs         example-bundle checks — add checks here
 scripts/browser-suite.mjs          84 checks × {chromium,firefox,webkit} × {desktop,mobile}
+scripts/perf-policy.mjs            the perf-retry rules, pure and browser-free
+scripts/check-perf-policy.mjs      exercises every retry branch and pins the 25 ms budget
 scripts/check-contract.mjs         package promises (zero deps, peer React, exports map)
 scripts/check-contrast.mjs         WCAG contrast over every theme's role pairs — extend on new pairs
 scripts/check-style.mjs            CSS authoring contract (the laws, executable — library AND example apps)
