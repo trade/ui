@@ -84,7 +84,7 @@ WCAG 1.4.3 AA (4.5:1) for text roles, 1.4.11 (3.0:1) for UI boundaries, evaluate
 system per theme — before any browser runs. See [design-tokens.md](design-tokens.md). Extend
 `PAIRS` when you add a foreground/background combination.
 
-### `scripts/check-style.mjs` — 128 checks over 11 library + 2 app stylesheets
+### `scripts/check-style.mjs` — 141 checks over 11 library + 2 app stylesheets
 
 The CSS authoring contract — raw values, physical direction, z-index, shadows, motion,
 `!important`, font-size, namespacing, vendor prefixes. Enumerated in [css.md](css.md).

@@ -84,7 +84,9 @@
   cursor: pointer;
   transition: none;
 }
-.ui-select-lb__option:hover { background: var(--ui-hover-overlay); }
+@media (hover: hover) {
+  .ui-select-lb__option:hover { background: var(--ui-hover-overlay); }
+}
 .ui-select-lb__option[aria-selected='true'] {
   background: var(--ui-hover-overlay);
   font-weight: 600;

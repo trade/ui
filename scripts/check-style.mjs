@@ -25,6 +25,35 @@ const appsDir = resolve(root, 'apps');
 
 const PREFIX_ALLOWLIST = new Set(['-webkit-font-smoothing']);
 
+/**
+ * Return `css` with every `@media (hover: hover) { ... }` block removed, brace-aware, so a rule
+ * nested inside the guard is not counted as unguarded. Anything the scan cannot parse is kept.
+ */
+function stripHoverGuards(css) {
+  let out = '';
+  let i = 0;
+  for (;;) {
+    const at = css.indexOf('@media', i);
+    if (at === -1) return out + css.slice(i);
+    out += css.slice(i, at);
+    const open = css.indexOf('{', at);
+    if (open === -1) return out + css.slice(at);
+    if (!/hover:\s*hover/.test(css.slice(at, open))) {
+      out += css.slice(at, open + 1);
+      i = open + 1;
+      continue;
+    }
+    let depth = 1;
+    let j = open + 1;
+    while (j < css.length && depth > 0) {
+      if (css[j] === '{') depth += 1;
+      else if (css[j] === '}') depth -= 1;
+      j += 1;
+    }
+    i = j; // the guarded block is dropped entirely
+  }
+}
+
 /** The shared law set. `namespaced` adds the library-only .ui-* rule. */
 function checkFile(checks, file, css, { namespaced }) {
   const check = (name, violations) =>
@@ -91,7 +120,14 @@ function checkFile(checks, file, css, { namespaced }) {
     [...new Set([...css.matchAll(/-(?:webkit|moz|ms|o)-[\w-]+/g)].map((m) => m[0]))].filter((p) => !PREFIX_ALLOWLIST.has(p))
   );
 
-  // 9. a stylesheet that ships is a resolved stylesheet — leftover git conflict
+  // 9. pointer states are guarded: `:hover` sticks after a tap on touch devices, so hover-only
+  //    rules must live inside `@media (hover: hover)`. `:active`/`:focus-visible` are exempt.
+  check(
+    `${file}: :hover is guarded by @media (hover: hover)`,
+    (stripHoverGuards(css).match(/[^{}]*:hover[^{}]*\{/g) ?? []).map((s) => s.trim().replace(/\s+/g, ' '))
+  );
+
+  // 10. a stylesheet that ships is a resolved stylesheet — leftover git conflict
   //  markers are malformed CSS the browser silently recovers from (last
   //  declaration wins), so a botched merge must fail the gate, not the diff
   check(

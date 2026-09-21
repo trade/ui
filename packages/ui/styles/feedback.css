@@ -28,8 +28,10 @@
 
 .ui-toast-region {
   position: fixed;
-  inset-inline-end: var(--ui-space-4);
-  inset-block-end: var(--ui-space-4);
+  /* notch/home-bar safe areas: without this a toast can sit under the iOS home indicator.
+     env() is 0 where it does not apply, and requires viewport-fit=cover in the page meta. */
+  inset-inline-end: calc(var(--ui-space-4) + env(safe-area-inset-right, 0px));
+  inset-block-end: calc(var(--ui-space-4) + env(safe-area-inset-bottom, 0px));
   z-index: var(--ui-z-toast);
   display: flex;
   flex-direction: column;

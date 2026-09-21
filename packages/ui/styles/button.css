@@ -40,9 +40,14 @@
 .ui-btn--outline   { background: var(--ui-surface-1); color: var(--ui-primary); border-color: var(--ui-border-control); }
 .ui-btn--ghost     { background: transparent; color: var(--ui-on-surface); }
 
-.ui-btn:hover:not(:disabled) { filter: brightness(0.96); }
-.ui-btn--outline:hover:not(:disabled),
-.ui-btn--ghost:hover:not(:disabled) { background: var(--ui-hover-overlay); filter: none; }
+/* Pointer states are guarded: on a touch device `:hover` sticks after a tap and leaves the control
+   looking pressed until something else is tapped. `:active` and `:focus-visible` stay unguarded —
+   they are correct on every input type. */
+@media (hover: hover) {
+  .ui-btn:hover:not(:disabled) { filter: brightness(0.96); }
+  .ui-btn--outline:hover:not(:disabled),
+  .ui-btn--ghost:hover:not(:disabled) { background: var(--ui-hover-overlay); filter: none; }
+}
 
 .ui-btn:active:not(:disabled) { filter: brightness(0.9); }
 

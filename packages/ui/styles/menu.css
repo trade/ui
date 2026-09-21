@@ -44,7 +44,13 @@
   transition: none;
 }
 
-.ui-menuitem:hover:not(:disabled),
+/* split: the hover half is pointer-only, the focus half must work on every input type */
+@media (hover: hover) {
+  .ui-menuitem:hover:not(:disabled) {
+    background: var(--ui-hover-overlay);
+  }
+}
+
 .ui-menuitem:focus-visible {
   background: var(--ui-hover-overlay);
 }
