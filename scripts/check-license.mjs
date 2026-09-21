@@ -76,7 +76,10 @@ for (const file of ['packages/tokens/build-tokens.mjs', 'packages/ui/build.mjs']
 const ID_RE = new RegExp(`SPDX-License-Identifier:\\s*${LICENSE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
 const CR_RE = /SPDX-FileCopyrightText:\s*\S+/;
 const badHeader = sourceFiles.filter((file) => {
-  const head = readFileSync(file, 'utf8').slice(0, 600);
+  // The header must OPEN the file (a shebang may precede it), not merely appear somewhere in it —
+  // otherwise a licence string in executable content would satisfy the gate.
+  // A shebang may occupy line 1; the two SPDX lines follow. Four lines is the whole allowance.
+  const head = readFileSync(file, 'utf8').split('\n', 4).join('\n');
   return !ID_RE.test(head) || !CR_RE.test(head);
 });
 check(
