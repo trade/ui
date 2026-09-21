@@ -246,6 +246,16 @@ await React.act(async () => {
 const afterArrow = activeTabIndex();
 check('ArrowRight moves selection (roving tabindex)', afterArrow === 2, `selectedIndex=${afterArrow} (expected 2)`);
 
+// every tab's aria-controls must resolve to a panel that exists in the DOM (no dangling refs)
+const danglingTabControls = [...container.querySelectorAll('[role="tab"]')]
+  .map((t) => t.getAttribute('aria-controls'))
+  .filter((id) => id && !document.getElementById(id));
+check(
+  "every tab's aria-controls resolves to a rendered panel",
+  danglingTabControls.length === 0,
+  `dangling: ${danglingTabControls.join(', ') || 'none'}`
+);
+
 await React.act(async () => click(container.querySelector('#open-dialog')));
 const dialog = document.body.querySelector('[role="dialog"]');
 const focusInside = Boolean(dialog && document.activeElement && dialog.contains(document.activeElement));
@@ -295,6 +305,19 @@ check(
   `describedby="${fieldDescribedBy}"`
 );
 await React.act(async () => fieldRoot.unmount());
+
+// ── DataTable: the empty-state cell is a real gridcell spanning the columns ──
+const emptyHost = document.createElement('div');
+document.body.appendChild(emptyHost);
+const emptyRoot = createRoot(emptyHost);
+await React.act(async () => emptyRoot.render(h(ui.DataTable, { columns: [{ key: 'a', header: 'A' }, { key: 'b', header: 'B' }], rows: [], getRowKey: (_, i) => i })));
+const emptyCell = emptyHost.querySelector('.ui-table__empty');
+check(
+  'the empty-state cell is a gridcell spanning the full column count',
+  emptyCell?.getAttribute('role') === 'gridcell' && emptyCell?.getAttribute('aria-colspan') === '2',
+  `role=${emptyCell?.getAttribute('role')}, aria-colspan=${emptyCell?.getAttribute('aria-colspan')}`
+);
+await React.act(async () => emptyRoot.unmount());
 
 await React.act(async () => click([...container.querySelectorAll('button')].find((b) => b.textContent === 'Dark')));
 check(

@@ -49,8 +49,6 @@ export function Tabs({ items, value, defaultValue, onChange, density, className 
     refs.current[targetIndex]?.focus();
   };
 
-  const activeItem = items.find((i) => i.key === active);
-
   return (
     <div className={cx('ui-tabs', className)}>
       <div className="ui-tabs__list" role="tablist">
@@ -79,17 +77,22 @@ export function Tabs({ items, value, defaultValue, onChange, density, className 
           );
         })}
       </div>
-      {activeItem ? (
-        <div
-          className="ui-tabs__panel"
-          role="tabpanel"
-          id={`${baseId}-panel-${activeItem.key}`}
-          aria-labelledby={`${baseId}-tab-${activeItem.key}`}
-          tabIndex={0}
-        >
-          {activeItem.content}
-        </div>
-      ) : null}
+      {items.map((item) => {
+        const selected = item.key === active;
+        return (
+          <div
+            key={item.key}
+            className="ui-tabs__panel"
+            role="tabpanel"
+            id={`${baseId}-panel-${item.key}`}
+            aria-labelledby={`${baseId}-tab-${item.key}`}
+            hidden={!selected}
+            tabIndex={selected ? 0 : undefined}
+          >
+            {item.content}
+          </div>
+        );
+      })}
     </div>
   );
 }
