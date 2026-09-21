@@ -68,6 +68,23 @@ system per theme — before any browser runs. See [design-tokens.md](design-toke
 The CSS authoring contract — raw values, physical direction, z-index, shadows, motion,
 `!important`, font-size, namespacing, vendor prefixes. Enumerated in [css.md](css.md).
 
+### `tests/*.test.mjs` — `npm test` (node:test, no dependencies)
+
+The unit-level floor for the pure modules — the parts that have no browser and no DOM:
+
+- `tests/perf-policy.test.mjs` — the browser suite's retry policy: the pinned 25 ms budget and 5 ms
+  slack, per-platform engine gating, the inclusive budget boundary, throttle detection, and the
+  verdict/retry branches.
+- `tests/baseline-gate.test.mjs` — baseline-set resolution: a host gates only on a complete set, an
+  absent host falls back to the manifest's nominated complete set, otherwise the checks are
+  informational.
+- `tests/tokens.test.mjs` — the ADR-001 token contract: identical role sets across themes, every role
+  a primitive reference, every reference resolving, the frozen scales (9-step space, density
+  `1 / 0.75 / 0.625`, motion off).
+
+These use `node:test` — no dependency, matching ADR-002. The behavioural suites (`verify.mjs`, the
+browser suite) still own rendered behaviour; this only covers the pure logic beneath them.
+
 ### `npm run size`
 
 size-limit budgets: ESM bundle ≤ 8 kB gzip, stylesheet ≤ 8 kB gzip, types ≤ 3 kB. Measured today:
@@ -76,7 +93,7 @@ so the next component is a size conversation, not a shrug.
 
 ## CI and the local loop
 
-`npm run ci` = `check:contract → build → check:contrast → check:style → check:types →
+`npm run ci` = `check:contract → build → check:contrast → check:style → check:types → test →
 check:docs → check:perf-policy → check:commits → example:build → example-trading:build →
 harness:build → size → verify → verify:example → verify:example-trading → verify:browser`,
 all non-zero-exit. CI (.github/workflows/ci.yml,
