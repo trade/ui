@@ -86,7 +86,12 @@ export function DataTable<T>({
           {spacerBefore > 0 ? <tr aria-hidden="true" style={{ height: spacerBefore }} /> : null}
           {rows.length === 0 && !virtualized ? (
             <tr role="row" aria-rowindex={2}>
-              <td className="ui-table__empty" colSpan={columns.length}>
+              <td
+                className="ui-table__empty"
+                role="gridcell"
+                aria-colspan={columns.length}
+                colSpan={columns.length}
+              >
                 {emptyMessage}
               </td>
             </tr>
