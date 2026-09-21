@@ -38,6 +38,12 @@ test('every primitive reference resolves', () => {
     for (const [role, value] of Object.entries(roles)) {
       const target = walk(tokens.primitive, String(value).slice(1, -1));
       assert.notEqual(target, undefined, `${themeName}.${role} -> ${value} does not resolve`);
+      // a group target ({colour.indigo}) would emit var(--ui-ref-indigo), which is never defined:
+      // only leaves become variables. build-tokens.mjs rejects it; this pins the same rule here.
+      assert.ok(
+        typeof target === 'string' || typeof target === 'number',
+        `${themeName}.${role} -> ${value} resolves to a group, not a scalar leaf`
+      );
     }
   }
 });

@@ -80,4 +80,15 @@ test('isBetterReading prefers an unthrottled, in-budget attempt', () => {
   const ctx = perfContext('linux', 'chromium');
   assert.equal(isBetterReading({ p95: 150, staticP95: 20 }, { p95: 20, staticP95: 20 }, ctx), true, 'unthrottled beats throttled');
   assert.equal(isBetterReading({ p95: 20, staticP95: 20 }, { p95: 150, staticP95: 20 }, ctx), false, 'throttled never beats unthrottled');
+
+  // The other replacement path: neither reading is throttled, but one is over budget on a gated
+  // engine, so the in-budget retry must win - otherwise a failing reading is kept.
+  const overBudget = { p95: 26, staticP95: 20 };
+  const inBudget = { p95: 20, staticP95: 20 };
+  assert.equal(isBetterReading(overBudget, inBudget, ctx), true, 'a gated engine replaces an over-budget reading with an in-budget retry');
+  assert.equal(
+    isBetterReading(overBudget, inBudget, perfContext('linux', 'webkit')),
+    false,
+    'an informational engine does not make that replacement'
+  );
 });

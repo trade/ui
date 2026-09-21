@@ -49,6 +49,12 @@ function resolveRef(value, where) {
     errors.push(`${where}: unknown primitive "${ns}.${name}"`);
     return null;
   }
+  if (variant === undefined && typeof entry !== 'string') {
+    // A group reference (e.g. {colour.indigo}) would emit var(--ui-ref-indigo), but only leaves
+    // are emitted as variables - so the reference would dangle and the browser would drop it.
+    errors.push(`${where}: "${ns}.${name}" is a group, not a scalar leaf - reference a variant (e.g. ${ns}.${name}.<variant>)`);
+    return null;
+  }
   if (variant !== undefined) {
     if (typeof entry !== 'object' || entry[variant] === undefined) {
       errors.push(`${where}: unknown primitive variant "${ns}.${name}.${variant}"`);

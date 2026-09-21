@@ -56,4 +56,14 @@ test('baseline gate resolution', (t) => {
     null,
     'no manifest -> informational'
   );
+
+  // A nominated directory that exists but is incomplete must NOT be selected: gating against a
+  // partial set would compare against baselines that are not there.
+  makeSet(root, 'darwin', { complete: false });
+  assert.equal(baselineSetIsComplete(root, 'darwin'), false, 'a partial nominated set is incomplete');
+  assert.equal(
+    resolveBaselinePlatform({ hostPlatform: 'win32', baselinesDir: root, manifest: { latestPlatform: 'darwin' } }),
+    null,
+    'absent host + incomplete nominated set -> informational, never a missing set'
+  );
 });
