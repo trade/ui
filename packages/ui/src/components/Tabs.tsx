@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// SPDX-FileCopyrightText: 2019-present Iko <6572003+iap@users.noreply.github.com>
+
 import { useId, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { cx } from '../internal/cx';

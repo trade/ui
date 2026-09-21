@@ -55,7 +55,8 @@ static p95. Full story: [STATUS.md](../STATUS.md), gh run 35205539648.
 
 The package promises: zero runtime dependencies in `@trade/ui` **and** `@trade/tokens`; React and
 React DOM are peers, not deps; `sideEffects: false`; exports map exposes import/require/types and
-`./styles.css`; publishes only `dist`; all 4 build artifacts present and non-empty.
+`./styles.css`; publishes `dist` plus the licence files (`LICENSE`, `LICENSE-MIT`, `LICENSE-APACHE`,
+`NOTICE`) and nothing else; all 4 build artifacts present and non-empty.
 
 ### `scripts/check-contrast.mjs` — 23 pairs × 3 themes = 69
 
@@ -85,6 +86,14 @@ The unit-level floor for the pure modules — the parts that have no browser and
 These use `node:test` — no dependency, matching ADR-002. The behavioural suites (`verify.mjs`, the
 browser suite) still own rendered behaviour; this only covers the pure logic beneath them.
 
+### `scripts/check-license.mjs` — `npm run check:license`
+
+The project is dual-licensed **MIT OR Apache-2.0**. This gate asserts that the terms travel with
+the code: the licence files exist (`LICENSE`, `LICENSE-MIT`, `LICENSE-APACHE`, `NOTICE`), every
+package manifest declares `"MIT OR Apache-2.0"`, and every source file carries an
+`SPDX-License-Identifier` header. Non-headerable files (JSON, HTML, the committed baseline PNGs)
+are covered by `REUSE.toml` (REUSE Specification 3.0).
+
 ### `npm run size`
 
 size-limit budgets: ESM bundle ≤ 8 kB gzip, stylesheet ≤ 8 kB gzip, types ≤ 3 kB. Measured today:
@@ -94,7 +103,7 @@ so the next component is a size conversation, not a shrug.
 ## CI and the local loop
 
 `npm run ci` = `check:contract → build → check:contrast → check:style → check:types → test →
-check:docs → check:perf-policy → check:commits → example:build → example-trading:build →
+check:license → check:docs → check:perf-policy → check:commits → example:build → example-trading:build →
 harness:build → size → verify → verify:example → verify:example-trading → verify:browser`,
 all non-zero-exit. CI (.github/workflows/ci.yml,
 Node 22) runs four jobs: **build** (the static checks + dist artifact), **size**, **verification**

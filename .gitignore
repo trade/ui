@@ -71,3 +71,10 @@ coverage/
 
 # orphaned screenshot folder from an earlier suite layout; nothing generates it
 verification/screen/
+
+# licence files copied into each publishable package by `prepack` (scripts/copy-licenses.mjs);
+# they exist only so `npm pack`/publish ships the terms, and are regenerated from the root copies
+packages/*/LICENSE
+packages/*/LICENSE-MIT
+packages/*/LICENSE-APACHE
+packages/*/NOTICE

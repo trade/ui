@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// SPDX-FileCopyrightText: 2019-present Iko <6572003+iap@users.noreply.github.com>
+
 // Unit tests for the visual-baseline gate resolution. A host gates only when a committed baseline
 // set for its platform actually exists; this is the logic that decides that, without a browser.
 import { test } from 'node:test';

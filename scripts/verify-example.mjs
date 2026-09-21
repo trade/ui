@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// SPDX-FileCopyrightText: 2019-present Iko <6572003+iap@users.noreply.github.com>
+
 /**
  * @trade/ui — example app boot verification.
  * Loads the *built* example (the real IIFE bundle) inside jsdom, lets it render,

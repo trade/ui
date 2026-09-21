@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// SPDX-FileCopyrightText: 2019-present Iko <6572003+iap@users.noreply.github.com>
+
 /** Minimal static server for the harness (the visible browser only accepts http/https). */
 import { createServer } from 'node:http';
 import { readFileSync, existsSync, statSync, writeFileSync } from 'node:fs';

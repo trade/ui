@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// SPDX-FileCopyrightText: 2019-present Iko <6572003+iap@users.noreply.github.com>
+
 import { forwardRef } from 'react';
 import type { InputHTMLAttributes, ReactNode } from 'react';
 import { cx } from '../internal/cx';

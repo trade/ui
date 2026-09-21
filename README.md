@@ -119,6 +119,7 @@ npm run check:contrast  # 69 colour pairs across 3 themes must meet the contrast
 npm run check:style     # 128 checks: the CSS authoring contract (tokens-only, logical, motionless)
 npm run check:types     # tsc --noEmit over @trade/ui — strict types are a gate, not a suggestion
 npm test                # 14 unit tests for the pure modules (node:test; no browser, no deps)
+npm run check:license   # licence headers + manifests agree (MIT OR Apache-2.0)
 npm run check:docs      # links resolve + documented check counts agree with the suites themselves
 npm run check:perf-policy  # 71 checks: the perf-retry rules, the gated verdicts, the pinned knobs
 npm run size            # bundle budgets (ESM 8 kB, stylesheet 8 kB, types 3 kB, gzip)

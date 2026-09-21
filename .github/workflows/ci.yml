@@ -46,6 +46,8 @@ jobs:
         run: npm run check:types
       - name: Unit tests (node:test, no browser)
         run: npm test
+      - name: Licence headers and manifests (MIT OR Apache-2.0)
+        run: npm run check:license
       - name: Docs integrity (links, documented counts, exceptions)
         run: npm run check:docs
       - name: Perf retry policy (every branch, pinned 25 ms budget)

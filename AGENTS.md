@@ -29,7 +29,11 @@ the router says you need them.
 9. **Never weaken a gate to make a change pass.** If a check fails, the change is wrong or the check
    is wrong — fix one of those two things, in the open, with the user's knowledge. Deleting,
    skipping, or loosening thresholds silently is the one unrecoverable mistake in this repo.
-10. **Accessibility is not optional polish.** Keyboard paths, `:focus-visible`, ARIA honesty
+10. **Licence headers travel with the code.** The project is dual-licensed (MIT OR Apache-2.0,
+    `LICENSE`). Every new source file starts with an `SPDX-License-Identifier` and an
+    `SPDX-FileCopyrightText` line; package manifests keep `"license": "MIT OR Apache-2.0"`.
+    (Gate: `check-license.mjs`.)
+11. **Accessibility is not optional polish.** Keyboard paths, `:focus-visible`, ARIA honesty
     (`aria-rowcount` = data length, not DOM length), non-colour signalling. If your change can
     affect interaction, `npm run verify` and `npm run verify:browser` must both run before you call
     it done. (Gate: axe both themes × 3 engines.)
