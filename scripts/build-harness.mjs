@@ -43,7 +43,7 @@ const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>@trade/ui — browser harness</title>
   <link rel="icon" href="data:," />
   <link rel="stylesheet" href="./ui.css" />

@@ -21,7 +21,11 @@
   border-radius: var(--ui-radius-lg);
   box-shadow: var(--ui-elevation-24);
   width: min(560px, 100%);
+  /* vh is the *large* viewport on mobile and does not shrink as browser chrome appears, so a tall
+     dialog can extend under it. dvh follows the visible viewport; engines without dvh keep the vh
+     line above (later declarations win, older engines ignore the one they cannot parse). */
   max-height: calc(100vh - var(--ui-space-7));
+  max-height: calc(100dvh - var(--ui-space-7));
   display: flex;
   flex-direction: column;
   transition: none;
