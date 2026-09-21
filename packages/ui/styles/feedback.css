@@ -30,13 +30,20 @@
   position: fixed;
   /* notch/home-bar safe areas: without this a toast can sit under the iOS home indicator.
      env() is 0 where it does not apply, and requires viewport-fit=cover in the page meta. */
-  inset-inline-end: calc(var(--ui-space-4) + env(safe-area-inset-right, 0px));
-  inset-block-end: calc(var(--ui-space-4) + env(safe-area-inset-bottom, 0px));
+  inset-inline-end: calc(var(--ui-space-4) + env(safe-area-inset-right, var(--ui-space-0)));
+  inset-block-end: calc(var(--ui-space-4) + env(safe-area-inset-bottom, var(--ui-space-0)));
   z-index: var(--ui-z-toast);
   display: flex;
   flex-direction: column;
   gap: var(--ui-space-2);
   max-width: 360px;
+}
+
+/* `inset-inline-end` is the physical left under RTL, so the safe-area inset has to follow the
+   edge actually used — a physical-right inset would miss a left cutout entirely. */
+[dir='rtl'] .ui-toast-region,
+.ui-toast-region[dir='rtl'] {
+  inset-inline-end: calc(var(--ui-space-4) + env(safe-area-inset-left, var(--ui-space-0)));
 }
 
 .ui-toast {

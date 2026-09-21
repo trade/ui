@@ -29,6 +29,14 @@ const PREFIX_ALLOWLIST = new Set(['-webkit-font-smoothing']);
  * Return `css` with every `@media (hover: hover) { ... }` block removed, brace-aware, so a rule
  * nested inside the guard is not counted as unguarded. Anything the scan cannot parse is kept.
  */
+/**
+ * A media prelude only guarantees hover capability when it tests `hover: hover` and does not
+ * negate it or OR it with anything else — `@media not (hover: hover)` and
+ * `@media (hover: hover), (pointer: coarse)` both match devices that cannot hover.
+ */
+const isHoverGuard = (prelude) =>
+  /hover:\s*hover/.test(prelude) && !prelude.includes(',') && !/\bnot\b/.test(prelude);
+
 function stripHoverGuards(css) {
   let out = '';
   let i = 0;
@@ -38,16 +46,28 @@ function stripHoverGuards(css) {
     out += css.slice(i, at);
     const open = css.indexOf('{', at);
     if (open === -1) return out + css.slice(at);
-    if (!/hover:\s*hover/.test(css.slice(at, open))) {
+    if (!isHoverGuard(css.slice(at, open))) {
       out += css.slice(at, open + 1);
       i = open + 1;
       continue;
     }
+    // Skip the guarded block. Quote-aware: a brace inside a string value (`content: "{"`) is not
+    // a block delimiter, and miscounting it would swallow the rules that follow.
     let depth = 1;
     let j = open + 1;
+    let quote = null;
     while (j < css.length && depth > 0) {
-      if (css[j] === '{') depth += 1;
-      else if (css[j] === '}') depth -= 1;
+      const char = css[j];
+      if (quote) {
+        if (char === '\\') j += 1;
+        else if (char === quote) quote = null;
+      } else if (char === '"' || char === "'") {
+        quote = char;
+      } else if (char === '{') {
+        depth += 1;
+      } else if (char === '}') {
+        depth -= 1;
+      }
       j += 1;
     }
     i = j; // the guarded block is dropped entirely
