@@ -23,6 +23,7 @@
     "verify:example": "node scripts/verify-example.mjs",
     "verify:example-trading": "node scripts/verify-example-trading.mjs",
     "verify:browser": "node scripts/browser-suite.mjs",
+    "verify:browser:docker": "node scripts/verify-browser-docker.mjs",
     "baselines:update": "node scripts/browser-suite.mjs --update-baselines",
     "size": "size-limit",
     "harness:build": "node scripts/build-harness.mjs",

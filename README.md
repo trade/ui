@@ -128,6 +128,7 @@ npm run verify:example  # 10 checks: boots the real example bundle in a DOM
 npm run harness:build   # required before verify:browser (harness/dist is gitignored)
 npm run verify:browser  # 84 checks: Chromium + Firefox + WebKit × desktop + mobile,
                         # incl. 12 visual-regression checks vs baselines/<platform>/
+npm run verify:browser:docker  # the same suite inside CI's pinned image (hosts below Playwright's macOS 14 floor)
 
 npm run all             # build + demo + harness + the verification suites
 npm run ci              # contract + build + demo + harness + size + every suite
