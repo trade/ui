@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef } from 'react';
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cx } from '../internal/cx';
@@ -13,6 +13,10 @@ export interface DialogProps {
   closeLabel?: string;
 }
 
+// useLayoutEffect warns on the server; the guard keeps SSR quiet while the ref sync still lands
+// synchronously after commit, before the browser can dispatch an event against it.
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
 
@@ -25,6 +29,19 @@ export function Dialog({ open, onClose, title, children, footer, className, clos
   const ref = useRef<HTMLDivElement | null>(null);
   const previouslyFocused = useRef<Element | null>(null);
 
+  // Hold onClose in a ref and depend only on `open`. Depending on the onClose identity re-ran this
+  // effect on every parent re-render (a consumer passing an inline handler creates a new identity
+  // each render): the cleanup restored focus to the pre-open element and the body re-focused the
+  // container, so focus inside the modal was reset to the dialog on every re-render and the
+  // document keydown listener was torn down and re-added each render.
+  const onCloseRef = useRef(onClose);
+  // A layout effect, not a passive one: the document keydown listener reads this ref synchronously,
+  // and an Escape can be dispatched after commit but before passive effects, which would call the
+  // previous onClose (Greptile P2 on #35).
+  useIsomorphicLayoutEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (!open) return;
     previouslyFocused.current = typeof document !== 'undefined' ? document.activeElement : null;
@@ -32,7 +49,7 @@ export function Dialog({ open, onClose, title, children, footer, className, clos
     // focusing the first control can surprise users on destructive dialogs.
     ref.current?.focus();
     const onKey = (e: globalThis.KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
     };
     document.addEventListener('keydown', onKey);
     return () => {
@@ -40,7 +57,7 @@ export function Dialog({ open, onClose, title, children, footer, className, clos
       const prev = previouslyFocused.current;
       if (prev && prev instanceof HTMLElement) prev.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 

@@ -262,6 +262,40 @@ check(
   `dialog still present=${Boolean(document.body.querySelector('[role="dialog"]'))}`
 );
 
+// ── dialog: a parent re-render must not reset focus inside the open modal (Rule zero:
+// the unstable-onClose fix needs a regression check) ──
+const dlgHost = document.createElement('div');
+document.body.appendChild(dlgHost);
+function DialogReprobe() {
+  const [open, setOpen] = React.useState(true);
+  return h(ui.Dialog, { open, onClose: () => setOpen(false), title: 'Ticket' }, h('button', { id: 'dlg-action' }, 'Confirm'));
+}
+const dlgRoot = createRoot(dlgHost);
+await React.act(async () => dlgRoot.render(h(DialogReprobe)));
+const dlgAction = document.body.querySelector('#dlg-action');
+await React.act(async () => dlgAction.focus());
+await React.act(async () => dlgRoot.render(h(DialogReprobe)));
+check(
+  're-rendering a parent with a fresh onClose keeps focus on the control inside the open dialog',
+  document.activeElement === dlgAction,
+  `activeElement=${document.activeElement?.id || document.activeElement?.tagName} (expected dlg-action)`
+);
+await React.act(async () => dlgRoot.unmount());
+
+// ── Field: a consumer-supplied aria-describedby is preserved and extended, not replaced ──
+const fieldHost = document.createElement('div');
+document.body.appendChild(fieldHost);
+const fieldRoot = createRoot(fieldHost);
+await React.act(async () => fieldRoot.render(h(ui.Field, { label: 'Price', error: 'Required' }, h(ui.Input, { 'aria-describedby': 'preset-help' }))));
+const fieldInput = fieldHost.querySelector('input');
+const fieldDescribedBy = fieldInput?.getAttribute('aria-describedby') ?? '';
+check(
+  'Field merges a consumer aria-describedby with its own error id',
+  fieldDescribedBy.split(' ').includes('preset-help') && /ui-field-.*-error/.test(fieldDescribedBy),
+  `describedby="${fieldDescribedBy}"`
+);
+await React.act(async () => fieldRoot.unmount());
+
 await React.act(async () => click([...container.querySelectorAll('button')].find((b) => b.textContent === 'Dark')));
 check(
   'provider theme toggle applies data-theme to <html>',

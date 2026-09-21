@@ -18,10 +18,15 @@ export function Field({ label, hint, error, children, className }: FieldProps) {
   const hintId = hint ? `${controlId}-hint` : undefined;
   const errorId = error ? `${controlId}-error` : undefined;
 
+  // Preserve any aria-describedby the consumer set on the control and append Field's own
+  // error/hint id rather than replacing it (Input and Tooltip merge; Field overwrote it).
+  const existingDescribedBy = children.props['aria-describedby'] as string | undefined;
+  const describedBy = [existingDescribedBy, errorId ?? hintId].filter(Boolean).join(' ') || undefined;
+
   const control = isValidElement(children)
     ? cloneElement(children, {
         id: (children.props.id as string | undefined) ?? controlId,
-        'aria-describedby': errorId ?? hintId,
+        'aria-describedby': describedBy,
         'aria-invalid': error ? true : undefined
       })
     : children;
