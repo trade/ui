@@ -51,6 +51,26 @@ gated by the dedicated `browser-macos` CI job on `macos-latest`. On macOS runner
 only real WebKit's perf gates, because shared-runner Chromium read a hardware-impossible 50 ms
 static p95. Full story: [STATUS.md](../STATUS.md), gh run 35205539648.
 
+### Running the browser suite in CI's container (`npm run verify:browser:docker`)
+
+Playwright supports **macOS 14 and later**. A development host below that floor cannot run the
+suite at all (Chromium's binary requires macOS 13+, and the WebKit build is macOS-14-targeted), and
+even a host that can run it renders differently from the Linux container that produced
+`baselines/linux`. `scripts/verify-browser-docker.mjs` removes both problems: it runs `npm ci`,
+`build`, `harness:build` and the suite **inside the same digest-pinned image CI uses** — read from
+`.github/workflows/ci.yml`, so the two can never drift — with the same `--shm-size=1g` and `HOME`.
+`node_modules` lives in the named volume `ui-node-modules`, so the host checkout is never written to.
+
+```powershell
+npm run verify:browser:docker                 # compare against baselines/linux
+npm run verify:browser:docker -- --update-baselines
+```
+
+**Give the container resources.** On a Docker VM with 2 CPUs the perf gates (p95 ≤ 25 ms) fail on
+throttling, not on the change: the suite reports every combo `[STILL THROTTLED]` and webkit — whose
+perf is informational off macOS — is the only combo that should pass clean. Raise Docker Desktop to
+4 CPUs / 8 GB for a faithful run.
+
 ### `scripts/check-contract.mjs` — 12 checks
 
 The package promises: zero runtime dependencies in `@trade/ui` **and** `@trade/tokens`; React and
