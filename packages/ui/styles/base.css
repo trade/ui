@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: MIT OR Apache-2.0 */
+/* SPDX-FileCopyrightText: 2019-present Iko <6572003+iap@users.noreply.github.com> */
+
 /* @trade/ui — base + reset. Static CSS only; no runtime style engine. */
 
 *, *::before, *::after { box-sizing: border-box; }

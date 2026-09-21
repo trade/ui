@@ -85,6 +85,14 @@ The unit-level floor for the pure modules — the parts that have no browser and
 These use `node:test` — no dependency, matching ADR-002. The behavioural suites (`verify.mjs`, the
 browser suite) still own rendered behaviour; this only covers the pure logic beneath them.
 
+### `scripts/check-license.mjs` — `npm run check:license`
+
+The project is dual-licensed **MIT OR Apache-2.0**. This gate asserts that the terms travel with
+the code: the licence files exist (`LICENSE`, `LICENSE-MIT`, `LICENSE-APACHE`, `NOTICE`), every
+package manifest declares `"MIT OR Apache-2.0"`, and every source file carries an
+`SPDX-License-Identifier` header. Non-headerable files (JSON, HTML, the committed baseline PNGs)
+are covered by `REUSE.toml` (REUSE Specification 3.0).
+
 ### `npm run size`
 
 size-limit budgets: ESM bundle ≤ 8 kB gzip, stylesheet ≤ 8 kB gzip, types ≤ 3 kB. Measured today:
@@ -94,7 +102,7 @@ so the next component is a size conversation, not a shrug.
 ## CI and the local loop
 
 `npm run ci` = `check:contract → build → check:contrast → check:style → check:types → test →
-check:docs → check:perf-policy → check:commits → example:build → example-trading:build →
+check:license → check:docs → check:perf-policy → check:commits → example:build → example-trading:build →
 harness:build → size → verify → verify:example → verify:example-trading → verify:browser`,
 all non-zero-exit. CI (.github/workflows/ci.yml,
 Node 22) runs four jobs: **build** (the static checks + dist artifact), **size**, **verification**

@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// SPDX-FileCopyrightText: 2019-present Iko <6572003+iap@users.noreply.github.com>
+
 /**
  * Build the browser harness: bundle the self-measuring page, inline axe-core, copy the stylesheet.
  * Output goes to ui/harness/dist and is served over http (the visible browser only accepts http/https).

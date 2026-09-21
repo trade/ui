@@ -19,5 +19,5 @@
     "url": "git+https://github.com/trade/ui.git",
     "directory": "packages/tokens"
   },
-  "license": "MIT"
+  "license": "MIT OR Apache-2.0"
 }

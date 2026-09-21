@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// SPDX-FileCopyrightText: 2019-present Iko <6572003+iap@users.noreply.github.com>
+
 // Unit tests for the token source contract (ADR-001): the role set is identical across themes,
 // every role is a primitive reference (never a literal), and the frozen scales keep their shape.
 // build-tokens.mjs enforces these at build time; these pin the same invariants independently.
