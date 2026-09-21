@@ -14,6 +14,7 @@
     "check:contrast": "node scripts/check-contrast.mjs",
     "check:style": "node scripts/check-style.mjs",
     "check:types": "tsc -p packages/ui --noEmit",
+    "test": "node --test",
     "check:docs": "node scripts/check-docs-links.mjs",
     "check:perf-policy": "node scripts/check-perf-policy.mjs",
     "check:commits": "node scripts/check-commits.mjs",
@@ -27,7 +28,7 @@
     "example:build": "node scripts/build-example.mjs",
     "example-trading:build": "node scripts/build-example-trading.mjs",
     "all": "npm run build && npm run example:build && npm run example-trading:build && npm run harness:build && npm run verify && npm run verify:example && npm run verify:example-trading && npm run verify:browser",
-    "ci": "npm run build && npm run check:contract && npm run check:contrast && npm run check:style && npm run check:types && npm run check:docs && npm run check:perf-policy && npm run check:commits && npm run example:build && npm run example-trading:build && npm run harness:build && npm run size && npm run verify && npm run verify:example && npm run verify:example-trading && npm run verify:browser"
+    "ci": "npm run build && npm run check:contract && npm run check:contrast && npm run check:style && npm run check:types && npm test && npm run check:docs && npm run check:perf-policy && npm run check:commits && npm run example:build && npm run example-trading:build && npm run harness:build && npm run size && npm run verify && npm run verify:example && npm run verify:example-trading && npm run verify:browser"
   },
   "size-limit": [
     {

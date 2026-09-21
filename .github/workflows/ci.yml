@@ -44,6 +44,8 @@ jobs:
         run: node scripts/check-style.mjs
       - name: Typecheck (strict, no emit)
         run: npm run check:types
+      - name: Unit tests (node:test, no browser)
+        run: npm test
       - name: Docs integrity (links, documented counts, exceptions)
         run: npm run check:docs
       - name: Perf retry policy (every branch, pinned 25 ms budget)
