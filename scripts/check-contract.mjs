@@ -41,9 +41,14 @@ check('sideEffects is false (tree-shakeable)', ui.sideEffects === false, `sideEf
 check('exports map exposes JS', Boolean(ui.exports?.['.']?.import && ui.exports?.['.']?.require && ui.exports?.['.']?.types), Object.keys(ui.exports ?? {}).join(', '));
 check('exports map exposes the stylesheet', ui.exports?.['./styles.css'] === './dist/ui.css', `./styles.css = ${ui.exports?.['./styles.css']}`);
 
-// 5. published files stay minimal
+// 5. published files stay minimal — the build output plus the licence terms the package declares
+const ALLOWED_FILES = new Set(['dist', 'LICENSE', 'LICENSE-MIT', 'LICENSE-APACHE', 'NOTICE']);
 const files = ui.files ?? [];
-check('publishes only dist', files.length === 1 && files[0] === 'dist', `files = ${JSON.stringify(files)}`);
+check(
+  'publishes dist plus the licence files, nothing else',
+  files.includes('dist') && files.every((f) => ALLOWED_FILES.has(f)),
+  `files = ${JSON.stringify(files)}`
+);
 
 // 6. build output exists and is non-trivial
 for (const f of ['packages/ui/dist/index.js', 'packages/ui/dist/index.cjs', 'packages/ui/dist/ui.css', 'packages/ui/dist/index.d.ts']) {

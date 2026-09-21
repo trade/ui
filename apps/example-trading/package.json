@@ -2,6 +2,7 @@
   "name": "example-trading",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT OR Apache-2.0",
   "description": "Trading workspace example — production-grade reference for the screen @trade/ui exists for.",
   "scripts": {
     "build": "node ../../scripts/build-example-trading.mjs"

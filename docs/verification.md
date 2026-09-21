@@ -55,7 +55,8 @@ static p95. Full story: [STATUS.md](../STATUS.md), gh run 35205539648.
 
 The package promises: zero runtime dependencies in `@trade/ui` **and** `@trade/tokens`; React and
 React DOM are peers, not deps; `sideEffects: false`; exports map exposes import/require/types and
-`./styles.css`; publishes only `dist`; all 4 build artifacts present and non-empty.
+`./styles.css`; publishes `dist` plus the licence files (`LICENSE`, `LICENSE-MIT`, `LICENSE-APACHE`,
+`NOTICE`) and nothing else; all 4 build artifacts present and non-empty.
 
 ### `scripts/check-contrast.mjs` — 23 pairs × 3 themes = 69
 
