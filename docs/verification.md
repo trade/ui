@@ -8,9 +8,11 @@ gaps.
 
 ## The suites
 
-### `scripts/verify.mjs` — 73 library checks
+### `scripts/verify.mjs` — 62 library checks
 
-Two phases, exits non-zero on any failure, prints a JSON report.
+Two phases, exits non-zero on any failure, prints a JSON report. It deliberately does **not**
+re-assert the package promises (that is `check-contract.mjs`) or the baseline-gate resolution (that
+is `tests/baseline-gate.test.mjs`) — one owner per rule, so a regression is reported once.
 
 - **Phase A — static:** package contract (zero runtime deps, React peer, `sideEffects:
   false`, exports map); build artifacts present (4 artifacts, ≥7 per-component CSS files);

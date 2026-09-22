@@ -17,7 +17,6 @@ import { gzipSync } from 'node:zlib';
 import { JSDOM } from 'jsdom';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { resolveBaselinePlatform, baselineSetIsComplete } from './baseline-gate.mjs';
 import { EXPECTED_COUNTS } from './expected-counts.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -36,18 +35,10 @@ const { sampleScreen, harness } = await import('./sample-screen.mjs');
 // ── package contract ──
 const pkg = JSON.parse(readFileSync(resolve(uiPkg, 'package.json'), 'utf8'));
 const depCount = Object.keys(pkg.dependencies ?? {}).length;
-check('zero runtime dependencies', depCount === 0, `dependencies = ${JSON.stringify(pkg.dependencies ?? {})}`);
-check(
-  'React is a peer, not a bundled dependency',
-  Boolean(pkg.peerDependencies?.react && pkg.peerDependencies?.['react-dom']),
-  JSON.stringify(pkg.peerDependencies)
-);
-check('sideEffects:false (tree-shakeable)', pkg.sideEffects === false, `sideEffects=${pkg.sideEffects}`);
-check(
-  'exports map exposes JS + styles',
-  Boolean(pkg.exports?.['.'] && pkg.exports?.['./styles.css']),
-  Object.keys(pkg.exports ?? {}).join(', ')
-);
+// The package promises — zero runtime dependencies, peer-only React, sideEffects, the exports map —
+// are asserted by check-contract.mjs, their single owner. Asserting them here as well let the two
+// drift apart and reported one failure twice. The artifact checks below stay: verify.mjs reads
+// those files, so it must know they exist.
 
 // ── build artifacts ──
 const artifacts = ['index.js', 'index.cjs', 'index.d.ts', 'ui.css'];
@@ -697,46 +688,9 @@ check(
   `dialog present=${Boolean(document.body.querySelector('[role="dialog"]'))}`
 );
 
-// ════════════ baseline gate regression checks (Rule Zero) ════════════
-{
-  const tmp = resolve(root, 'node_modules', '.tmp-baseline-test');
-  rmSync(tmp, { recursive: true, force: true });
-  mkdirSync(tmp, { recursive: true });
-
-  const eng = ['chromium', 'firefox', 'webkit'];
-  const vp = ['desktop', 'mobile'];
-
-  const seedComplete = (platform) => {
-    const p = resolve(tmp, platform);
-    mkdirSync(p, { recursive: true });
-    for (const e of eng) for (const v of vp) {
-      writeFileSync(resolve(p, `${e}-${v}-dark.png`), 'x');
-      writeFileSync(resolve(p, `${e}-${v}-light.png`), 'x');
-    }
-  };
-
-  check('baseline gate: absent set is incomplete',
-    baselineSetIsComplete(tmp, 'darwin') === false, 'missing directory');
-  seedComplete('linux');
-  rmSync(resolve(tmp, 'linux', 'webkit-mobile-dark.png'), { force: true });
-  check('baseline gate: partial set is incomplete',
-    baselineSetIsComplete(tmp, 'linux') === false, 'one missing PNG');
-  writeFileSync(resolve(tmp, 'linux', 'webkit-mobile-dark.png'), 'x');
-  check('baseline gate: complete set returns true',
-    baselineSetIsComplete(tmp, 'linux') === true, 'full set');
-  seedComplete('darwin');
-  const r1 = resolveBaselinePlatform({ hostPlatform: 'darwin', baselinesDir: tmp, manifest: { latestPlatform: 'linux' } });
-  check('baseline gate: host with own set gates on own', r1 === 'darwin', `got ${r1}`);
-  rmSync(resolve(tmp, 'darwin'), { recursive: true, force: true });
-  const r2 = resolveBaselinePlatform({ hostPlatform: 'darwin', baselinesDir: tmp, manifest: { latestPlatform: 'linux' } });
-  check('baseline gate: absent host falls back to nominated', r2 === 'linux', `got ${r2}`);
-  const r3 = resolveBaselinePlatform({ hostPlatform: 'darwin', baselinesDir: tmp, manifest: { latestPlatform: 'darwin' } });
-  check('baseline gate: absent host + absent nominated → null', r3 === null, `got ${r3}`);
-  const r4 = resolveBaselinePlatform({ hostPlatform: 'darwin', baselinesDir: tmp, manifest: null });
-  check('baseline gate: no manifest → null', r4 === null, `got ${r4}`);
-
-  rmSync(tmp, { recursive: true, force: true });
-}
+// Baseline-gate resolution moved to tests/baseline-gate.test.mjs (node:test) in #37 — the same
+// module, the same cases, and it runs without building dist. Keeping a second copy here only made
+// one regression visible twice.
 
 // ════════════ report ════════════
 const passed = results.filter((r) => r.pass).length;
