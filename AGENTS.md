@@ -30,9 +30,9 @@ the router says you need them.
    is wrong — fix one of those two things, in the open, with the user's knowledge. Deleting,
    skipping, or loosening thresholds silently is the one unrecoverable mistake in this repo.
 10. **Licence headers travel with the code.** The project is dual-licensed (MIT OR Apache-2.0,
-    `LICENSE`). Every new source file starts with an `SPDX-License-Identifier` and an
-    `SPDX-FileCopyrightText` line; package manifests keep `"license": "MIT OR Apache-2.0"`.
-    (Gate: `check-license.mjs`.)
+    `LICENSE`). Every new source file starts with an `SPDX-License-Identifier`; the copyright
+    notice lives in the licence files (`LICENSE-MIT`), not in per-file headers. Package manifests
+    keep `"license": "MIT OR Apache-2.0"`. (Gate: `check-license.mjs`.)
 11. **Accessibility is not optional polish.** Keyboard paths, `:focus-visible`, ARIA honesty
     (`aria-rowcount` = data length, not DOM length), non-colour signalling. If your change can
     affect interaction, `npm run verify` and `npm run verify:browser` must both run before you call

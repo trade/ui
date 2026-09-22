@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-// SPDX-FileCopyrightText: 2019-present Iko <6572003+iap@users.noreply.github.com>
 
 /**
  * @trade/ui - perf-retry policy for scripts/browser-suite.mjs.

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-// SPDX-FileCopyrightText: 2019-present Iko <6572003+iap@users.noreply.github.com>
 
 // Commit message gate: subject line of each new commit must respect the repo convention
 // (CONTRIBUTING.md § 7): aim <= 50 chars, 72 hard max, conventional `type(scope):` prefix.

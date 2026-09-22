@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: MIT OR Apache-2.0
-// SPDX-FileCopyrightText: 2019-present Iko <6572003+iap@users.noreply.github.com>
 /**
  * @trade/ui — licence contract.
  *
@@ -10,7 +9,7 @@
  *   1. the licence files exist (LICENSE, LICENSE-MIT, LICENSE-APACHE, NOTICE)
  *   2. every workspace manifest — discovered from the root `workspaces` globs, not a hand-list —
  *      declares the dual licence
- *   3. every source file opens with the exact SPDX identifier *and* the copyright line
+ *   3. every source file opens with the exact SPDX identifier
  *   4. every publishable package lists the licence files so they reach the npm tarball
  *
  * Non-headerable files (JSON, HTML, the committed baseline PNGs) are covered by REUSE.toml.
@@ -74,16 +73,16 @@ for (const file of ['packages/tokens/build-tokens.mjs', 'packages/ui/build.mjs']
 }
 
 const ID_RE = new RegExp(`SPDX-License-Identifier:\\s*${LICENSE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
-const CR_RE = /SPDX-FileCopyrightText:\s*\S+/;
+// Only the identifier is required per file; the copyright notice lives in the licence files.
 const badHeader = sourceFiles.filter((file) => {
   // The header must OPEN the file (a shebang may precede it), not merely appear somewhere in it —
   // otherwise a licence string in executable content would satisfy the gate.
   // A shebang may occupy line 1; the two SPDX lines follow. Four lines is the whole allowance.
   const head = readFileSync(file, 'utf8').split('\n', 4).join('\n');
-  return !ID_RE.test(head) || !CR_RE.test(head);
+  return !ID_RE.test(head);
 });
 check(
-  `every source file opens with the exact SPDX id + copyright line (${sourceFiles.length} files)`,
+  `every source file opens with the exact SPDX identifier (${sourceFiles.length} files)`,
   badHeader.length === 0,
   badHeader.length ? `bad: ${badHeader.slice(0, 5).map((f) => relative(root, f)).join(', ')}` : 'clean'
 );

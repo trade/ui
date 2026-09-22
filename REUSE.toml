@@ -1,20 +1,12 @@
-# SPDX licensing information for files that cannot carry a header comment.
-# Source files carry their own SPDX-License-Identifier; this covers the rest (REUSE-style).
+# REUSE licensing information (REUSE Specification 3.0).
+#
+# Source files carry `SPDX-License-Identifier` in their own header. The copyright notice and the
+# licence for every file are declared here instead of in 60+ per-file headers, so there is exactly
+# one authoritative statement of who holds the copyright — this file and LICENSE-MIT.
 version = 1
 
 [[annotations]]
-path = [
-  "**/*.json",
-  "**/*.html",
-  "**/*.png",
-  "**/*.md",
-  "**/*.toml",
-  "**/*.yml",
-  "**/*.yaml",
-  ".gitattributes",
-  ".gitignore",
-  "package-lock.json"
-]
+path = ["**"]
 precedence = "aggregate"
-SPDX-FileCopyrightText = "2019-present Iko <6572003+iap@users.noreply.github.com>"
+SPDX-FileCopyrightText = "2019-present Trade"
 SPDX-License-Identifier = "MIT OR Apache-2.0"

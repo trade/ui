@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-// SPDX-FileCopyrightText: 2019-present Iko <6572003+iap@users.noreply.github.com>
 
 // Docs integrity gates: (1) every relative Markdown link in docs/** must resolve to an
 // existing file; (2) GitHub alert callouts must be one of the five exact types, uppercase,
