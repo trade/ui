@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 // SPDX-FileCopyrightText: 2019-present Iko <6572003+iap@users.noreply.github.com>
 
-import { forwardRef, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useId, useRef, useState } from 'react';
 import type { ButtonHTMLAttributes, ChangeEvent, ForwardRefExoticComponent, KeyboardEvent, ReactNode, Ref, RefAttributes, SelectHTMLAttributes } from 'react';
 import { cx } from '../internal/cx';
+import { useIsomorphicLayoutEffect } from '../internal/useIsomorphicLayoutEffect';
 import type { Density } from './Stack';
-
-// useLayoutEffect warns on the server; the guard keeps SSR quiet while the flip
-// measurement still lands before the browser's first paint.
-const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 export interface SelectOption {
   value: string;

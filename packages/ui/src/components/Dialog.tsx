@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 // SPDX-FileCopyrightText: 2019-present Iko <6572003+iap@users.noreply.github.com>
 
-import { useEffect, useId, useLayoutEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cx } from '../internal/cx';
+import { useIsomorphicLayoutEffect } from '../internal/useIsomorphicLayoutEffect';
 
 export interface DialogProps {
   open: boolean;
@@ -15,10 +16,6 @@ export interface DialogProps {
   className?: string;
   closeLabel?: string;
 }
-
-// useLayoutEffect warns on the server; the guard keeps SSR quiet while the ref sync still lands
-// synchronously after commit, before the browser can dispatch an event against it.
-const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';

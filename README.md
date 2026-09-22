@@ -13,7 +13,7 @@ cd ui
 npm install
 npm run build          # tokens → CSS + TS, then the library (ESM, CJS, d.ts, CSS)
 npm run example:build     # bundles the component example to apps/example/dist
-npm run verify         # 73 checks: contract, CSS, SSR, DOM interactions
+npm run verify         # 62 checks: CSS health, SSR markup, DOM interactions
 npm run verify:example    # 10 checks: boots the built example in a DOM and drives it
 npm run example-trading:build  # bundles the trading workspace example
 npm run verify:example-trading  # 28 checks: virtualization, ARIA, ticket guard, axe, 2 viewports
@@ -123,14 +123,14 @@ npm run check:license   # licence headers + manifests agree (MIT OR Apache-2.0)
 npm run check:docs      # links resolve + documented check counts agree with the suites themselves
 npm run check:perf-policy  # 71 checks: the perf-retry rules, the gated verdicts, the pinned knobs
 npm run size            # bundle budgets (ESM 8 kB, stylesheet 8 kB, types 3 kB, gzip)
-npm run verify          # 73 checks: contract, CSS, SSR, DOM interactions
+npm run verify          # 62 checks: CSS health, SSR markup, DOM interactions
 npm run verify:example  # 10 checks: boots the real example bundle in a DOM
 npm run harness:build   # required before verify:browser (harness/dist is gitignored)
 npm run verify:browser  # 84 checks: Chromium + Firefox + WebKit × desktop + mobile,
                         # incl. 12 visual-regression checks vs baselines/<platform>/
 npm run verify:browser:docker  # the same suite inside CI's pinned image (hosts below Playwright's macOS 14 floor)
 
-npm run all             # build + demo + harness + the verification suites
+npm run all             # build + contract + unit tests + demo + harness + the verification suites
 npm run ci              # contract + build + demo + harness + size + every suite
 ```
 
