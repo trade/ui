@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT OR Apache-2.0
-# SPDX-FileCopyrightText: 2019-present Iko <6572003+iap@users.noreply.github.com>
 
 """Objective check of the rendered output without a vision model.
 
