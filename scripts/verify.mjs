@@ -33,8 +33,6 @@ const ui = await import('../packages/ui/dist/index.js');
 const { sampleScreen, harness } = await import('./sample-screen.mjs');
 
 // ── package contract ──
-const pkg = JSON.parse(readFileSync(resolve(uiPkg, 'package.json'), 'utf8'));
-const depCount = Object.keys(pkg.dependencies ?? {}).length;
 // The package promises — zero runtime dependencies, peer-only React, sideEffects, the exports map —
 // are asserted by check-contract.mjs, their single owner. Asserting them here as well let the two
 // drift apart and reported one failure twice. The artifact checks below stay: verify.mjs reads

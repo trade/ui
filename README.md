@@ -130,7 +130,7 @@ npm run verify:browser  # 84 checks: Chromium + Firefox + WebKit × desktop + mo
                         # incl. 12 visual-regression checks vs baselines/<platform>/
 npm run verify:browser:docker  # the same suite inside CI's pinned image (hosts below Playwright's macOS 14 floor)
 
-npm run all             # build + demo + harness + the verification suites
+npm run all             # build + contract + unit tests + demo + harness + the verification suites
 npm run ci              # contract + build + demo + harness + size + every suite
 ```
 
