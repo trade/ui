@@ -752,6 +752,60 @@ check(
   globalThis.cancelAnimationFrame = realCancel;
 }
 
+// ── useTicks: the timeout path, and a cadence change re-arming a pending flush ──
+{
+  const realRaf = globalThis.requestAnimationFrame;
+  const realCancel = globalThis.cancelAnimationFrame;
+  globalThis.requestAnimationFrame = undefined; // force the timer path
+  globalThis.cancelAnimationFrame = undefined;
+
+  const host = document.createElement('div');
+  document.body.appendChild(host);
+  const root = createRoot(host);
+  let setEvery;
+  let pushTick = () => {};
+  let seen = -1;
+  let renders = 0;
+  function CadenceProbe() {
+    const [every, set] = React.useState(60000);
+    setEvery = set;
+    const [value, enqueue] = ui.useTicks(0, { every });
+    pushTick = enqueue;
+    seen = value;
+    renders += 1;
+    return null;
+  }
+  await React.act(async () => root.render(h(CadenceProbe)));
+  const baseline = renders;
+
+  await React.act(async () => { pushTick((n) => n + 1); });
+  check(
+    'useTicks: with no rAF the timeout path holds a tick until its cadence elapses',
+    renders === baseline && seen === 0,
+    `renders=${renders} (expected ${baseline}), value=${seen} (expected 0)`
+  );
+
+  // Changing the cadence while a flush is pending must re-arm it: without the re-arm the tick
+  // would wait out the original 60 s timer and the display would stay stale.
+  await React.act(async () => { setEvery(10); });
+  const afterCadenceChange = renders; // the probe's own re-render, not the hook's flush
+  await React.act(async () => { await new Promise((resolve) => setTimeout(resolve, 60)); });
+  check(
+    'useTicks: changing the cadence re-arms a pending flush at the new cadence',
+    renders === afterCadenceChange + 1 && seen === 1,
+    `renders=${renders} (expected ${afterCadenceChange + 1}), value=${seen} (expected 1)`
+  );
+
+  await React.act(async () => root.unmount());
+  globalThis.requestAnimationFrame = realRaf;
+  globalThis.cancelAnimationFrame = realCancel;
+}
+
+// StrictMode's mount-time cleanup takes the same re-arm path as a cadence change, which the check
+// above covers and which a negative test confirmed (removing the re-arm fails it). A direct
+// StrictMode probe was written and discarded: this environment does not double-invoke effects, so
+// the check passed with the fix removed — a check that cannot fail is worse than no check.
+
 // Baseline-gate resolution moved to tests/baseline-gate.test.mjs (node:test) in #37 — the same
 // module, the same cases, and it runs without building dist. Keeping a second copy here only made
 // one regression visible twice.

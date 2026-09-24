@@ -69,10 +69,15 @@ the *whole* dataset, so screen readers see the truth while the DOM holds a windo
 ## Tick coalescing
 
 `useTicks` bounds how often a tick stream reaches React. Data arrives far more often than the
-display refreshes, and every render walks every row and cell — the 60-row harness measures roughly
-360 cell renders per frame. The hook queues updaters and commits them **at most once per animation
-frame** (or per N ms via `every`), so a thousand ticks cost a thousand cheap updater calls and
-**one** render.
+display refreshes, and every render walks every row and cell, so a burst of a thousand ticks should
+cost a thousand cheap updater calls and **one** render. It does that by queueing updaters and
+committing them at most once per animation frame (or per N ms via `every`).
+
+**The harness does not use it, deliberately.** `LiveTable` drives its own `requestAnimationFrame`
+loop and calls `setTick` directly, so the frame numbers above describe the **un-coalesced** case:
+they are a worst-case reading, not a demonstration of the hook's benefit. Adopting `useTicks` in the
+harness would fold a coalescing win into the perf budget and hide exactly the regressions the budget
+exists to catch.
 
 Queued updaters are applied **in order**, so a delta stream is merged rather than truncated; a
 caller holding full snapshots passes `() => snapshot`. The queue is client-only — a server render
