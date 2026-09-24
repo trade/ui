@@ -113,7 +113,7 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
 
 ## Not started
 
-- Tick coalescing helper (`useTicks`).
+- _(none — `useTicks`, the last Phase 2 item, shipped 2026-09-25.)_
 
 ## Next, in order
 
@@ -124,9 +124,9 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
    (which pixel-compares against `baselines/linux/`) passed on every dependency-bump PR
    (#11–#16) merged that day.
 2. ~~A macOS baseline set (real WebKit) for the `browser-macos` job.~~ Done 2026-09-19.
-3. Phase 2 components. **`Popover` and `Tooltip` shipped 2026-09-18** (PR #24) and the
-   **listbox `Select` variant shipped 2026-09-20** (PR #25) — library checks 46 → 69, 14
-   components. The remaining Phase 2 item is `useTicks` (issue #7).
+3. Phase 2. **`Popover` and `Tooltip` shipped 2026-09-18** (PR #24), the **listbox `Select`
+   variant shipped 2026-09-20** (PR #25), and **`useTicks` shipped 2026-09-25** — the Phase 2
+   list is complete (library checks 46 → 66).
 
 A fuller optimisation roadmap (density, theme splitting, component tokens, icons, motion, publishing)
 was produced during the build; the items above are the ones that block or de-risk the others.

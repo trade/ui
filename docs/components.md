@@ -22,6 +22,10 @@ ARIA behaviour, [scaling.md](scaling.md) for the recipe to add one.
 - **Density as a prop** — `'comfortable' | 'compact' | 'dense'`, emitted as a modifier class only
   when set *and* not `comfortable` (comfortable is the CSS default). See [css.md](css.md#density).
 
+`useTicks` is the one export that is not a component, so only the conventions that apply to it do:
+no inline style objects, SSR-safe (its queue is client-only and a server render uses the initial
+value), and no timer that outlives the component.
+
 ## The inventory
 
 ### Layout
@@ -102,6 +106,17 @@ animation** in v1.
 ### Theming
 
 **`ThemeProvider` / `useTheme` / `setThemeAttribute`** — see [theming.md](theming.md).
+
+### Hooks
+
+**`useTicks<T>(initial, { every })` → `[value, push]`** — coalesces a high-frequency tick stream so
+React renders at most once per cadence window. `every` is `'frame'` (default — one commit per
+animation frame) or a number of milliseconds. `push(value)` or `push(previous => next)`: queued
+updaters are applied **in order** at flush time, so a delta stream is merged rather than truncated,
+and snapshot callers pass `() => snapshot`. A batch of any size commits as exactly one render, an
+idle window renders nothing, and unmounting cancels a pending flush. Shipped because market data
+arrives far more often than the display refreshes; the reasoning and the measured case are in
+[performance.md](performance.md#tick-coalescing).
 
 ## Class naming
 

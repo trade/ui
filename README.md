@@ -13,7 +13,7 @@ cd ui
 npm install
 npm run build          # tokens → CSS + TS, then the library (ESM, CJS, d.ts, CSS)
 npm run example:build     # bundles the component example to apps/example/dist
-npm run verify         # 62 checks: CSS health, SSR markup, DOM interactions
+npm run verify         # 66 checks: CSS health, SSR markup, DOM interactions
 npm run verify:example    # 10 checks: boots the built example in a DOM and drives it
 npm run example-trading:build  # bundles the trading workspace example
 npm run verify:example-trading  # 28 checks: virtualization, ARIA, ticket guard, axe, 2 viewports
@@ -33,6 +33,7 @@ ui/
 │  └─ ui/                @trade/ui     — components, styles, build
 │     ├─ src/components/ Button, Input, Select, Field, SelectionControls,
 │     │                  DataTable, Tabs, Menu, Popover, Tooltip, Dialog, Feedback, ThemeProvider, Stack
+│     ├─ src/hooks/      useTicks (tick coalescing)
 │     ├─ styles/         one CSS file per area (base, layout, button, forms, table, tabs, feedback, dialog, menu, popover, tooltip)
 │     └─ dist/           index.js · index.cjs · index.d.ts · ui.css · components/*.css
 ├─ apps/                 examples — apps/example (component reference),
@@ -123,7 +124,7 @@ npm run check:license   # licence headers + manifests agree (MIT OR Apache-2.0)
 npm run check:docs      # links resolve + documented check counts agree with the suites themselves
 npm run check:perf-policy  # 71 checks: the perf-retry rules, the gated verdicts, the pinned knobs
 npm run size            # bundle budgets, measured min+gzip the way a consumer ships it
-npm run verify          # 62 checks: CSS health, SSR markup, DOM interactions
+npm run verify          # 66 checks: CSS health, SSR markup, DOM interactions
 npm run verify:example  # 10 checks: boots the real example bundle in a DOM
 npm run harness:build   # required before verify:browser (harness/dist is gitignored)
 npm run verify:browser  # 84 checks: Chromium + Firefox + WebKit × desktop + mobile,

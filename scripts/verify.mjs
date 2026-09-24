@@ -690,6 +690,68 @@ check(
   `dialog present=${Boolean(document.body.querySelector('[role="dialog"]'))}`
 );
 
+// ── useTicks: a burst of ticks costs one render, and no update is dropped ──
+{
+  // rAF is not copied onto globalThis by this harness, so install a deterministic queue.
+  const realRaf = globalThis.requestAnimationFrame;
+  const realCancel = globalThis.cancelAnimationFrame;
+  const frames = [];
+  globalThis.requestAnimationFrame = (cb) => { frames.push(cb); return frames.length; };
+  globalThis.cancelAnimationFrame = (id) => { if (id) frames[id - 1] = null; };
+
+  const tickHost = document.createElement('div');
+  document.body.appendChild(tickHost);
+  const tickRoot = createRoot(tickHost);
+  let pushTick;
+  let renders = 0;
+  let seen = -1;
+  function TickProbe() {
+    const [value, enqueue] = ui.useTicks(0, { every: 'frame' });
+    pushTick = enqueue;
+    renders += 1;
+    seen = value;
+    return null;
+  }
+  await React.act(async () => tickRoot.render(h(TickProbe)));
+  const baseline = renders;
+
+  await React.act(async () => { for (let i = 0; i < 100; i += 1) pushTick((n) => n + 1); });
+  check(
+    'useTicks: a burst of 100 ticks queues without rendering',
+    renders === baseline && frames.length === 1,
+    `renders=${renders} (expected ${baseline}), scheduled frames=${frames.length} (expected 1)`
+  );
+
+  await React.act(async () => { frames.splice(0).forEach((cb) => cb && cb(16)); });
+  check(
+    'useTicks: the burst commits as one render with every update applied in order',
+    renders === baseline + 1 && seen === 100,
+    `renders=${renders} (expected ${baseline + 1}), value=${seen} (expected 100)`
+  );
+
+  await React.act(async () => { pushTick((n) => n + 1); });
+  const beforeLateFlush = renders;
+  await React.act(async () => { frames.splice(0).forEach((cb) => cb && cb(32)); });
+  check(
+    'useTicks: a later tick schedules a new flush and commits exactly once',
+    beforeLateFlush === baseline + 1 && renders === baseline + 2 && seen === 101,
+    `renders=${renders} (expected ${baseline + 2}), value=${seen} (expected 101)`
+  );
+
+  // React silently discards a setState on an unmounted component, so "no extra render" would pass
+  // even without cleanup. Assert the observable thing instead: the scheduled frame is cancelled.
+  await React.act(async () => { pushTick((n) => n + 1); tickRoot.unmount(); });
+  const stillPending = frames.filter(Boolean).length;
+  check(
+    'useTicks: unmount cancels a pending flush',
+    stillPending === 0,
+    `pending frames after unmount=${stillPending} (expected 0)`
+  );
+
+  globalThis.requestAnimationFrame = realRaf;
+  globalThis.cancelAnimationFrame = realCancel;
+}
+
 // Baseline-gate resolution moved to tests/baseline-gate.test.mjs (node:test) in #37 — the same
 // module, the same cases, and it runs without building dist. Keeping a second copy here only made
 // one regression visible twice.

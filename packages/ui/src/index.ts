@@ -43,4 +43,7 @@ export type { BannerProps, ToastProps, ToastRegionProps, FeedbackTone } from './
 export { ThemeProvider, useTheme, setThemeAttribute } from './components/ThemeProvider';
 export type { ThemeProviderProps, ThemeContextValue, ThemeName, ResolvedTheme } from './components/ThemeProvider';
 
+export { useTicks } from './hooks/useTicks';
+export type { UseTicksOptions, TickCadence } from './hooks/useTicks';
+
 export { cx } from './internal/cx';

@@ -63,8 +63,22 @@ story: [verification.md](verification.md) and [STATUS.md](../STATUS.md).
 honesty mechanism: pass `rowCount` (full dataset), `rowOffset` (index of the first supplied row)
 and `rowHeight`, and the table emits `aria-hidden` spacer rows plus an `aria-rowcount` covering
 the *whole* dataset, so screen readers see the truth while the DOM holds a window. Verified at
-5,000-row SSR scale and 200,000-row live scale. Consumers plug in their own windowing; a tick
-coalescing helper (`useTicks`) is planned Phase 2 — see [STATUS.md](../STATUS.md).
+5,000-row SSR scale and 200,000-row live scale. Consumers plug in their own windowing; `useTicks`
+(below) is what bounds how often new rows reach it.
+
+## Tick coalescing
+
+`useTicks` bounds how often a tick stream reaches React. Data arrives far more often than the
+display refreshes, and every render walks every row and cell — the 60-row harness measures roughly
+360 cell renders per frame. The hook queues updaters and commits them **at most once per animation
+frame** (or per N ms via `every`), so a thousand ticks cost a thousand cheap updater calls and
+**one** render.
+
+Queued updaters are applied **in order**, so a delta stream is merged rather than truncated; a
+caller holding full snapshots passes `() => snapshot`. The queue is client-only — a server render
+uses the initial value — and unmounting cancels a pending flush. Asserted by `verify.mjs`: a
+100-tick burst must produce exactly one render with every update applied, a later tick must
+re-schedule, and a flush pending at unmount must not commit.
 
 ## Hot-path discipline
 
@@ -78,6 +92,8 @@ From CONTRIBUTING §5 and the ADRs — the rules that make the numbers above rep
 4. **`transition: none` everywhere** (ADR-004) — every state change is exactly one paint. No
    keyframes, no entry/exit animations, no auto-dismiss timers.
 5. **Budgets are gates, not aspirations** — `npm run size` and the frame-time thresholds fail CI.
+6. **Coalesce the feed, not the paint.** `useTicks` bounds renders to the display's cadence; the
+   library never renders more frames than the screen can show.
 
 Commit evidence follows the same discipline: numbers, not adjectives — *"p95 16.7 ms → 12.1 ms
 over 90 frames, `npm run verify:browser`"*, per CONTRIBUTING §7.
