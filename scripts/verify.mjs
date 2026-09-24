@@ -103,13 +103,18 @@ check(
 );
 
 // ── sizes ──
+// Artifact tripwire: gzip of the committed build output, which is deliberately unminified. What a
+// consumer actually ships is smaller — `npm run size` measures that (bundled, minified, gzipped).
+// This one stays because it catches a regression in the shipped files themselves, cjs included
+// (its gzip was previously computed and then never asserted).
 const jsGz = gzipSync(readFileSync(resolve(dist, 'index.js'))).length;
 const cjsGz = gzipSync(readFileSync(resolve(dist, 'index.cjs'))).length;
 const cssGz = gzipSync(readFileSync(resolve(dist, 'ui.css'))).length;
+const dtsGz = gzipSync(readFileSync(resolve(dist, 'index.d.ts'))).length;
 check(
-  'bundle sizes within budget',
-  cssGz < 12 * 1024 && jsGz < 30 * 1024,
-  `index.js=${jsGz}B gz, index.cjs=${cjsGz}B gz, ui.css=${cssGz}B gz (budgets: css<12KB, js<30KB)`
+  'artifact gzip sizes within budget',
+  jsGz < 12 * 1024 && cjsGz < 12 * 1024 && cssGz < 8 * 1024 && dtsGz < 3 * 1024,
+  `index.js=${jsGz}B, index.cjs=${cjsGz}B, ui.css=${cssGz}B, index.d.ts=${dtsGz}B gz (budgets: js<12KB, cjs<12KB, css<8KB, dts<3KB)`
 );
 
 // ── server-rendered markup ──

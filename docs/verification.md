@@ -117,9 +117,27 @@ are covered by `REUSE.toml` (REUSE Specification 3.0).
 
 ### `npm run size`
 
-size-limit budgets: ESM bundle ≤ 8 kB gzip, stylesheet ≤ 8 kB gzip, types ≤ 3 kB. Measured today:
-7.78 / 5.47 kB (types 485 B) — under budget, with the ESM number down to ~0.2 kB of headroom,
-so the next component is a size conversation, not a shrug.
+`npm run size` measures **what a consumer actually ships** — bundled, minified and gzipped — via the
+`@size-limit/esbuild` provider. (The previous `@size-limit/file` entries only gzipped the committed,
+unminified artifact, which overstated every number by roughly a quarter and made the ESM budget look
+almost exhausted.) **Four budgets:**
+
+| Entry | Budget | Measured |
+|---|---|---|
+| ESM, full surface | 7 kB | 5.89 kB |
+| ESM, `Button` only — tree-shaking guard | 1.5 kB | 620 B |
+| CJS, full surface | 7.5 kB | 6.36 kB |
+| Stylesheet (all components) | 8 kB | 3.72 kB |
+
+These bound the **minified** cost, not the published files. The committed artifacts are deliberately
+unminified and therefore larger — `dist/index.js` ≈ 7.8 kB, `dist/index.cjs` ≈ 8.2 kB, `dist/ui.css`
+≈ 6.2 kB, `dist/index.d.ts` ≈ 0.5 kB gzipped — so a 7.5 kB size-limit entry does **not** mean the
+published `index.cjs` is under 7.5 kB; it means a consumer who bundles and minifies it pays 6.36 kB.
+
+`verify.mjs` bounds the published files instead, with a separate tripwire (gzip < 12 / 12 / 8 / 3 kB for
+`index.js` / `index.cjs` / `ui.css` / `index.d.ts`), so a regression in the shipped artifacts is caught
+even if the minifier's output shifts. The generated-types budget lives there because size-limit cannot
+bundle a `.d.ts`.
 
 ## CI and the local loop
 
