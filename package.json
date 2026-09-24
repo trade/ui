@@ -35,7 +35,7 @@
   },
   "size-limit": [
     {
-      "name": "@trade/ui ESM, full surface (min+gzip)",
+      "name": "@trade/ui ESM, full surface (consumer cost, min+gzip)",
       "path": "packages/ui/dist/index.js",
       "ignore": [
         "react",
@@ -46,7 +46,7 @@
       "gzip": true
     },
     {
-      "name": "@trade/ui ESM, Button only (min+gzip) \u2014 tree-shaking guard",
+      "name": "@trade/ui ESM, Button only (consumer cost, min+gzip) \u2014 tree-shaking guard",
       "path": "packages/ui/dist/index.js",
       "import": "{ Button }",
       "ignore": [
@@ -58,7 +58,7 @@
       "gzip": true
     },
     {
-      "name": "@trade/ui CJS, full surface (min+gzip)",
+      "name": "@trade/ui CJS, full surface (consumer cost, min+gzip)",
       "path": "packages/ui/dist/index.cjs",
       "ignore": [
         "react",
