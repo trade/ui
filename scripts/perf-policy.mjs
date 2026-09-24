@@ -24,6 +24,23 @@
 export const MAX_P95_FRAME_MS = 25;
 export const MARGINAL_SLACK_MS = 5;
 export const HOST_OVERLOAD = { droppedRatio: 0.25, staticP95Ms: 40 };
+
+// The interval a 60 Hz display asks for, and how close a reading must sit to a multiple of it to
+// count as a cadence lock.
+export const FRAME_MS = 1000 / 60;
+export const CADENCE_TOLERANCE_MS = 2.5;
+
+// Starvation signature. When the host is CPU-starved the paint still fits inside a frame (the static
+// reading stays healthy) but the ticking render loop does not, so every rAF callback overruns and
+// the cadence halves to a hard 30 Hz - a p95 sitting on 2x the frame interval (33.3 ms). A genuine
+// library regression looks different: it degrades the static reading too, and does not land on an
+// exact multiple of the frame interval. Seen on both a loaded Windows host (Firefox) and a 4-CPU
+// Docker VM (Chromium + Firefox) with the identical commit, so it is the host, not the code.
+export const looksCadenceLocked = (r) =>
+  Number.isFinite(r.p95) &&
+  Number.isFinite(r.staticP95) &&
+  r.staticP95 <= MAX_P95_FRAME_MS &&
+  Math.abs(r.p95 - FRAME_MS * 2) <= CADENCE_TOLERANCE_MS;
 export const perfContext = (platform, engineName) => ({
   platform,
   engineName,
@@ -61,7 +78,7 @@ export const isBetterReading = (current, candidate, { platform, engineName, budg
 // runner the whole box thrashes together. A genuine single-engine regression looks the opposite way
 // (the failing engine degrades while the others stay healthy), so this cannot mask one.
 export const isOverloadSignal = (r, { droppedRatio, staticP95Ms }) =>
-  Boolean(r) && (r.droppedRatio > droppedRatio || r.staticP95 > staticP95Ms);
+  Boolean(r) && (r.droppedRatio > droppedRatio || r.staticP95 > staticP95Ms || looksCadenceLocked(r));
 
 // The gated verdicts the suite prints. Routing them through here (rather than an inline
 // comparison in the suite) is what lets scripts/check-perf-policy.mjs exercise the 25 ms boundary
@@ -72,9 +89,12 @@ export const tickingWithinBudget = (r, ctx) =>
 export const staticWithinBudget = (r, ctx) =>
   !perfGated(ctx.platform, ctx.engineName) || r.staticP95 <= ctx.budgetMs;
 
-// Should this reading be re-measured? Throttled, marginally over budget on a gated engine, or over
-// budget on a gated engine while the host is already known to be overloaded.
+// Should this reading be re-measured? Throttled, marginally over budget on a gated engine, cadence-
+// locked on a gated engine (the host is starved, not the library), or over budget on a gated engine
+// while the host is already known to be overloaded. A persistent reading still fails: a retry that
+// is no better is discarded by isBetterReading, so none of these can mask a real regression.
 export const needsRetry = (r, { platform, engineName, budgetMs, slackMs, hostOverloaded }) =>
   looksThrottled(r) ||
   marginalPerfOverBudget(r, { platform, engineName, budgetMs, slackMs }) ||
+  (perfGated(platform, engineName) && looksCadenceLocked(r)) ||
   (perfGated(platform, engineName) && overPerfBudget(r, budgetMs) && hostOverloaded);

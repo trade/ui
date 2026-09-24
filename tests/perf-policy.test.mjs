@@ -15,7 +15,11 @@ import {
   tickingWithinBudget,
   staticWithinBudget,
   isBetterReading,
-  needsRetry
+  isOverloadSignal,
+  needsRetry,
+  looksCadenceLocked,
+  FRAME_MS,
+  CADENCE_TOLERANCE_MS
 } from '../scripts/perf-policy.mjs';
 
 test('the perf budget and slack are pinned', () => {
@@ -76,6 +80,30 @@ test('a re-measure is triggered for throttled, marginal, or overloaded-host read
   const overloaded = { ...perfContext('linux', 'chromium'), hostOverloaded: true };
   assert.equal(needsRetry({ p95: 40, staticP95: 20 }, overloaded), true, 'over budget while the host is thrashing');
   assert.equal(needsRetry({ p95: 40, staticP95: 20 }, ctx), false, 'over budget but the host looks healthy -> fail honestly');
+});
+
+test('a cadence lock is healthy paint plus a 30 Hz-locked ticking reading', () => {
+  assert.equal(looksCadenceLocked({ p95: 33.3, staticP95: 16.8 }), true, 'exactly 2 frames');
+  assert.equal(looksCadenceLocked({ p95: 34, staticP95: 16.8 }), true, 'inside the tolerance band');
+  assert.equal(looksCadenceLocked({ p95: 40, staticP95: 16.8 }), false, '2.4 frames is not a lock');
+  assert.equal(looksCadenceLocked({ p95: 33.3, staticP95: 26 }), false, 'paint over budget is not starvation');
+  assert.equal(looksCadenceLocked({ p95: Number.NaN, staticP95: 16.8 }), false, 'a missing reading is not a lock');
+  assert.equal(FRAME_MS * 2 - CADENCE_TOLERANCE_MS <= 33.3 && 33.3 <= FRAME_MS * 2 + CADENCE_TOLERANCE_MS, true);
+});
+
+test('a cadence lock retries on a gated engine and latches the host as overloaded', () => {
+  const gated = { ...perfContext('linux', 'chromium'), hostOverloaded: false };
+  const informational = { ...perfContext('linux', 'webkit'), hostOverloaded: false };
+  assert.equal(needsRetry({ p95: 33.3, staticP95: 16.8 }, gated), true, 'a starved, gated reading is re-measured');
+  assert.equal(needsRetry({ p95: 33.3, staticP95: 16.8 }, informational), false, 'informational engines do not retry');
+  assert.equal(isOverloadSignal({ p95: 33.3, staticP95: 16.8, droppedRatio: 0 }, { droppedRatio: 0.25, staticP95Ms: 40 }), true, 'a lock is an overload signal');
+});
+
+test('a persistent cadence lock still fails (the retry cannot mask a regression)', () => {
+  const ctx = perfContext('linux', 'chromium');
+  const locked = { p95: 33.3, staticP95: 16.8 };
+  // Retrying is safe: a second identical reading is not "better", so the failing one is kept.
+  assert.equal(isBetterReading(locked, { ...locked }, ctx), false, 'an equal retry never replaces the original');
 });
 
 test('isBetterReading prefers an unthrottled, in-budget attempt', () => {

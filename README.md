@@ -123,7 +123,7 @@ npm run check:types     # tsc --noEmit over @trade/ui — strict types are a gat
 npm test                # 14 unit tests for the pure modules (node:test; no browser, no deps)
 npm run check:license   # licence headers + manifests agree (MIT OR Apache-2.0)
 npm run check:docs      # links resolve + documented check counts agree with the suites themselves
-npm run check:perf-policy  # 71 checks: the perf-retry rules, the gated verdicts, the pinned knobs
+npm run check:perf-policy  # 82 checks: the perf-retry rules, the gated verdicts, the pinned knobs
 npm run size            # 20 checks: consumer cost vs the declared sizes, and the docs that quote them
 npm run verify          # 68 checks: CSS health, SSR markup, DOM interactions
 npm run verify:example  # 10 checks: boots the real example bundle in a DOM
@@ -150,10 +150,11 @@ numbers that move between runs is worse than no gate, so the browser suite:
 
 - launches Chromium with background-throttling disabled,
 - settles 1500 ms after the page finishes before measuring,
-- re-measures a combo when a reading looks throttled, when a gated reading is only marginally
-  over budget, or when an earlier combo in the same run read catastrophically (the host is
-  thrashing) - keeping the better attempt (`scripts/perf-policy.mjs`, checked by
-  `npm run check:perf-policy`), and
+- re-measures a combo when a reading looks throttled, when a gated reading is cadence-locked to
+  2x the frame interval (paint healthy but ticking halved to a hard 30 Hz - a CPU-starved host,
+  not a slow library) or only marginally over budget, or when an earlier combo in the same run
+  read catastrophically (the host is thrashing) - keeping the better attempt
+  (`scripts/perf-policy.mjs`, checked by `npm run check:perf-policy`), and
 - gates on **p95 frame delta** and the **dropped-frame ratio**, not absolute fps (headless engines
 drive `requestAnimationFrame` at engine-specific cadences — Firefox measures the same fps ticking
 and idle).

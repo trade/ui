@@ -23,12 +23,15 @@ import {
   isBetterReading,
   isOverloadSignal,
   needsRetry,
+  looksCadenceLocked,
   tickingWithinBudget,
   staticWithinBudget,
   perfContext,
   MAX_P95_FRAME_MS,
   MARGINAL_SLACK_MS,
-  HOST_OVERLOAD
+  HOST_OVERLOAD,
+  FRAME_MS,
+  CADENCE_TOLERANCE_MS
 } from './perf-policy.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -82,10 +85,23 @@ const retry = (r, { engineName = 'webkit', hostOverloaded = false } = {}) =>
   needsRetry(reading(r), { ...darwin(engineName), hostOverloaded });
 eq('throttled readings retry', retry({ p95: 150 }), true);
 eq('a marginal gated reading retries', retry({ p95: 26 }), true);
-eq('a clearly over-budget gated reading does NOT retry without overload', retry({ p95: 34 }), false);
-eq('a clearly over-budget gated reading retries on an overloaded host', retry({ p95: 34 }, { hostOverloaded: true }), true);
-eq('an overloaded host does not rescue an informational engine', retry({ p95: 34 }, { engineName: 'chromium', hostOverloaded: true }), false);
+eq('a clearly over-budget gated reading does NOT retry without overload', retry({ p95: 40 }), false);
+eq('a clearly over-budget gated reading retries on an overloaded host', retry({ p95: 40 }, { hostOverloaded: true }), true);
+eq('an overloaded host does not rescue an informational engine', retry({ p95: 40 }, { engineName: 'chromium', hostOverloaded: true }), false);
 eq('a clean reading never retries', retry({ p95: 16.7 }), false);
+
+// --- 5b. the cadence-lock starvation signature: healthy paint, ticking locked to 2x the frame
+//         interval (a hard 30 Hz cadence) -- a CPU-starved host, not a slow library. ---
+eq('a 30 Hz-locked ticking reading is recognised (33.3 ms)', looksCadenceLocked(reading({ p95: 33.3 })), true);
+eq('the lock window covers 2 frames +/- tolerance (34 ms is inside)', looksCadenceLocked(reading({ p95: 34 })), true);
+eq('a 2.4-frame reading is not a lock (40 ms)', looksCadenceLocked(reading({ p95: 40 })), false);
+eq('a lock needs healthy paint (static over budget is not a lock)', looksCadenceLocked(reading({ p95: 33.3, staticP95: 30 })), false);
+eq('a missing ticking reading is not a lock', looksCadenceLocked({ p95: Number.NaN, staticP95: 16.8 }), false);
+eq('a cadence-locked gated reading retries', retry({ p95: 33.3 }), true);
+eq('a cadence-locked reading does not rescue an informational engine', retry({ p95: 33.3 }, { engineName: 'chromium' }), false);
+eq('a cadence-locked reading marks the host overloaded', overload(reading({ p95: 33.3 })), true);
+eq('the frame interval is a 60 Hz frame', Math.round(FRAME_MS * 100) / 100, 16.67);
+eq('the cadence tolerance is pinned at 2.5 ms', CADENCE_TOLERANCE_MS, 2.5);
 
 // --- 6. exactly one engine is gated per platform ---
 eq('darwin gates webkit', perfGated('darwin', 'webkit'), true);
@@ -154,7 +170,7 @@ check(
   'no comparison against T.maxP95FrameMs outside perf-policy.mjs (interpolation and passthrough are fine)'
 );
 check('browser-suite passes the host-overload state in', /hostOverloaded: hostOverloaded\(\)/.test(suite), 'hostOverloaded() at the call site');
-for (const name of ['looksThrottled', 'perfGated', 'overPerfBudget', 'marginalPerfOverBudget', 'isBetterReading', 'isOverloadSignal', 'needsRetry', 'tickingWithinBudget', 'staticWithinBudget']) {
+for (const name of ['looksThrottled', 'perfGated', 'overPerfBudget', 'marginalPerfOverBudget', 'isBetterReading', 'isOverloadSignal', 'needsRetry', 'looksCadenceLocked', 'tickingWithinBudget', 'staticWithinBudget']) {
   check(`browser-suite does not redefine ${name}`, !new RegExp(`(?:const|let|var|function)\\s+${name}\\b`).test(suite), 'no local definition');
 }
 
