@@ -8,7 +8,7 @@ gaps.
 
 ## The suites
 
-### `scripts/verify.mjs` — 62 library checks
+### `scripts/verify.mjs` — 68 library checks
 
 Two phases, exits non-zero on any failure, prints a JSON report. It deliberately does **not**
 re-assert the package promises (that is `check-contract.mjs`) or the baseline-gate resolution (that
@@ -23,7 +23,9 @@ is `tests/baseline-gate.test.mjs`) — one owner per rule, so a regression is re
 - **Phase B — jsdom interaction:** tab click + ArrowRight roving tabindex; dialog
   open/focus + Escape; theme switch sets `data-theme` on `<html>` with **zero React renders**;
   `useTheme().resolved` follows the OS; selection-control semantics and `onChange`; live-region
-  semantics; Home/End jumps; focus trap wrapping in both directions.
+  semantics; Home/End jumps; focus trap wrapping in both directions; `useTicks` coalescing — a
+  100-tick burst commits as one render with every update applied, a cadence change re-arms a
+  pending flush, and unmount cancels one.
 
 ### `scripts/verify-example.mjs` — 10 checks
 

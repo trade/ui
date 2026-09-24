@@ -690,6 +690,122 @@ check(
   `dialog present=${Boolean(document.body.querySelector('[role="dialog"]'))}`
 );
 
+// ── useTicks: a burst of ticks costs one render, and no update is dropped ──
+{
+  // rAF is not copied onto globalThis by this harness, so install a deterministic queue.
+  const realRaf = globalThis.requestAnimationFrame;
+  const realCancel = globalThis.cancelAnimationFrame;
+  const frames = [];
+  globalThis.requestAnimationFrame = (cb) => { frames.push(cb); return frames.length; };
+  globalThis.cancelAnimationFrame = (id) => { if (id) frames[id - 1] = null; };
+
+  const tickHost = document.createElement('div');
+  document.body.appendChild(tickHost);
+  const tickRoot = createRoot(tickHost);
+  let pushTick;
+  let renders = 0;
+  let seen = -1;
+  function TickProbe() {
+    const [value, enqueue] = ui.useTicks(0, { every: 'frame' });
+    pushTick = enqueue;
+    renders += 1;
+    seen = value;
+    return null;
+  }
+  await React.act(async () => tickRoot.render(h(TickProbe)));
+  const baseline = renders;
+
+  await React.act(async () => { for (let i = 0; i < 100; i += 1) pushTick((n) => n + 1); });
+  check(
+    'useTicks: a burst of 100 ticks queues without rendering',
+    renders === baseline && frames.length === 1,
+    `renders=${renders} (expected ${baseline}), scheduled frames=${frames.length} (expected 1)`
+  );
+
+  await React.act(async () => { frames.splice(0).forEach((cb) => cb && cb(16)); });
+  check(
+    'useTicks: the burst commits as one render with every update applied in order',
+    renders === baseline + 1 && seen === 100,
+    `renders=${renders} (expected ${baseline + 1}), value=${seen} (expected 100)`
+  );
+
+  await React.act(async () => { pushTick((n) => n + 1); });
+  const beforeLateFlush = renders;
+  await React.act(async () => { frames.splice(0).forEach((cb) => cb && cb(32)); });
+  check(
+    'useTicks: a later tick schedules a new flush and commits exactly once',
+    beforeLateFlush === baseline + 1 && renders === baseline + 2 && seen === 101,
+    `renders=${renders} (expected ${baseline + 2}), value=${seen} (expected 101)`
+  );
+
+  // React silently discards a setState on an unmounted component, so "no extra render" would pass
+  // even without cleanup. Assert the observable thing instead: the scheduled frame is cancelled.
+  await React.act(async () => { pushTick((n) => n + 1); tickRoot.unmount(); });
+  const stillPending = frames.filter(Boolean).length;
+  check(
+    'useTicks: unmount cancels a pending flush',
+    stillPending === 0,
+    `pending frames after unmount=${stillPending} (expected 0)`
+  );
+
+  globalThis.requestAnimationFrame = realRaf;
+  globalThis.cancelAnimationFrame = realCancel;
+}
+
+// ── useTicks: the timeout path, and a cadence change re-arming a pending flush ──
+{
+  const realRaf = globalThis.requestAnimationFrame;
+  const realCancel = globalThis.cancelAnimationFrame;
+  globalThis.requestAnimationFrame = undefined; // force the timer path
+  globalThis.cancelAnimationFrame = undefined;
+
+  const host = document.createElement('div');
+  document.body.appendChild(host);
+  const root = createRoot(host);
+  let setEvery;
+  let pushTick = () => {};
+  let seen = -1;
+  let renders = 0;
+  function CadenceProbe() {
+    const [every, set] = React.useState(60000);
+    setEvery = set;
+    const [value, enqueue] = ui.useTicks(0, { every });
+    pushTick = enqueue;
+    seen = value;
+    renders += 1;
+    return null;
+  }
+  await React.act(async () => root.render(h(CadenceProbe)));
+  const baseline = renders;
+
+  await React.act(async () => { pushTick((n) => n + 1); });
+  check(
+    'useTicks: with no rAF the timeout path holds a tick until its cadence elapses',
+    renders === baseline && seen === 0,
+    `renders=${renders} (expected ${baseline}), value=${seen} (expected 0)`
+  );
+
+  // Changing the cadence while a flush is pending must re-arm it: without the re-arm the tick
+  // would wait out the original 60 s timer and the display would stay stale.
+  await React.act(async () => { setEvery(10); });
+  const afterCadenceChange = renders; // the probe's own re-render, not the hook's flush
+  await React.act(async () => { await new Promise((resolve) => setTimeout(resolve, 60)); });
+  check(
+    'useTicks: changing the cadence re-arms a pending flush at the new cadence',
+    renders === afterCadenceChange + 1 && seen === 1,
+    `renders=${renders} (expected ${afterCadenceChange + 1}), value=${seen} (expected 1)`
+  );
+
+  await React.act(async () => root.unmount());
+  globalThis.requestAnimationFrame = realRaf;
+  globalThis.cancelAnimationFrame = realCancel;
+}
+
+// StrictMode's mount-time cleanup takes the same re-arm path as a cadence change, which the check
+// above covers and which a negative test confirmed (removing the re-arm fails it). A direct
+// StrictMode probe was written and discarded: this environment does not double-invoke effects, so
+// the check passed with the fix removed — a check that cannot fail is worse than no check.
+
 // Baseline-gate resolution moved to tests/baseline-gate.test.mjs (node:test) in #37 — the same
 // module, the same cases, and it runs without building dist. Keeping a second copy here only made
 // one regression visible twice.

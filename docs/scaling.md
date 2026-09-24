@@ -72,8 +72,8 @@ Commits carry evidence — numbers, check counts, the command that produced them
 
 - **Visual regression**: shipped (ADR-005) — the suite pixel-compares against the committed,
   read-only `baselines/<platform>/` sets and never overwrites them (PRs #8/#9, #23).
-- **Phase 2 components**: `Menu`, `Popover`, `Tooltip` and the listbox `Select` all shipped
-  (#17, #24, #25); the `useTicks` coalescing helper is what remains (issue #7).
+- **Phase 2**: `Menu`, `Popover`, `Tooltip`, the listbox `Select` and the `useTicks` coalescing
+  helper all shipped (#17, #24, #25) — the Phase 2 list is complete.
 - Density, theme splitting, component tokens, icons, motion, publishing: the fuller roadmap was
   produced during the build; the two items above are what unblock the rest.
 
