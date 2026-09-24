@@ -32,8 +32,9 @@ component change.
 | Measured | Value |
 |---|---|
 | Runtime dependencies | **0** (React/React DOM are peers) |
-| ESM bundle | **7.78 kB** gzip (budget 8 kB) |
-| Stylesheet | **5.47 kB** gzip (budget 8 kB) |
+| ESM bundle (as a consumer ships it) | **5.89 kB** min+gzip (budget 7 kB) |
+| Single-component import (`Button`) | **620 B** min+gzip (budget 1.5 kB) |
+| Stylesheet | **3.72 kB** min+gzip (budget 8 kB) |
 | Theme switch cost | **0 React renders** |
 | Ticking frame time, Chromium/Firefox | **p95 16.7 ms**, 0 dropped frames |
 | Ticking frame time, WebKit | **gates pass on real macOS WebKit**; the 26–36 ms seen on the Playwright port was a port artifact (resolved 2026-09-17) |
