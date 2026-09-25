@@ -116,6 +116,7 @@ After any change: `npm run build && npm run example:build && npm run verify && n
 
 ```powershell
 npm run check:contract  # 12 checks: zero deps, peer-only React, exports map, artifacts
+npm run check:pack      # 9 checks: the real tarballs — entry points resolve, terms ship, nothing leaks
 npm run check:contrast  # 69 colour pairs across 3 themes must meet the contrast contract
 npm run check:style     # 141 checks: the CSS authoring contract (tokens-only, logical, motionless, guarded :hover)
 npm run check:types     # tsc --noEmit over @trade/ui — strict types are a gate, not a suggestion

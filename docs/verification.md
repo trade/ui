@@ -54,6 +54,19 @@ gated by the dedicated `browser-macos` CI job on `macos-latest`. On macOS runner
 only real WebKit's perf gates, because shared-runner Chromium read a hardware-impossible 50 ms
 static p95. Full story: [STATUS.md](../STATUS.md), gh run 35205539648.
 
+### `scripts/check-pack.mjs` — `npm run check:pack`
+
+The packaging contract. `check-contract.mjs` asserts what the manifests *say* (the `files` list,
+the exports map, the artifacts on disk) — it cannot catch an artifact that is declared correctly and
+still packs wrong, which has happened: #55's tarballs shipped with no licence files at all, because
+npm only packs files that exist **inside** the package directory, and only a human reading the diff
+noticed.
+
+So this packs each publishable package for real (`npm pack --dry-run` on a built tree) and inspects
+the file list: every declared entry point in `main`/`module`/`types`/`exports` must resolve to a file
+in the tarball (a dangling `main` ships broken to CJS consumers), the licence files and build output
+must be present, and source, tests, scripts, examples, maps and `node_modules` must never leak in.
+
 ### Running the browser suite in CI's container (`npm run verify:browser:docker`)
 
 Playwright supports **macOS 14 and later**. A development host below that floor cannot run the
@@ -143,10 +156,10 @@ bundle a `.d.ts`.
 
 ## CI and the local loop
 
-`npm run ci` = `check:contract → build → check:contrast → check:style → check:types → test →
-check:license → check:docs → check:perf-policy → check:commits → example:build → example-trading:build →
-harness:build → size → verify → verify:example → verify:example-trading → verify:browser`,
-all non-zero-exit. CI (.github/workflows/ci.yml,
+`npm run ci` = `build → check:contract → check:pack → check:contrast → check:style → check:types →
+test → check:license → check:docs → check:perf-policy → check:commits → example:build →
+example-trading:build → harness:build → size → verify → verify:example → verify:example-trading →
+verify:browser`, all non-zero-exit. CI (.github/workflows/ci.yml,
 Node 22) runs four jobs: **build** (the static checks + dist artifact), **size**, **verification**
 (verify + both examples + all three browser engines; uploads `verification/` evidence even on failure),
 **browser-macos** (real WebKit perf gating). Every command exits non-zero on failure; a non-zero

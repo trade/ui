@@ -7,11 +7,12 @@
 // module to keep README and docs/verification.md honest against it.
 //
 // Only the browser suite can compute its total structurally (checks per combo x engines x viewports),
-// so it keeps `--print-counts`; these three are declarations, each enforced by the suite that owns it.
+// so it keeps `--print-counts`; these are declarations, each enforced by the suite that owns it.
 // Before this, only the browser suite's totals were gated and three docs drifted: verify 39 vs 69,
 // check:style 97 vs 128, verify:example-trading 26 vs 28 (issue #31).
 export const EXPECTED_COUNTS = {
   verify: 68,
   style: 141,
-  trading: 28
+  trading: 28,
+  pack: 9
 };
