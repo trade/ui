@@ -13,12 +13,13 @@
  *
  *   1. every entry point in `main`/`module`/`types`/`exports` resolves to a file in the tarball
  *   2. the licence files and the build output are present
- *   3. source, tests, scripts, examples and `node_modules` never leak in
+ *   3. every per-component stylesheet the build promises is present
+ *   4. source, tests, scripts, examples, maps and `node_modules` never leak in
  *
  * Exit code 0 = both tarballs are what a consumer would receive.
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -29,12 +30,21 @@ const checks = [];
 const check = (name, pass, detail) => checks.push({ name, pass, detail });
 
 const REQUIRED = ['package.json', 'LICENSE', 'LICENSE-MIT', 'LICENSE-APACHE', 'NOTICE'];
-const LEAKS = [/^src\//, /^tests?\//, /^scripts\//, /^apps\//, /^harness\//, /node_modules/, /\.map$/, /\.ts$/];
+const FORBIDDEN_PREFIX = /^(src|tests?|scripts|apps|harness)\//;
+
+const stylesDir = resolve(root, 'packages/ui/styles');
+const sourceStylesheets = existsSync(stylesDir) ? readdirSync(stylesDir).filter((f) => f.endsWith('.css')).length : 0;
 
 for (const dir of PACKAGES) {
   const pkgDir = resolve(root, dir);
-  if (!existsSync(resolve(pkgDir, 'package.json'))) continue;
   const label = dir;
+
+  // A package listed here must exist: skipping it silently would make this gate narrower than it
+  // claims, and the summary would still report the full package count.
+  if (!existsSync(resolve(pkgDir, 'package.json'))) {
+    check(`${label}: has a manifest`, false, `no package.json at ${label}`);
+    continue;
+  }
 
   let manifest;
   try {
@@ -77,11 +87,30 @@ for (const dir of PACKAGES) {
   const missing = REQUIRED.filter((f) => !packed.has(f));
   check(`${label}: ships the licence files and its manifest`, missing.length === 0, missing.length ? `missing: ${missing.join(', ')}` : 'ok');
 
-  // 3. nothing that should not be published
-  const leaked = [...packed].filter((f) => LEAKS.some((re) => re.test(f)) && !f.startsWith('dist/'));
+  // 3. the per-component stylesheets the build promises — a wildcard export would otherwise pass
+  //    with any single file present, so compare against the source set rather than "at least one"
+  if (dir === 'packages/ui') {
+    const shipped = [...packed].filter((f) => f.startsWith('dist/components/') && f.endsWith('.css'));
+    check(
+      `${label}: ships every per-component stylesheet`,
+      shipped.length === sourceStylesheets && sourceStylesheets > 0,
+      `${shipped.length} of ${sourceStylesheets}`
+    );
+  }
+
+  // 4. nothing that should not be published. `dist/` holds build output — including the tokens
+  //    package's dist/tokens.ts, which is published on purpose — but it is not a blanket exemption:
+  //    the build emits no source maps, so a .map anywhere is a leak, not an artefact.
+  const leaked = [...packed].filter((f) => {
+    if (FORBIDDEN_PREFIX.test(f)) return true;
+    if (/node_modules/.test(f)) return true;
+    if (/\.map$/.test(f)) return true;
+    if (/\.ts$/.test(f) && !f.startsWith('dist/')) return true;
+    return false;
+  });
   check(`${label}: leaks no source, tests, scripts, maps or node_modules`, leaked.length === 0, leaked.length ? `leaked: ${leaked.slice(0, 5).join(', ')}` : `${packed.size} files`);
 
-  // 4. the build output is actually in there
+  // 5. the build output is actually in there
   // the UI package ships the bundle plus per-component CSS; tokens ships its CSS and TS module
   const distFiles = [...packed].filter((f) => f.startsWith('dist/'));
   const expectedDist = dir === 'packages/ui' ? 4 : 1;
