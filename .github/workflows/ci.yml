@@ -37,6 +37,8 @@ jobs:
         run: npm run build
       - name: Assert the library ships zero runtime dependencies
         run: node scripts/check-contract.mjs
+      - name: Assert the published tarballs are correct (entry points, terms, no leaks)
+        run: npm run check:pack
 
       - name: Enforce the token contrast contract across every theme
         run: node scripts/check-contrast.mjs

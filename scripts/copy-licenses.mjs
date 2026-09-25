@@ -28,4 +28,5 @@ for (const pkg of PACKAGES) {
   }
 }
 
-console.log(`licences copied: ${copied} file(s) into ${PACKAGES.join(', ')}`);
+// stderr: this runs as `prepack`, and anything on stdout would corrupt `npm pack --json` output
+console.error(`licences copied: ${copied} file(s) into ${PACKAGES.join(', ')}`);
