@@ -128,7 +128,7 @@ npm run size            # bundle budgets, measured min+gzip the way a consumer s
 npm run verify          # 68 checks: CSS health, SSR markup, DOM interactions
 npm run verify:example  # 10 checks: boots the real example bundle in a DOM
 npm run harness:build   # required before verify:browser (harness/dist is gitignored)
-npm run verify:browser  # 84 checks: Chromium + Firefox + WebKit × desktop + mobile,
+npm run verify:browser  # 90 checks: Chromium + Firefox + WebKit × desktop + mobile,
                         # incl. 12 visual-regression checks vs baselines/<platform>/
 npm run verify:browser:docker  # the same suite inside CI's pinned image (hosts below Playwright's macOS 14 floor)
 
@@ -167,7 +167,7 @@ so any nonzero diff is a real change, and the 0.3% budget stays calibrated for a
 
 This makes runs reproducible: the WebKit ticking cadence is reported **informationally** on
 non-macOS hosts (it is the Playwright port, not Safari) and gated for real only in the
-`browser-macos` CI job, so a full local run is a clean 84/84 on every host instead of
+`browser-macos` CI job, so a full local run is a clean 90/90 on every host instead of
 disagreeing run to run.
 
 ### Visual baselines

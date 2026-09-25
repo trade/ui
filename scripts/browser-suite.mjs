@@ -96,7 +96,7 @@ const VIEWPORTS = [
 // adding a check without bumping these numbers fails the suite, and `check:docs` reads
 // the totals via --print-counts to keep README/AGENTS from drifting (the 72-vs-84 class
 // of bug). Both live before the server starts so --print-counts never binds the port.
-const CHECKS_PER_COMBO = { compare: 14, update: 13 };
+const CHECKS_PER_COMBO = { compare: 15, update: 14 };
 
 if (process.argv.includes('--print-counts')) {
   const total = (mode) => CHECKS_PER_COMBO[mode] * ENGINES.length * VIEWPORTS.length;
@@ -240,6 +240,26 @@ async function attempt(engine, vp, id) {  const browser = await engine.launcher.
     const frozen = await page.evaluate(() => window.__frozen === true);
     if (!frozen) throw new Error('harness did not freeze for capture — visual capture would be nondeterministic');
 
+    // RTL geometry: a logical inset paired with a physical transform drifts in RTL (#42). The probe
+    // is off-screen and `position: fixed`, so it cannot contribute to layout overflow, and it is
+    // removed inside the same evaluation — nothing of it reaches axe or the screenshot.
+    const tooltipGeometry = await page.evaluate(() => {
+      const host = document.createElement('div');
+      host.setAttribute('style', 'position:fixed;top:-10000px;left:-10000px;');
+      document.body.appendChild(host);
+      const round = (n) => Math.round(n * 100) / 100;
+      const measure = (dir) => {
+        host.setAttribute('dir', dir);
+        host.innerHTML = '<span class="ui-tooltip-anchor"><span class="ui-tooltip">tip text</span></span>';
+        const anchor = host.querySelector('.ui-tooltip-anchor').getBoundingClientRect();
+        const tip = host.querySelector('.ui-tooltip').getBoundingClientRect();
+        return { tipWidth: round(tip.width), offBy: round(tip.left + tip.width / 2 - (anchor.left + anchor.width / 2)) };
+      };
+      const out = { ltr: measure('ltr'), rtl: measure('rtl') };
+      host.remove();
+      return out;
+    });
+
     // The sticky header was never verified — only screenshotted at scroll position 0.
     const sticky = await page.evaluate(() => {
       const wrap = document.querySelector('.ui-table-wrap');
@@ -282,7 +302,7 @@ async function attempt(engine, vp, id) {  const browser = await engine.launcher.
 
     return {
       fps, p95, over33, steadyFrames, droppedRatio, overflow, structureRows, rowcount, themeOk,
-      lightAxe, staticFps, staticP95, darkViolations, consoleErrors, badResponses, axeErrored, lines, sticky, visual
+      lightAxe, staticFps, staticP95, darkViolations, consoleErrors, badResponses, axeErrored, lines, sticky, tooltipGeometry, visual
     };
   } finally {
     await browser.close();
@@ -349,6 +369,15 @@ for (const engine of ENGINES) {
       add('static render cadence (p95)' + (perfInformational ? ' [informational on this host]' : ''),
         staticWithinBudget(m, policyContext(engine)),
         `static p95=${m.staticP95}ms, static fps=${m.staticFps}`);
+      // The probe must have rendered a real bubble, or a zero-width tooltip would satisfy the
+      // centring assertion vacuously.
+      add(
+        'tooltip stays centred on its anchor in both writing directions',
+        m.tooltipGeometry.ltr.tipWidth > 10 &&
+          Math.abs(m.tooltipGeometry.ltr.offBy) < 1 &&
+          Math.abs(m.tooltipGeometry.rtl.offBy) < 1,
+        `ltr off=${m.tooltipGeometry.ltr.offBy}px, rtl off=${m.tooltipGeometry.rtl.offBy}px, tipWidth=${m.tooltipGeometry.ltr.tipWidth}px`
+      );
       add('sticky header stays pinned when the table scrolls', m.sticky?.ok === true, m.sticky?.ok ? `scrolled ${m.sticky.scrollTop}px, header offset ${m.sticky.offset}px` : `NOT PINNED — ${m.sticky?.reason ?? 'no reading'}`);
 
       // Visual regression — gates only where the baselines were generated (same platform);

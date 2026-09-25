@@ -28,6 +28,15 @@
   transition: none;
 }
 
+/* `inset-inline-start` is logical — under RTL it resolves to the physical *right* — while the
+   centring transform stays physical, so the two offsets compound instead of cancelling and the
+   bubble lands a full width off-centre. The transform therefore has to flip with the direction,
+   the same pattern the safe-area inset uses in feedback.css. Verified in Chromium: LTR offset 0,
+   RTL offset -tipWidth before this rule, 0 after. */
+[dir='rtl'] .ui-tooltip {
+  transform: translateX(var(--ui-size-center));
+}
+
 /* below the trigger instead of above it */
 .ui-tooltip--bottom {
   inset-block-end: auto;
