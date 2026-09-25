@@ -33,7 +33,7 @@ Boots the **built demo bundle** (IIFE, `runScripts: 'dangerously'`) in jsdom: mo
 watchlist, numeric columns, direction glyphs, `aria-rowcount="121"`, theme switch to dark and
 back, tab click, row-click opens the order ticket, Escape dismisses.
 
-### `scripts/browser-suite.mjs` — 14 checks × 6 combos = 84 (78 in update mode)
+### `scripts/browser-suite.mjs` — 15 checks × 6 combos = 90 (84 in update mode)
 
 Playwright, engines `{chromium, firefox, webkit}` × viewports `{desktop 1600×900, mobile
 390×844}`, against the self-measuring harness served on `127.0.0.1:4174` (see

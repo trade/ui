@@ -68,7 +68,7 @@ apps/example/src/main.jsx          the component reference screen — show new c
 apps/example-trading/src/main.jsx  the production-grade trading workspace example
 scripts/verify.mjs                 library checks (SSR, CSS, DOM interactions) — add checks here
 scripts/verify-example.mjs         example-bundle checks — add checks here
-scripts/browser-suite.mjs          84 checks × {chromium,firefox,webkit} × {desktop,mobile}
+scripts/browser-suite.mjs          90 checks × {chromium,firefox,webkit} × {desktop,mobile}
 scripts/perf-policy.mjs            the perf-retry rules, pure and browser-free
 scripts/check-perf-policy.mjs      exercises every retry branch and pins the 25 ms budget
 scripts/check-contract.mjs         package promises (zero deps, peer React, exports map)

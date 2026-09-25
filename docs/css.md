@@ -43,6 +43,14 @@ Ten checks per library stylesheet, nine per app stylesheet, in `scripts/check-st
    `text-align: left|right` are all banned. Use `inline-start`/`inline-end` — RTL flips for free.
    The codebase uses `border-inline-start` (banner tones), `inset-inline-end`/`inset-block-end`
    (toast region), `text-align: start/end` (numeric cells).
+
+   Direction itself is declared with the **`dir` attribute**. That is what `:dir()` reflects, since
+   it follows the document language's directionality rather than the CSS `direction` property — so a
+   direction set only in CSS is outside the contract and no selector can observe it. The exception to
+   "RTL flips for free" is a value with no logical equivalent: the tooltip pairs `inset-inline-start`
+   with a *physical* centring transform, so the transform must flip with the direction, and it does so
+   via `.ui-tooltip:dir(rtl)` — matched on the element, so an `ltr` island inside an `rtl` document
+   keeps ltr geometry.
 3. **z-index only via `var(--ui-z-*)`** — the stacking order is a tokened ladder
    (dropdown 1000 → toast 1070).
 4. **box-shadow only via `var(--ui-elevation-*)`** — elevation is a scale, not a local decision.

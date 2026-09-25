@@ -28,6 +28,25 @@
   transition: none;
 }
 
+/* `inset-inline-start` is logical — under RTL it resolves to the physical *right* — while the
+   centring transform stays physical, so the two offsets compound instead of cancelling and the
+   bubble lands a full width off-centre. The transform therefore has to flip with the direction.
+
+   `:dir()` is on the tooltip itself, not on an ancestor selector, so it follows the bubble's own
+   effective direction: a `dir="ltr"` island inside an RTL document keeps the LTR geometry, and a
+   direction set in CSS rather than by attribute is still honoured. Engines without `:dir()`
+   (Safari < 16.4, Chrome < 120) fall back to the document direction, which is what those engines'
+   RTL applications set. */
+.ui-tooltip:dir(rtl) {
+  transform: translateX(var(--ui-size-center));
+}
+
+@supports not selector(:dir(rtl)) {
+  [dir='rtl'] .ui-tooltip {
+    transform: translateX(var(--ui-size-center));
+  }
+}
+
 /* below the trigger instead of above it */
 .ui-tooltip--bottom {
   inset-block-end: auto;
