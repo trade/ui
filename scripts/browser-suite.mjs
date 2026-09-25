@@ -245,17 +245,19 @@ async function attempt(engine, vp, id) {  const browser = await engine.launcher.
     // removed inside the same evaluation — nothing of it reaches axe or the screenshot.
     const tooltipGeometry = await page.evaluate(() => {
       const host = document.createElement('div');
-      host.setAttribute('style', 'position:fixed;top:-10000px;left:-10000px;');
+      host.setAttribute('style', 'position:fixed;inset-block-start:-10000px;inset-inline-start:-10000px;');
       document.body.appendChild(host);
       const round = (n) => Math.round(n * 100) / 100;
-      const measure = (dir) => {
+      // The third case is the one that makes the selector choice matter: an ltr island inside an rtl
+      // ancestor must keep ltr geometry. An ancestor-attribute selector would flip it wrongly.
+      const measure = (dir, innerDir) => {
         host.setAttribute('dir', dir);
-        host.innerHTML = '<span class="ui-tooltip-anchor"><span class="ui-tooltip">tip text</span></span>';
+        host.innerHTML = `<div dir="${innerDir}"><span class="ui-tooltip-anchor"><span class="ui-tooltip">tip text</span></span></div>`;
         const anchor = host.querySelector('.ui-tooltip-anchor').getBoundingClientRect();
         const tip = host.querySelector('.ui-tooltip').getBoundingClientRect();
         return { tipWidth: round(tip.width), offBy: round(tip.left + tip.width / 2 - (anchor.left + anchor.width / 2)) };
       };
-      const out = { ltr: measure('ltr'), rtl: measure('rtl') };
+      const out = { ltr: measure('ltr', 'ltr'), rtl: measure('rtl', 'rtl'), island: measure('rtl', 'ltr') };
       host.remove();
       return out;
     });
@@ -369,14 +371,13 @@ for (const engine of ENGINES) {
       add('static render cadence (p95)' + (perfInformational ? ' [informational on this host]' : ''),
         staticWithinBudget(m, policyContext(engine)),
         `static p95=${m.staticP95}ms, static fps=${m.staticFps}`);
-      // The probe must have rendered a real bubble, or a zero-width tooltip would satisfy the
-      // centring assertion vacuously.
+      // The probe must have rendered a real bubble in every case, or a zero-width tooltip would
+      // satisfy the centring assertion vacuously.
+      const tipOk = (g) => g.tipWidth > 10 && Math.abs(g.offBy) < 1;
       add(
-        'tooltip stays centred on its anchor in both writing directions',
-        m.tooltipGeometry.ltr.tipWidth > 10 &&
-          Math.abs(m.tooltipGeometry.ltr.offBy) < 1 &&
-          Math.abs(m.tooltipGeometry.rtl.offBy) < 1,
-        `ltr off=${m.tooltipGeometry.ltr.offBy}px, rtl off=${m.tooltipGeometry.rtl.offBy}px, tipWidth=${m.tooltipGeometry.ltr.tipWidth}px`
+        'tooltip stays centred in LTR, RTL, and an LTR island inside RTL',
+        tipOk(m.tooltipGeometry.ltr) && tipOk(m.tooltipGeometry.rtl) && tipOk(m.tooltipGeometry.island),
+        `ltr off=${m.tooltipGeometry.ltr.offBy} (w=${m.tooltipGeometry.ltr.tipWidth}), rtl off=${m.tooltipGeometry.rtl.offBy} (w=${m.tooltipGeometry.rtl.tipWidth}), island off=${m.tooltipGeometry.island.offBy} (w=${m.tooltipGeometry.island.tipWidth})`
       );
       add('sticky header stays pinned when the table scrolls', m.sticky?.ok === true, m.sticky?.ok ? `scrolled ${m.sticky.scrollTop}px, header offset ${m.sticky.offset}px` : `NOT PINNED — ${m.sticky?.reason ?? 'no reading'}`);
 
