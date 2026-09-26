@@ -139,15 +139,16 @@ almost exhausted.) **Four budgets:**
 
 | Entry | Budget | Measured |
 |---|---|---|
-| ESM, full surface | 7 kB | 5.89 kB |
-| ESM, `Button` only — tree-shaking guard | 1.5 kB | 620 B |
-| CJS, full surface | 7.5 kB | 6.36 kB |
-| Stylesheet (all components) | 8 kB | 3.72 kB |
+| ESM, full surface | 7 kB | 6.18 kB |
+| ESM, `Button` only — tree-shaking guard | 1.5 kB | 622 B |
+| CJS, full surface | 7.5 kB | 6.66 kB |
+| Stylesheet (all components) | 8 kB | 3.76 kB |
+
+`scripts/check-size-claims.mjs` re-measures the build and holds every document that states a size to this table (`20 checks`).
 
 These bound the **minified** cost, not the published files. The committed artifacts are deliberately
-unminified and therefore larger — `dist/index.js` ≈ 7.8 kB, `dist/index.cjs` ≈ 8.2 kB, `dist/ui.css`
-≈ 6.2 kB, `dist/index.d.ts` ≈ 0.5 kB gzipped — so a 7.5 kB size-limit entry does **not** mean the
-published `index.cjs` is under 7.5 kB; it means a consumer who bundles and minifies it pays 6.36 kB.
+unminified and therefore larger — so a 7.5 kB size-limit entry does **not** mean the published
+`index.cjs` is under 7.5 kB; it means a consumer who bundles and minifies it pays 6.66 kB.
 
 `verify.mjs` bounds the published files instead, with a separate tripwire (gzip < 12 / 12 / 8 / 3 kB for
 `index.js` / `index.cjs` / `ui.css` / `index.d.ts`), so a regression in the shipped artifacts is caught
