@@ -4,8 +4,8 @@
 //
 // `npm run size` measures what a consumer ships; this script runs it and holds two things to it:
 //
-//   1. every measurement still matches the value declared in `scripts/expected-counts.mjs`, and
-//   2. every document that states a measured size quotes exactly those declared values.
+//   1. the measurement still matches the values declared in `scripts/expected-counts.mjs`, and
+//   2. every document that states a measured size states it in the right cell of the right row.
 //
 // Before this, four documents restated the sizes as prose and drifted three different ways — README,
 // STATUS and docs/verification.md agreed with a state that no longer existed, and docs/performance.md
@@ -19,16 +19,21 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { EXPECTED_COUNTS, EXPECTED_SIZES, formatSize } from './expected-counts.mjs';
 
 const TOLERANCE = 0.01; // 1% of the declared size — a real drift, not a byte of minifier noise
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url)); // fileURLToPath, not .pathname: a checkout path with a space would otherwise break the lookup
+const escapeRe = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-// Which document states which measured size. A size stated anywhere else is not gated, so it does not
-// get stated elsewhere: README points at the table instead of repeating it.
-const DOC_QUOTES = {
-  'docs/verification.md': ['esmFull', 'esmButton', 'cjsFull', 'stylesheet'],
-  'STATUS.md': ['esmFull', 'esmButton', 'stylesheet']
+// Each document has its own row shape, so each is matched as a row and not as a substring of the file:
+// a table cell that drifts while the same number survives in the prose below it is exactly the kind of
+// change a whole-file `includes()` would wave through.
+const ROW = {
+  'docs/verification.md': (label, budget, value) =>
+    new RegExp(`^\\|\\s*${escapeRe(label)}\\s*\\|\\s*${escapeRe(budget)}\\s*\\|\\s*${escapeRe(value)}\\s*\\|`, 'm'),
+  'STATUS.md': (label, budget, value) =>
+    new RegExp(`^\\|\\s*${escapeRe(label)}\\s*\\|\\s*\\*\\*${escapeRe(value)}\\*\\*\\s*min\\+gzip\\s*\\(budget\\s*${escapeRe(budget)}\\)`, 'm')
 };
 
 const checks = [];
@@ -38,19 +43,18 @@ const check = (name, ok, detail) => {
 };
 
 // Read the measurement; do not trust a cached one. size-limit exits non-zero when a budget fails but
-// still prints the figures, so a budget breach is reported per-entry below rather than as a crash.
+// still prints the figures, so a breach is reported per entry below rather than as a crash.
 let measured;
 try {
   const bin = join(root, 'node_modules', '.bin', process.platform === 'win32' ? 'size-limit.cmd' : 'size-limit');
   const stdout = execFileSync(bin, ['--json'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   measured = JSON.parse(stdout);
 } catch (error) {
-  const partial = error.stdout;
   try {
-    measured = JSON.parse(partial);
+    measured = JSON.parse(error.stdout);
   } catch {
     console.error('size claims: could not measure — is the build present? (npm run build)');
-    console.error(String(partial || error.message).slice(0, 600));
+    console.error(String(error.stdout || error.message).slice(0, 600));
     process.exit(1);
   }
 }
@@ -58,17 +62,25 @@ try {
 const byName = new Map(measured.map((entry) => [entry.name, entry]));
 const entries = Object.entries(EXPECTED_SIZES);
 
+// The sets must be equal, not merely overlapping. A new size-limit entry that nobody declares would
+// otherwise be measured and then ignored — including by the error path above, which would swallow its
+// budget failure and still report a clean run.
+const missing = entries.filter(([, claim]) => !byName.has(claim.entry)).map(([key]) => key);
+const undeclared = measured.filter((entry) => !entries.some(([, claim]) => claim.entry === entry.name)).map((entry) => entry.name);
 check(
-  `all ${entries.length} sized artifacts were measured`,
-  entries.every(([, claim]) => byName.has(claim.entry)),
-  `${byName.size} of ${entries.length} entries reported`
+  'the measured artifacts are exactly the declared ones',
+  missing.length === 0 && undeclared.length === 0,
+  missing.length || undeclared.length
+    ? `missing ${missing.join(', ') || 'none'}; undeclared ${undeclared.join(', ') || 'none'}`
+    : `${entries.length} declared, ${measured.length} measured`
 );
 
 for (const [key, claim] of entries) {
   const found = byName.get(claim.entry);
   if (!found) {
-    check(`${key}: matches its declared size`, false, `no size-limit entry "${claim.entry}"`);
-    check(`${key}: under its ${formatSize(claim.budget)} budget`, false, 'not measured');
+    check(`${key}: matches its declared size`, false, 'not measured');
+    check(`${key}: within its declared budget`, false, 'not measured');
+    check(`${key}: declared budget agrees with package.json`, false, 'not measured');
     continue;
   }
   const drift = Math.abs(found.size - claim.bytes) / claim.bytes;
@@ -77,23 +89,27 @@ for (const [key, claim] of entries) {
     drift <= TOLERANCE,
     `measured ${formatSize(found.size)}, declared ${formatSize(claim.bytes)} (${(drift * 100).toFixed(2)}%)`
   );
+  // Compare against the budget printed in the docs, not size-limit's own verdict, so the ceiling in the
+  // message is the ceiling the reader is shown.
   check(
-    `${key}: under its ${formatSize(claim.budget)} budget`,
-    found.passed === true,
-    found.passed ? 'ok' : 'over budget'
+    `${key}: within its declared budget`,
+    found.size <= claim.budget,
+    `${formatSize(found.size)} of ${claim.budgetLabel}`
+  );
+  check(
+    `${key}: declared budget agrees with package.json`,
+    found.sizeLimit === claim.budget,
+    `package.json says ${formatSize(found.sizeLimit)}, this module declares ${claim.budgetLabel}`
   );
 }
 
-// The docs are what readers believe; a declared value they do not quote is a value nobody can check.
-for (const [file, keys] of Object.entries(DOC_QUOTES)) {
-  const doc = readFileSync(join(root, file), 'utf8');
-  for (const key of keys) {
-    const quoted = formatSize(EXPECTED_SIZES[key].bytes);
-    check(
-      `${file} quotes ${key} as ${quoted}`,
-      doc.includes(quoted),
-      doc.includes(quoted) ? 'quoted' : 'missing or different'
-    );
+// The docs are what readers believe; a value that is not in the right cell is not a value they can check.
+for (const [key, claim] of entries) {
+  const value = formatSize(claim.bytes);
+  for (const [file, label] of Object.entries(claim.docs)) {
+    const doc = readFileSync(join(root, file), 'utf8');
+    const ok = ROW[file](label, claim.budgetLabel, value).test(doc);
+    check(`${file} states ${key} as ${value} in its row`, ok, ok ? `"${label}"` : `no row "${label} | ${claim.budgetLabel} | ${value}"`);
   }
 }
 
@@ -105,7 +121,7 @@ if (checks.length !== EXPECTED_COUNTS.sizes) {
 if (failed > 0) {
   console.error(`\nsize claims: ${checks.length - failed}/${checks.length} checks passed`);
   console.error('If the measurement genuinely moved, update EXPECTED_SIZES in scripts/expected-counts.mjs');
-  console.error('and the sizes quoted in docs/verification.md and STATUS.md together.');
+  console.error('and the sizes stated in docs/verification.md and STATUS.md together.');
   process.exit(1);
 }
 console.log(`\nsize claims: ${checks.length}/${checks.length} checks passed — the build and the docs agree`);

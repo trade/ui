@@ -144,7 +144,7 @@ almost exhausted.) **Four budgets:**
 | CJS, full surface | 7.5 kB | 6.66 kB |
 | Stylesheet (all components) | 8 kB | 3.76 kB |
 
-`scripts/check-size-claims.mjs` re-measures the build and holds every document that states a size to this table (`16 checks`).
+`scripts/check-size-claims.mjs` re-measures the build and holds every document that states a size to this table (`20 checks`).
 
 These bound the **minified** cost, not the published files. The committed artifacts are deliberately
 unminified and therefore larger — so a 7.5 kB size-limit entry does **not** mean the published

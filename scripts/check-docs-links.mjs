@@ -6,7 +6,7 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join, dirname, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { EXPECTED_COUNTS, EXPECTED_SIZES, formatSize } from './expected-counts.mjs';
+import { EXPECTED_COUNTS } from './expected-counts.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const docsDir = join(root, 'docs');

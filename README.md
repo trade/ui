@@ -124,7 +124,7 @@ npm test                # 14 unit tests for the pure modules (node:test; no brow
 npm run check:license   # licence headers + manifests agree (MIT OR Apache-2.0)
 npm run check:docs      # links resolve + documented check counts agree with the suites themselves
 npm run check:perf-policy  # 71 checks: the perf-retry rules, the gated verdicts, the pinned knobs
-npm run size            # 16 checks: consumer cost vs the declared sizes, and the docs that quote them
+npm run size            # 20 checks: consumer cost vs the declared sizes, and the docs that quote them
 npm run verify          # 68 checks: CSS health, SSR markup, DOM interactions
 npm run verify:example  # 10 checks: boots the real example bundle in a DOM
 npm run harness:build   # required before verify:browser (harness/dist is gitignored)
