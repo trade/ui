@@ -14,9 +14,21 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { JSDOM } from 'jsdom';
-import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { EXPECTED_COUNTS } from './expected-counts.mjs';
+
+// React must be imported dynamically, AFTER this assignment. React ships `act` only in its
+// development build and Node picks the entry point from NODE_ENV at import time, so a shell
+// with NODE_ENV=production loaded a React whose `act` is undefined and this suite died at the
+// first `React.act(...)` with a bare "not a function". Both facts below were measured, not
+// assumed: `typeof React.act` is `undefined` under NODE_ENV=production and `function` under
+// development, and a module-body assignment is too late because static imports are hoisted
+// above it — so the plain `import React from 'react'` form still yields `undefined`. Verified
+// with NODE_ENV=production in the shell: the dynamic form gives `function`, the static form
+// `undefined`. Forcing it here also beats prefixing the npm script, which is not portable to
+// Windows `cmd`. A test suite always wants the development build.
+process.env.NODE_ENV = 'development';
+const React = (await import('react')).default;
+const { renderToStaticMarkup } = await import('react-dom/server');
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
