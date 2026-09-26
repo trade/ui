@@ -8,7 +8,7 @@ gaps.
 
 ## The suites
 
-### `scripts/verify.mjs` — 68 library checks
+### `scripts/verify.mjs` — 69 library checks
 
 Two phases, exits non-zero on any failure, prints a JSON report. It deliberately does **not**
 re-assert the package promises (that is `check-contract.mjs`) or the baseline-gate resolution (that

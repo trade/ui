@@ -228,6 +228,14 @@ dom.window.matchMedia = (query) => ({
 const { createRoot } = await import('react-dom/client');
 const click = (el) => el.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
 const keydown = (el, key) => el.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true }));
+// A real keystroke into a controlled field: the native value setter plus a bubbling
+// `input` event, which is what a browser delivers and what React listens for.
+// Assigning `.value` directly would be swallowed by React's value tracker.
+const type = (el, text) => {
+  const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value').set;
+  setter.call(el, el.value + text);
+  el.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+};
 
 const container = document.getElementById('root');
 const reactRoot = createRoot(container);
@@ -271,6 +279,23 @@ check(
   'dialog opens and receives focus',
   Boolean(dialog) && focusInside,
   `dialog present=${Boolean(dialog)}, focused=${document.activeElement?.className || document.activeElement?.tagName}`
+);
+
+// Regression gate for a bug that actually shipped. The dialog's open/close effect
+// depended on [open, onClose]; consumers pass an inline onClose, so every parent render
+// re-ran the effect and its cleanup restored focus to the trigger. A controlled field
+// inside the dialog lost the caret on the FIRST keystroke. It survived review because the
+// harness dialog held no controlled input, so nothing here ever typed into one — and the
+// sibling re-render check below only focuses a plain <button>, which a mid-dialog focus
+// reset also satisfies. This one types.
+const qtyField = document.body.querySelector('#dialog-qty');
+await React.act(async () => qtyField?.focus());
+await React.act(async () => type(qtyField, '7'));
+const qtyAfter = document.body.querySelector('#dialog-qty');
+check(
+  'dialog caret survives typing into a controlled field',
+  document.activeElement === qtyAfter && qtyAfter?.value === '10007',
+  `activeElement=${document.activeElement?.id || document.activeElement?.className || document.activeElement?.tagName}, value=${JSON.stringify(qtyAfter?.value)} (expected focus on dialog-qty, value "10007")`
 );
 
 await React.act(async () => keydown(document, 'Escape'));
