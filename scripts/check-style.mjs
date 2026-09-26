@@ -88,11 +88,17 @@ function checkFile(checks, file, css, { namespaced }) {
   );
 
   // 2. layout is direction-agnostic (RTL flips for free) — logical properties only
+  //
+  // A bare `left`/`right` is the strongest form of what this rule bans: unlike `margin-left` it does
+  // not flip at all, so it is wrong in one direction by construction — and it was the one form the
+  // pattern missed, while docs/css.md already claimed the wider ban (#72).
   check(
     `${file}: no physical directional properties`,
     decls
       .filter(
         ({ prop, value }) =>
+          prop === 'left' ||
+          prop === 'right' ||
           /^(margin|padding|border|inset|overscroll-behavior)-(left|right)/.test(prop) ||
           (prop === 'text-align' && /^(left|right)$/.test(value))
       )
