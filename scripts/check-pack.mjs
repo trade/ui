@@ -66,6 +66,9 @@ for (const dir of PACKAGES) {
   // claims, and the summary would still report the full package count.
   if (!existsSync(resolve(pkgDir, 'package.json'))) {
     check(`${label}: has a manifest`, false, `no package.json at ${label}`);
+    // Same reasoning as the catch below: with no manifest there is nothing to pack and nothing
+    // to assert, so say the pack never ran rather than leaving the absence implicit.
+    check(`${label}: npm pack produced a real manifest`, false, 'no manifest — the pack command did not run');
     continue;
   }
 
