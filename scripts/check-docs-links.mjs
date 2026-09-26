@@ -6,7 +6,7 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join, dirname, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { EXPECTED_COUNTS } from './expected-counts.mjs';
+import { EXPECTED_COUNTS, EXPECTED_SIZES, formatSize } from './expected-counts.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const docsDir = join(root, 'docs');
@@ -117,6 +117,9 @@ const staleTokens = [
   'npm run demo', 'build-demo', 'verify-demo', 'build-trading',
   '39 library checks', '97 checks over', '12 checks × 6 combos = 72',
   '4.34', '4.06 kB', '4.2 KB gzip',
+  // Superseded size figures. They lived in four documents and drifted apart; the current values are
+  // gated by scripts/check-size-claims.mjs, and these must never come back.
+  '5.89', '620 B', '6.36 kB', '3.72 kB', '7.78 kB', '5.47 kB',
   '21 roles', '114 custom properties', '8 files, ~320', '26 checks: virtualization',
   '20 steps'
 ];
@@ -167,6 +170,8 @@ expectCount(readme, 'README.md', /npm run verify\s+#\s+(\d+) checks/g, EXPECTED_
 expectCount(readme, 'README.md', /npm run check:style\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.style, 'the check:style row total');
 expectCount(readme, 'README.md', /npm run verify:example-trading\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.trading, 'the verify:example-trading row total');
 expectCount(readme, 'README.md', /npm run check:pack\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.pack, 'the check:pack row total');
+expectCount(readme, 'README.md', /npm run size\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.sizes, 'the size row total');
+expectCount(verification, 'docs/verification.md', /check-size-claims\.mjs`[^\n]*?(\d+) checks/g, EXPECTED_COUNTS.sizes, 'the size-claims total');
 expectCount(verification, 'docs/verification.md', /verify\.mjs`[^\n]*?(\d+) library checks/g, EXPECTED_COUNTS.verify, 'the verify total');
 expectCount(verification, 'docs/verification.md', /check-style\.mjs`[^\n]*?(\d+) checks over/g, EXPECTED_COUNTS.style, 'the check:style total');
 expectCount(verification, 'docs/verification.md', /verify-example\.mjs`[^\n]*?(\d+) checks/g, 10, 'the verify:example total');
@@ -174,7 +179,8 @@ forbidIn(readme, 'README.md', /belong in CI artifacts/, 'the "screenshots belong
 
 console.log(
   `docs counts: browser-suite ${compare} compare / ${update} update, verify ${EXPECTED_COUNTS.verify}, `
-  + `style ${EXPECTED_COUNTS.style}, trading ${EXPECTED_COUNTS.trading}, perf-policy ${policyCount} — `
+  + `style ${EXPECTED_COUNTS.style}, trading ${EXPECTED_COUNTS.trading}, pack ${EXPECTED_COUNTS.pack}, `
+  + `size ${EXPECTED_COUNTS.sizes}, perf-policy ${policyCount} — `
   + `README, AGENTS.md, CONTRIBUTING.md and docs/verification.md agree; `
   + `stale-name scan covers all ${markdownFiles.length} markdown files`
 );

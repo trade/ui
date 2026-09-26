@@ -110,7 +110,7 @@ After any change: `npm run build && npm run example:build && npm run verify && n
 ## Known limitations (Phase 1)
 
 - No virtualizer is shipped — `DataTable` is virtualizer-friendly (`rowCount` keeps ARIA honest) so consumers plug in their own.
-- The examples bundle React into an IIFE for convenience; the library itself is 5.89 kB min+gzip for the full surface (620 B for a single-component import) and depends on nothing.
+- The examples bundle React into an IIFE for convenience; the library itself depends on nothing and holds a 7 kB min+gzip budget for the full surface (measured figures: [docs/verification.md](docs/verification.md)).
 
 ## Verification & CI
 
@@ -124,7 +124,7 @@ npm test                # 14 unit tests for the pure modules (node:test; no brow
 npm run check:license   # licence headers + manifests agree (MIT OR Apache-2.0)
 npm run check:docs      # links resolve + documented check counts agree with the suites themselves
 npm run check:perf-policy  # 71 checks: the perf-retry rules, the gated verdicts, the pinned knobs
-npm run size            # bundle budgets, measured min+gzip the way a consumer ships it
+npm run size            # 16 checks: consumer cost vs the declared sizes, and the docs that quote them
 npm run verify          # 68 checks: CSS health, SSR markup, DOM interactions
 npm run verify:example  # 10 checks: boots the real example bundle in a DOM
 npm run harness:build   # required before verify:browser (harness/dist is gitignored)

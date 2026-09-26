@@ -7,11 +7,24 @@ Measured numbers live in [STATUS.md](../STATUS.md); the methodology is in `harne
 
 ## Budgets (gated by `npm run size`)
 
-| Artifact | Budget (gzip) | Measured |
+Two budget sets, because there are two different measurements. Consumer cost — bundled, minified and
+gzipped — is bounded by `size-limit` via the `@size-limit/esbuild` provider. The committed,
+unminified artifacts that are actually published are bounded separately by `verify.mjs`, because a
+size-limit entry says nothing about the size of a tarball's `dist/index.cjs`.
+
+| Artifact | Budget (gzip) | Gate |
 |---|---|---|
-| `@trade/ui` ESM bundle | 8 kB | **7.78 kB** |
-| Stylesheet (all components) | 8 kB | **5.47 kB** |
-| Generated types | 3 kB | under |
+| `@trade/ui` ESM, full surface | 7 kB | `npm run size` |
+| `@trade/ui` ESM, `Button` only (tree-shaking guard) | 1.5 kB | `npm run size` |
+| `@trade/ui` CJS, full surface | 7.5 kB | `npm run size` |
+| Stylesheet, all components | 8 kB | `npm run size` |
+| Published `dist/` — `index.js` · `index.cjs` · `ui.css` · `index.d.ts` | 12 / 12 / 8 / 3 kB | `verify.mjs` |
+
+Measured values live in [STATUS.md](../STATUS.md) and are tabulated per entry in
+[verification.md](verification.md). Both are gated by `scripts/check-size-claims.mjs`, which is why
+this table deliberately carries no "measured" column: it used to, and it sat on the pre-`esbuild`
+figures — roughly a quarter too high — while claiming `npm run size` produced them. A copy that goes
+stale with nothing noticing is worse than no copy.
 
 Zero runtime dependencies (ADR-002) is the first performance decision: no dependency graph, no
 hot-path weight, tree-shakeable per-area CSS imports.
