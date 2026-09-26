@@ -67,6 +67,12 @@ the file list: every declared entry point in `main`/`module`/`types`/`exports` m
 in the tarball (a dangling `main` ships broken to CJS consumers), the licence files and build output
 must be present, and source, tests, scripts, examples, maps and `node_modules` must never leak in.
 
+Two details make it runnable everywhere. It invokes npm through `process.execPath` plus
+`npm_execpath` — npm's own CLI entry point, exported by `npm run` — rather than spawning `npm`,
+which does not exist as an executable on Windows and made this gate unrunnable there. And each
+package asserts that `npm pack` produced a real manifest, so a broken command reports itself as
+"the pack command did not run" instead of masquerading as a packaging regression.
+
 ### `scripts/verify-consumer.mjs` — `npm run verify:consumer`
 
 The consumer contract — 16 checks. Everything else in this repository verifies the library **as a

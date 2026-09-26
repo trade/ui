@@ -14,7 +14,7 @@ export const EXPECTED_COUNTS = {
   verify: 69,
   style: 141,
   trading: 32,
-  pack: 9,
+  pack: 11,
   sizes: 20,
   consumer: 16
 };

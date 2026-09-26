@@ -113,6 +113,17 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
    passes or fails, so the margin is visible before it trips (`scripts/browser-suite.mjs`). A real
    single-engine regression - 30-40 ms with a rising dropped-frame ratio while the other engines
    stay healthy - still fails on every attempt.
+9. **A gate can be green on CI and unrunnable on a contributor's machine.** `check:pack` spawned
+   `npm` via `execFileSync`, which cannot work on Windows: there is no `npm` executable there, only
+   `npm.cmd`, and Node refuses to spawn a `.cmd` without a shell. Every win32 run failed
+   `spawnSync npm ENOENT` — the gate could never pass there — while Linux CI was green, so the
+   whole `ci` chain was unrunnable locally on Windows and the failure read as a packaging
+   regression rather than a broken command. **Fixed 2026-09-26** by invoking npm through
+   `process.execPath` + `npm_execpath` (npm's own CLI entry point, exported by `npm run`), with
+   each package now asserting a real manifest so a broken command says so. The wider gap is
+   still open: nothing gates a script for *runnability on every platform* — CI runs Linux and
+   macOS only, so a win32-only break reaches a contributor unannounced. `baselines/win32/` has
+   the same shape (issue 6).
 
 ## Working practice, 2026-09-26
 
