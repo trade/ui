@@ -16,7 +16,7 @@ export const EXPECTED_COUNTS = {
   trading: 32,
   pack: 9,
   sizes: 20,
-  consumer: 14
+  consumer: 16
 };
 
 // The measured sizes, declared once. `scripts/check-size-claims.mjs` re-measures them on every run and

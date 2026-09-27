@@ -69,7 +69,7 @@ must be present, and source, tests, scripts, examples, maps and `node_modules` m
 
 ### `scripts/verify-consumer.mjs` — `npm run verify:consumer`
 
-The consumer contract — 14 checks. Everything else in this repository verifies the library **as a
+The consumer contract — 16 checks. Everything else in this repository verifies the library **as a
 workspace**: the example apps resolve `@trade/ui` through npm's hoisted symlink, and `check:pack`
 inspects a tarball's *file list*. Neither can see whether a stranger who runs `npm install @trade/ui`
 gets a working package. A file present in `dist/` here but absent from the tarball loads perfectly in
@@ -83,9 +83,10 @@ it with a real bundler, renders a component to markup under React, and typecheck
 declarations. It is hermetic: the packages declare no runtime dependencies, and React — the peer a
 consumer is expected to provide — is linked in rather than downloaded.
 
-It is deliberately not a second `check:pack`. Three breakages were used to test it, and `check:pack`
-**passes all three**: an entry that exists but exports nothing, `./styles.css` dropped from `exports`,
-and a stylesheet that ships but is empty.
+It is deliberately not a second `check:pack`. Five breakages were used to test it, and `check:pack`
+**passes all five**: an entry that exists but exports nothing, `./styles.css` dropped from `exports`,
+a stylesheet that ships but is empty, a `index.cjs` that throws when loaded, and a declaration dropped
+for an export a consumer imports.
 
 ### Running the browser suite in CI's container (`npm run verify:browser:docker`)
 

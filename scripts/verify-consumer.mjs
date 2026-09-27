@@ -210,6 +210,9 @@ try {
 // Each specifier resolves in its own try, so a failure names the module that actually failed
 // rather than the first one the probe happened to reach.
 try { facts.cjsEntry = require.resolve('@trade/ui'); } catch (error) { facts.cjsError = String(error.message); }
+// resolve() only finds the file. Loading it is what a CommonJS consumer does, and an index.cjs that
+// throws on load would otherwise pass every check here.
+try { facts.cjsExports = Object.keys(require('@trade/ui')).sort(); } catch (error) { facts.cjsError = String(error.message); }
 try {
   facts.css = require.resolve('@trade/ui/styles.css');
   facts.cssBytes = statSync(facts.css).size;
@@ -219,6 +222,12 @@ try {
   facts.tokensCss = require.resolve('@trade/tokens/tokens.css');
   facts.tokensCssSource = readFileSync(facts.tokensCss, 'utf8').slice(0, 400000);
 } catch (error) { facts.tokensError = String(error.message); }
+// The package's other structural export: the per-component stylesheets under ./components/*, which a
+// consumer imports to ship only what it uses.
+try {
+  facts.componentCss = require.resolve('@trade/ui/components/button.css');
+  facts.componentCssSource = readFileSync(facts.componentCss, 'utf8').slice(0, 40000);
+} catch (error) { facts.componentCssError = String(error.message); }
 try {
   const { createElement } = await import('react');
   const { renderToStaticMarkup } = await import('react-dom/server');
@@ -266,6 +275,13 @@ console.log('FACTS ' + JSON.stringify(facts));
     facts.esmError ?? (absent.length ? `missing ${absent.join(', ')}` : `${facts.esmExports?.length ?? 0} exports`)
   );
 
+  const cjsAbsent = PUBLIC_SURFACE.filter((name) => !(facts.cjsExports ?? []).includes(name));
+  check(
+    'CommonJS loads and exports the same surface',
+    Array.isArray(facts.cjsExports) && cjsAbsent.length === 0,
+    facts.cjsError ?? (cjsAbsent.length ? `missing ${cjsAbsent.join(', ')}` : `${facts.cjsExports?.length ?? 0} exports`)
+  );
+
   check(
     '@trade/ui/styles.css resolves through the export map',
     insideConsumer(facts.css) && existsSync(facts.css),
@@ -284,6 +300,15 @@ console.log('FACTS ' + JSON.stringify(facts));
     '@trade/tokens/tokens.css resolves from the installed copy',
     tokensOk,
     tokensOk ? `${facts.tokensCss.split(sep).pop()}, contains ${TOKEN_PROPERTY}` : facts.tokensError ?? String(facts.tokensCss ?? 'not resolved')
+  );
+
+  // The last structural export. `check:pack` compares the packed per-component stylesheet count
+  // against the source set, but nothing resolved one the way a consumer does until this.
+  const componentCssOk = insideConsumer(facts.componentCss) && String(facts.componentCssSource ?? '').includes(CSS_SELECTOR);
+  check(
+    'a per-component stylesheet resolves through the export map',
+    componentCssOk,
+    componentCssOk ? `${facts.componentCss.split(sep).pop()}, contains ${CSS_SELECTOR}` : facts.componentCssError ?? String(facts.componentCss ?? 'not resolved')
   );
 
   // ── 5. a bundler, not just Node ───────────────────────────────────────────
@@ -339,14 +364,23 @@ export const Element = () => <Button>Save</Button>;
   // ── 7. the types travel too ───────────────────────────────────────────────
   // The declarations are part of the promise, and tsc is run against the *installed* package here,
   // not against the source the way `npm run check:types` does.
-  // The same shim `npm run check:types` uses, resolved the same way size-limit is in the size gate.
-  const tscBin = join(root, 'node_modules', '.bin', process.platform === 'win32' ? 'tsc.cmd' : 'tsc');
-  if (!existsSync(tscBin)) {
+  // Node runs TypeScript's own JS entry rather than the .bin shim: on Windows that shim is `tsc.cmd`,
+  // and Node cannot spawn a .cmd without a shell (EINVAL) -- the same defect that made check:pack
+  // unrunnable there. `typescript/bin/tsc` is a .js file, so this works on every platform.
+  const tscEntry = join(root, 'node_modules', 'typescript', 'bin', 'tsc');
+  if (!existsSync(tscEntry)) {
     check('typescript compiles against the installed declarations', false, 'typescript is not installed in node_modules');
   } else {
+    // Several exports, not just one: a declaration dropped for anything a consumer imports must fail
+    // here, and referencing each in a type position needs no knowledge of its prop shape.
     writeFileSync(
       join(consumer, 'use.tsx'),
-      `import { Button } from '@trade/ui';
+      `import { Button, DataTable, Dialog, Menu, Popover, Select, Tabs, ThemeProvider, Tooltip, useTicks } from '@trade/ui';
+
+export type Surface = [
+  typeof Button, typeof DataTable, typeof Dialog, typeof Menu, typeof Popover,
+  typeof Select, typeof Tabs, typeof ThemeProvider, typeof Tooltip, typeof useTicks
+];
 
 export const element = <Button>Save</Button>;
 `
@@ -373,7 +407,7 @@ export const element = <Button>Save</Button>;
     );
     let tscError = null;
     try {
-      run(tscBin, ['-p', join(consumer, 'tsconfig.json')], { cwd: consumer });
+      run(process.execPath, [tscEntry, '-p', join(consumer, 'tsconfig.json')], { cwd: consumer });
     } catch (error) {
       tscError = error;
     }

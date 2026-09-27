@@ -3,7 +3,7 @@
 
 /** Build the component example app: bundle it (IIFE so it opens from file://) and copy the stylesheets. */
 import { build } from 'esbuild';
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
