@@ -140,6 +140,9 @@ const performanceDoc = readDoc('docs/performance.md');
 const pkg = readDoc('package.json');
 expectIn(verification, 'docs/verification.md', new RegExp('browser-suite\\.mjs[^\\n]*= ' + compare), 'the browser-suite per-combo total (= ' + compare + ')');
 expectIn(verification, 'docs/verification.md', /perf-policy\.mjs/, 'the perf-policy module');
+// The consumer gate is described where the other suites are; a gate nobody documents is a gate the
+// next contributor deletes. Rule zero applies to the doc as much as to the chain.
+expectIn(verification, 'docs/verification.md', /verify-consumer\.mjs/, 'the consumer gate section');
 expectIn(performanceDoc, 'docs/performance.md', /perf-policy\.mjs/, 'the perf-policy module');
 expectIn(pkg, 'package.json', /"check:perf-policy":/, 'the check:perf-policy script');
 expectIn(pkg, 'package.json', /check:perf-policy && npm run check:commits/, 'check:perf-policy wired into the ci chain');
@@ -170,6 +173,7 @@ expectCount(readme, 'README.md', /npm run verify\s+#\s+(\d+) checks/g, EXPECTED_
 expectCount(readme, 'README.md', /npm run check:style\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.style, 'the check:style row total');
 expectCount(readme, 'README.md', /npm run verify:example-trading\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.trading, 'the verify:example-trading row total');
 expectCount(readme, 'README.md', /npm run check:pack\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.pack, 'the check:pack row total');
+expectCount(readme, 'README.md', /npm run verify:consumer\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.consumer, 'the verify:consumer row total');
 expectCount(readme, 'README.md', /npm run size\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.sizes, 'the size row total');
 expectCount(verification, 'docs/verification.md', /check-size-claims\.mjs`[^\n]*?(\d+) checks/g, EXPECTED_COUNTS.sizes, 'the size-claims total');
 expectCount(verification, 'docs/verification.md', /verify\.mjs`[^\n]*?(\d+) library checks/g, EXPECTED_COUNTS.verify, 'the verify total');
@@ -180,7 +184,7 @@ forbidIn(readme, 'README.md', /belong in CI artifacts/, 'the "screenshots belong
 console.log(
   `docs counts: browser-suite ${compare} compare / ${update} update, verify ${EXPECTED_COUNTS.verify}, `
   + `style ${EXPECTED_COUNTS.style}, trading ${EXPECTED_COUNTS.trading}, pack ${EXPECTED_COUNTS.pack}, `
-  + `size ${EXPECTED_COUNTS.sizes}, perf-policy ${policyCount} — `
+  + `size ${EXPECTED_COUNTS.sizes}, consumer ${EXPECTED_COUNTS.consumer}, perf-policy ${policyCount} — `
   + `README, AGENTS.md, CONTRIBUTING.md and docs/verification.md agree; `
   + `stale-name scan covers all ${markdownFiles.length} markdown files`
 );
