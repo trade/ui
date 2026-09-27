@@ -133,11 +133,16 @@ npm run verify:browser  # 90 checks: Chromium + Firefox + WebKit × desktop + mo
                         # incl. 12 visual-regression checks vs baselines/<platform>/
 npm run verify:browser:docker  # the same suite inside CI's pinned image (hosts below Playwright's macOS 14 floor)
 
+npm run check:release   # 7 checks: the release preconditions — run at cut time, not part of ci
+
 npm run all             # build + contract + unit tests + demo + harness + the verification suites
 npm run ci              # contract + build + demo + harness + size + every suite
 ```
 
-Every suite exits non-zero on failure, so they work as gates. GitHub Actions runs four jobs
+Every suite exits non-zero on failure, so they work as gates. **Releasing** follows
+[docs/release.md](docs/release.md): `npm run check:release` proves the preconditions and a human
+supplies the credentials — no script in this repository holds a token or calls `npm publish`.
+GitHub Actions runs four jobs
 (`.github/workflows/ci.yml`): `build`, `size`, `verify` on Linux, and `browser-macos` to measure the
 real macOS WebKit engine — plus a `baselines` job on manual dispatch that regenerates the linux
 baseline set in the verify container (see Visual baselines). Reports land in `verification/` and

@@ -177,6 +177,7 @@ expectCount(readme, 'README.md', /npm run verify\s+#\s+(\d+) checks/g, EXPECTED_
 expectCount(readme, 'README.md', /npm run check:style\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.style, 'the check:style row total');
 expectCount(readme, 'README.md', /npm run verify:example-trading\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.trading, 'the verify:example-trading row total');
 expectCount(readme, 'README.md', /npm run check:pack\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.pack, 'the check:pack row total');
+expectCount(readme, 'README.md', /npm run check:release\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.release, 'the check:release row total');
 expectCount(readme, 'README.md', /npm run check:contract\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.contract, 'the check:contract row total');
 expectCount(readme, 'README.md', /npm run verify:consumer\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.consumer, 'the verify:consumer row total');
 expectCount(readme, 'README.md', /npm run size\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.sizes, 'the size row total');
@@ -189,7 +190,7 @@ forbidIn(readme, 'README.md', /belong in CI artifacts/, 'the "screenshots belong
 console.log(
   `docs counts: browser-suite ${compare} compare / ${update} update, verify ${EXPECTED_COUNTS.verify}, `
   + `style ${EXPECTED_COUNTS.style}, trading ${EXPECTED_COUNTS.trading}, pack ${EXPECTED_COUNTS.pack}, `
-  + `size ${EXPECTED_COUNTS.sizes}, consumer ${EXPECTED_COUNTS.consumer}, contract ${EXPECTED_COUNTS.contract}, perf-policy ${policyCount} — `
+  + `size ${EXPECTED_COUNTS.sizes}, consumer ${EXPECTED_COUNTS.consumer}, contract ${EXPECTED_COUNTS.contract}, release ${EXPECTED_COUNTS.release}, perf-policy ${policyCount} — `
   + `README, AGENTS.md, CONTRIBUTING.md and docs/verification.md agree; `
   + `stale-name scan covers all ${markdownFiles.length} markdown files`
 );
