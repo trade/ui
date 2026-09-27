@@ -8,7 +8,7 @@ gaps.
 
 ## The suites
 
-### `scripts/verify.mjs` — 68 library checks
+### `scripts/verify.mjs` — 69 library checks
 
 Two phases, exits non-zero on any failure, prints a JSON report. It deliberately does **not**
 re-assert the package promises (that is `check-contract.mjs`) or the baseline-gate resolution (that
@@ -66,6 +66,12 @@ So this packs each publishable package for real (`npm pack --dry-run` on a built
 the file list: every declared entry point in `main`/`module`/`types`/`exports` must resolve to a file
 in the tarball (a dangling `main` ships broken to CJS consumers), the licence files and build output
 must be present, and source, tests, scripts, examples, maps and `node_modules` must never leak in.
+
+Two details make it runnable everywhere. It invokes npm through `process.execPath` plus
+`npm_execpath` — npm's own CLI entry point, exported by `npm run` — rather than spawning `npm`,
+which does not exist as an executable on Windows and made this gate unrunnable there. And each
+package asserts that `npm pack` produced a real manifest, so a broken command reports itself as
+"the pack command did not run" instead of masquerading as a packaging regression.
 
 ### `scripts/verify-consumer.mjs` — `npm run verify:consumer`
 

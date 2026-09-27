@@ -132,7 +132,8 @@ export function harness(ui, h, React) {
     const [popoverOpen, setPopoverOpen] = React.useState(false);
     const [dialogPopoverOpen, setDialogPopoverOpen] = React.useState(false);
     const [lbValue, setLbValue] = React.useState('day');
-    const { ThemeProvider, Button, Tabs, Dialog, Menu, MenuItem, MenuSeparator, Popover, Tooltip, Select } = ui;
+    const [ticketQty, setTicketQty] = React.useState('1000');
+    const { ThemeProvider, Button, Tabs, Dialog, Menu, MenuItem, MenuSeparator, Popover, Tooltip, Select, Input } = ui;
     return h(
       ThemeProvider,
       { theme: 'light' },
@@ -165,6 +166,16 @@ export function harness(ui, h, React) {
           footer: h(Button, { variant: 'primary', id: 'confirm-order', onClick: () => setOpen(false) }, 'Confirm')
         },
         h('p', null, 'Order ticket body'),
+        // A CONTROLLED input, on purpose. The dialog body used to hold only static
+        // text, which is why the caret bug shipped: nothing in the harness ever
+        // typed into a dialog, so no check could see focus being stolen. This is
+        // the shape apps/example actually ships.
+        h(Input, {
+          id: 'dialog-qty',
+          numeric: true,
+          value: ticketQty,
+          onChange: (e) => setTicketQty(e.target.value)
+        }),
         h(
           'div',
           { className: 'ui-popover-anchor' },

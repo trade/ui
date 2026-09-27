@@ -22,6 +22,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { EXPECTED_COUNTS } from './expected-counts.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES = ['packages/ui', 'packages/tokens'];
@@ -35,6 +36,28 @@ const FORBIDDEN_PREFIX = /^(src|tests?|scripts|apps|harness)\//;
 const stylesDir = resolve(root, 'packages/ui/styles');
 const sourceStylesheets = existsSync(stylesDir) ? readdirSync(stylesDir).filter((f) => f.endsWith('.css')).length : 0;
 
+/**
+ * How to invoke npm. `execFileSync('npm', ...)` cannot work on Windows: there is no `npm`
+ * executable there, only `npm.cmd`, and Node refuses to spawn a `.cmd` without a shell (EINVAL).
+ * So the command was unrunnable on win32 — this gate could never pass there, and on Linux CI it
+ * passed, which is why nobody upstream noticed.
+ *
+ * The fix is npm's own CLI entry point rather than a shell. Under `npm run`, npm exports
+ * `npm_execpath` (the absolute path of npm-cli.js). That is a .js file, so it cannot be the
+ * command execFileSync runs — it is the SCRIPT, and node itself is the command. Verified on
+ * win32: running `process.execPath npm_execpath pack …` succeeds where both `npm` (ENOENT) and
+ * `npm.cmd` (EINVAL) fail.
+ *
+ * The shell is a fallback only, for running this file directly (`node scripts/check-pack.mjs`),
+ * where `npm_execpath` is absent. It is not the primary path on purpose: `shell: true` re-opens
+ * argument-injection surface, and the argument list here is fixed literals, so there is no
+ * reason to prefer it when a shell-free route exists.
+ */
+const npmCli = process.env.npm_execpath;
+const npmCommand = npmCli ? process.execPath : 'npm';
+const npmArgs = (args) => (npmCli ? [npmCli, ...args] : args);
+const npmOptions = { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], ...(npmCli ? {} : { shell: true }) };
+
 for (const dir of PACKAGES) {
   const pkgDir = resolve(root, dir);
   const label = dir;
@@ -43,16 +66,24 @@ for (const dir of PACKAGES) {
   // claims, and the summary would still report the full package count.
   if (!existsSync(resolve(pkgDir, 'package.json'))) {
     check(`${label}: has a manifest`, false, `no package.json at ${label}`);
+    // Same reasoning as the catch below: with no manifest there is nothing to pack and nothing
+    // to assert, so say the pack never ran rather than leaving the absence implicit.
+    check(`${label}: npm pack produced a real manifest`, false, 'no manifest — the pack command did not run');
     continue;
   }
 
   let manifest;
   try {
-    const out = execFileSync('npm', ['pack', '--dry-run', '--json'], { cwd: pkgDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    const out = execFileSync(npmCommand, npmArgs(['pack', '--dry-run', '--json']), { cwd: pkgDir, ...npmOptions });
     // a lifecycle script can still write to stdout ahead of the JSON, so take the array itself
     manifest = JSON.parse(out.slice(out.indexOf('['), out.lastIndexOf(']') + 1))[0];
   } catch (error) {
     check(`${label}: packs`, false, String(error.stderr ?? error.message).split('\n').slice(0, 3).join(' '));
+    // The command itself is broken, so every assertion below would be vacuous. Say so with a
+    // named check instead of skipping them silently: a gate that reports "0/2 packages" and a
+    // bare spawn error reads like a packaging regression, when the truth is that no tarball
+    // was ever built. This is the check that distinguishes the two.
+    check(`${label}: npm pack produced a real manifest`, false, 'no manifest — the pack command did not run');
     continue;
   }
 
@@ -119,9 +150,33 @@ for (const dir of PACKAGES) {
     distFiles.length >= expectedDist,
     `${distFiles.length} files under dist/ (expected >= ${expectedDist})`
   );
+
+  // 6. the npm invocation above actually ran. Without this the whole gate was silently
+  //    vacuous on any platform where `npm` is not directly spawnable: the catch above recorded
+  //    the spawn error as a per-package FAIL, so the gate still exited 1, but nothing asserted
+  //    that a real tarball had been produced — the failure read as a packaging regression when
+  //    it was a broken command. A manifest with a plausible file count is only obtainable from
+  //    a successful `npm pack`; the two failure paths above record this same check as failed, so
+  //    "the pack never ran" is never left implicit.
+  check(
+    `${label}: npm pack produced a real manifest`,
+    manifest && Array.isArray(manifest.files) && manifest.files.length > 0,
+    manifest ? `${manifest.files?.length ?? 0} entries, ${manifest.size ?? '?'} bytes packed` : 'no manifest'
+  );
 }
 
 const passed = checks.filter((c) => c.pass).length;
 console.log(`packaging contract: ${passed}/${checks.length} checks passed (${PACKAGES.length} publishable packages)`);
 for (const c of checks) console.log(`  ${c.pass ? 'PASS' : 'FAIL'}  ${c.name}${c.pass ? '' : ' -> ' + c.detail}`);
+// Rule zero, both ends: this suite owns its own total, and check:docs reads the same number to
+// keep README honest. Before this the count was declared in expected-counts.mjs but never
+// compared here, so adding a check moved the docs out of step with the suite and only
+// check:docs noticed — one gate deep, after the fact.
+if (checks.length !== EXPECTED_COUNTS.pack) {
+  console.error(
+    `check:pack: ${checks.length} checks ran but scripts/expected-counts.mjs declares ${EXPECTED_COUNTS.pack}. ` +
+      'Update that number and the docs it feeds in the same change, then run check:docs.'
+  );
+  process.exit(1);
+}
 process.exit(passed === checks.length ? 0 : 1);
