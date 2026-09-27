@@ -148,6 +148,10 @@ expectIn(pkg, 'package.json', /"check:perf-policy":/, 'the check:perf-policy scr
 expectIn(pkg, 'package.json', /check:perf-policy && npm run check:commits/, 'check:perf-policy wired into the ci chain');
 const workflow = readDoc('.github/workflows/ci.yml');
 expectIn(workflow, '.github/workflows/ci.yml', /npm run check:perf-policy/, 'the perf-policy gate in the CI build job');
+// Rule zero for a workflow: the npm chain is not what CI runs. GitHub Actions runs these steps
+// individually, so a gate that is only added to `npm run ci` never executes on a pull request — which
+// is exactly what happened to the consumer gate before this assertion existed.
+expectIn(workflow, '.github/workflows/ci.yml', /npm run verify:consumer/, 'the consumer gate in the CI build job');
 // The new gate's own total is quoted in README; read it from the gate rather than trusting the prose.
 const policyCount = Number(
   (execSync('node scripts/check-perf-policy.mjs', { cwd: root, encoding: 'utf8' }).match(/perf policy: (\d+)\//) ?? [])[1]

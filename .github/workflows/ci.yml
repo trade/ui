@@ -40,6 +40,11 @@ jobs:
       - name: Assert the published tarballs are correct (entry points, terms, no leaks)
         run: npm run check:pack
 
+      # The tarball as a consumer receives it. Running the gate is not enough -- this step is what makes
+      # it a gate: the workflow runs commands individually and never invokes `npm run ci`.
+      - name: Install the packed tarballs into a project outside the repo and use them
+        run: npm run verify:consumer
+
       - name: Enforce the token contrast contract across every theme
         run: node scripts/check-contrast.mjs
       - name: Enforce the CSS authoring contract
