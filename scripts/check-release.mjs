@@ -31,6 +31,8 @@ const check = (name, ok, detail) => {
 };
 const run = (bin, args, options) => execFileSync(bin, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], ...options });
 const read = (p) => JSON.parse(readFileSync(resolve(root, p), 'utf8'));
+// Every RegExp metacharacter, not just the dot a version happens to contain.
+const escapeRe = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
  * npm is invoked through its own CLI entry rather than by spawning `npm`: on Windows there is no `npm`
@@ -48,11 +50,20 @@ const ui = read('packages/ui/package.json');
 const tokens = read('packages/tokens/package.json');
 const version = ui.version;
 
-// 1. the tag points at a commit, so what matters is that the tracked tree has no uncommitted work.
-//    Untracked files (a stray log, a local cache) do not change what the tag contains, so they are
-//    not a release blocker — asserting on them would fail for reasons the release does not care about.
-const dirty = run('git', ['status', '--porcelain', '--untracked-files=no'], { cwd: root }).trim();
-check('no uncommitted changes to tracked files', dirty === '', dirty ? dirty.split('\n').slice(0, 3).join(' | ') : 'clean');
+// 1. the tag points at a commit, so uncommitted work is work that does not ship. Untracked files are
+//    the subtler half: npm packs files that sit *inside* a package directory whether or not git knows
+//    about them, so a stray README in packages/ui would be published without ever being reviewed. A
+//    scratch file elsewhere in the tree is not a release blocker, so only the packages are checked.
+const dirty = run('git', ['status', '--porcelain'], { cwd: root }).trim();
+const tracked = dirty.split('\n').filter((l) => l && !l.startsWith('??'));
+const strayInPackages = dirty.split('\n').filter((l) => l.startsWith('??') && /packages\/(ui|tokens)\//.test(l));
+check(
+  'no uncommitted changes, and no untracked files inside the packages',
+  tracked.length === 0 && strayInPackages.length === 0,
+  tracked.length || strayInPackages.length
+    ? [...tracked.slice(0, 3), ...strayInPackages.slice(0, 3).map((l) => `untracked ${l.replace(/^\?\? /, '')}`)].join(' | ')
+    : 'clean'
+);
 
 // 2. cutting from a branch tags something nobody reviewed
 let head = '';
@@ -74,7 +85,7 @@ if (head || originMain) {
 // 3. the changelog is the first thing a consumer reads
 const changelogPath = resolve(root, 'CHANGELOG.md');
 const changelog = existsSync(changelogPath) ? readFileSync(changelogPath, 'utf8') : '';
-const entry = new RegExp(`^## \\[${version.replace(/\./g, '\\.')}\\]`, 'm');
+const entry = new RegExp(`^## \\[${escapeRe(version)}\\]`, 'm');
 check(
   `CHANGELOG.md has a section for ${version}`,
   entry.test(changelog),
@@ -95,7 +106,7 @@ for (const [label, script] of [['the packaging contract passes (check:pack)', 'c
     return lines.find((l) => /\bFAIL\b/.test(l)) ?? lines.slice(-1)[0] ?? '';
   };
   let ok = true;
-  let detail = 'reused';
+  let detail;
   try {
     detail = pick(run(process.execPath, [resolve(root, 'scripts', script)], { cwd: root })) || 'ok';
   } catch (error) {

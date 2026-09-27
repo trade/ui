@@ -25,26 +25,40 @@ Two facts that only you can establish:
 git fetch origin
 git switch main && git pull --ff-only
 
-# 2. move the version in one place, in both manifests
-npm version <major|minor|patch> --workspace @trade/tokens --no-git-tag-version
-npm version <same> --workspace @trade/ui --no-git-tag-version
+# 2. move the version in all three manifests. The root manifest counts: the package contract requires
+#    every manifest to declare the same version, and `npm version --workspace` leaves the root behind.
+npm version <version> --no-git-tag-version
+npm version <version> --workspace @trade/tokens --no-git-tag-version
+npm version <version> --workspace @trade/ui --no-git-tag-version
 
-# 3. give the version its changelog section, then move it out of Unreleased
-#    (CHANGELOG.md: "## [Unreleased]" gains a "## [x.y.z] - YYYY-MM-DD" below it)
+# 3. give the version its changelog section: "## [Unreleased]" keeps its heading, and a
+#    "## [<version>] - YYYY-MM-DD" section goes below it. The gate will not cut without it.
 
-# 4. the preconditions, mechanised
+# 4. everything that can run on a dirty tree
 npm run ci
+
+# 5. commit and push. The gate's next step checks that HEAD *is* origin/main, so the release commit has
+#    to be pushed before the gate runs — not after.
+git add -A && git commit -m "chore(release): v<version>"
+git push origin main
+
+# 6. the preconditions, mechanised: no uncommitted or stray-packaged files, HEAD at origin/main, a
+#    changelog section for the version, neither package private, both contracts, and the version not
+#    already on the registry
 npm run check:release
 
-# 5. commit the bump, tag, and push the tag
-git add -A && git commit -m "chore(release): v0.1.0"
-git tag -a v0.1.0 -m "v0.1.0"
-git push origin main --follow-tags
+# 7. tag the commit the gate just verified
+git tag -a v<version> -m "v<version>"
+git push origin v<version>
 
-# 6. publish, in dependency order
-npm publish --workspace @trade/tokens
-npm publish --workspace @trade/ui
+# 8. publish, in dependency order. --access public is required: a scoped package publishes as
+#    restricted by default, so without it the release either fails or is invisible to consumers.
+npm publish --workspace @trade/tokens --access public
+npm publish --workspace @trade/ui --access public
 ```
+
+Replace `<version>` everywhere, including the tag names: a procedure that hardcodes `v0.1.0` either
+fails on the next release or tags a version the packages do not declare.
 
 `npm run check:release` is the gate that makes step 4 mechanical. It asserts the state of the world
 that a release requires and stops otherwise; it does not publish anything. It is **not** part of
@@ -56,7 +70,7 @@ branch. Its CI-checkable parts are covered by `npm run ci` itself.
 
 | Check | Why it matters |
 |---|---|
-| The working tree is clean | the tag points at a commit, so uncommitted work is work that does not ship |
+| No uncommitted changes, and no untracked files inside the packages | the tag points at a commit — but npm packs *untracked* files that live in a package directory, so a stray `packages/ui/README.md` would ship without ever being reviewed |
 | `HEAD` is `origin/main` | cutting from a branch tags something nobody reviewed |
 | A changelog entry exists for the version | the changelog is what a consumer reads first; a version with no section is a version nobody can evaluate |
 | Neither package is `private` | a `private: true` manifest silently cannot be published |
