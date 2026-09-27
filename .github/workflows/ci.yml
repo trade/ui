@@ -57,6 +57,11 @@ jobs:
         run: npm run check:license
       - name: Docs integrity (links, documented counts, exceptions)
         run: npm run check:docs
+      # The floor is derived from what the stylesheets use, so it has to be re-derived whenever they
+      # change. Like every other gate here it needs its own workflow step: the chain below is not what
+      # CI runs, the steps are.
+      - name: Browser floor (the document and the code agree)
+        run: npm run check:support
       - name: Perf retry policy (every branch, pinned 25 ms budget)
         run: npm run check:perf-policy
       - name: Commit subjects (pushed range)

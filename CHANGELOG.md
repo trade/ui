@@ -34,4 +34,6 @@ The first release. Not yet published to the registry.
   plug in their own.
 - Not yet used by a real application. The published surface is verified from a real tarball install
   (`npm run verify:consumer`), but no external consumer has exercised it.
-- The supported browser floor is not yet stated; see the open issue for the matrix.
+- The supported browser floor is **Chrome 86 · Firefox 85 · Safari 15.4**, derived from the features
+the stylesheets use rather than chosen. Below it, specific things degrade; [docs/support.md](docs/support.md)
+lists each one and what it costs.

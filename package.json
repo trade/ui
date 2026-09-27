@@ -20,6 +20,7 @@
     "test": "node --test",
     "check:license": "node scripts/check-license.mjs",
     "check:docs": "node scripts/check-docs-links.mjs",
+    "check:support": "node scripts/check-support.mjs",
     "check:perf-policy": "node scripts/check-perf-policy.mjs",
     "check:commits": "node scripts/check-commits.mjs",
     "check:release": "node scripts/check-release.mjs",
@@ -34,7 +35,7 @@
     "example:build": "node scripts/build-example.mjs",
     "example-trading:build": "node scripts/build-example-trading.mjs",
     "all": "npm run build && npm run check:contract && npm run check:pack && npm run verify:consumer && npm test && npm run example:build && npm run example-trading:build && npm run harness:build && npm run verify && npm run verify:example && npm run verify:example-trading && npm run verify:browser",
-    "ci": "npm run build && npm run check:contract && npm run check:pack && npm run verify:consumer && npm run check:contrast && npm run check:style && npm run check:types && npm test && npm run check:license && npm run check:docs && npm run check:perf-policy && npm run check:commits && npm run example:build && npm run example-trading:build && npm run harness:build && npm run size && npm run verify && npm run verify:example && npm run verify:example-trading && npm run verify:browser"
+    "ci": "npm run build && npm run check:contract && npm run check:pack && npm run verify:consumer && npm run check:contrast && npm run check:style && npm run check:types && npm test && npm run check:license && npm run check:docs && npm run check:support && npm run check:perf-policy && npm run check:commits && npm run example:build && npm run example-trading:build && npm run harness:build && npm run size && npm run verify && npm run verify:example && npm run verify:example-trading && npm run verify:browser"
   },
   "size-limit": [
     {
