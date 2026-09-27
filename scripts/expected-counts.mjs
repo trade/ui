@@ -16,6 +16,7 @@ export const EXPECTED_COUNTS = {
   trading: 32,
   pack: 11,
   contract: 16,
+  release: 7,
   sizes: 20,
   consumer: 16
 };

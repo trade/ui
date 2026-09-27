@@ -22,6 +22,7 @@
     "check:docs": "node scripts/check-docs-links.mjs",
     "check:perf-policy": "node scripts/check-perf-policy.mjs",
     "check:commits": "node scripts/check-commits.mjs",
+    "check:release": "node scripts/check-release.mjs",
     "verify:example": "node scripts/verify-example.mjs",
     "verify:example-trading": "node scripts/verify-example-trading.mjs",
     "verify:browser": "node scripts/browser-suite.mjs",

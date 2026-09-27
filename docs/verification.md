@@ -204,6 +204,8 @@ exit means the work is wrong, not that the command is flaky.
 - Example-level behaviour → `scripts/verify-example.mjs`.
 - New token pair → `check-contrast.mjs` `PAIRS`. New CSS convention → `check-style.mjs`.
 - New package promise → `check-contract.mjs`. Gate policy → `scripts/perf-policy.mjs` + `check-perf-policy.mjs`.
+- Release precondition → `scripts/check-release.mjs` (run at cut time, not in `ci`; procedure in
+  [release.md](release.md)).
 
 Never weaken a gate to make a change pass (AGENTS.md invariant 9 — the one unrecoverable
 mistake). If a check fails, the change is wrong or the check is wrong; fix one of those two
