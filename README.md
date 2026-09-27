@@ -115,7 +115,7 @@ After any change: `npm run build && npm run example:build && npm run verify && n
 ## Verification & CI
 
 ```powershell
-npm run check:contract  # 12 checks: zero deps, peer-only React, exports map, artifacts
+npm run check:contract  # 16 checks: zero deps, peer-only React, exports map, artifacts, one version
 npm run check:pack      # 11 checks: the real tarballs — entry points resolve, terms ship, nothing leaks
 npm run verify:consumer  # 16 checks: the real tarballs, installed into a project outside the repo
 npm run check:contrast  # 69 colour pairs across 3 themes must meet the contrast contract

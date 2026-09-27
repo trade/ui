@@ -114,12 +114,16 @@ throttling, not on the change: the suite reports every combo `[STILL THROTTLED]`
 perf is informational off macOS — is the only combo that should pass clean. Raise Docker Desktop to
 4 CPUs / 8 GB for a faithful run.
 
-### `scripts/check-contract.mjs` — 12 checks
+### `scripts/check-contract.mjs` — 16 checks
 
 The package promises: zero runtime dependencies in `@trade/ui` **and** `@trade/tokens`; React and
 React DOM are peers, not deps; `sideEffects: false`; exports map exposes import/require/types and
 `./styles.css`; publishes `dist` plus the licence files (`LICENSE`, `LICENSE-MIT`, `LICENSE-APACHE`,
-`NOTICE`) and nothing else; all 4 build artifacts present and non-empty.
+`NOTICE`) and nothing else; all 4 build artifacts present and non-empty; and **one version, one
+meaning** — every manifest declares the same version, the token schema's own version is named
+`schemaVersion` rather than `version`, and both shipped token artifacts carry the package version
+(issue #76: `tokens.json` said `version: 0.2.0` inside 0.1.0 packages, the build emitted it as the
+package version, and nothing anywhere asserted anything about version at all).
 
 ### `scripts/check-contrast.mjs` — 23 pairs × 3 themes = 69
 
