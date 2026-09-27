@@ -4,6 +4,9 @@
   "private": true,
   "license": "MIT OR Apache-2.0",
   "description": "@trade/ui example — component reference (watchlist + order ticket).",
+  "dependencies": {
+    "@trade/ui": "*"
+  },
   "scripts": {
     "build": "node ../../scripts/build-example.mjs"
   }

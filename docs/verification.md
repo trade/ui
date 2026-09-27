@@ -67,6 +67,27 @@ the file list: every declared entry point in `main`/`module`/`types`/`exports` m
 in the tarball (a dangling `main` ships broken to CJS consumers), the licence files and build output
 must be present, and source, tests, scripts, examples, maps and `node_modules` must never leak in.
 
+### `scripts/verify-consumer.mjs` — `npm run verify:consumer`
+
+The consumer contract — 16 checks. Everything else in this repository verifies the library **as a
+workspace**: the example apps resolve `@trade/ui` through npm's hoisted symlink, and `check:pack`
+inspects a tarball's *file list*. Neither can see whether a stranger who runs `npm install @trade/ui`
+gets a working package. A file present in `dist/` here but absent from the tarball loads perfectly in
+both apps and in every gate, and breaks only for the first real consumer (#79).
+
+So this script stops looking at the repository and becomes a consumer instead: it packs both packages
+for real, installs the tarballs into a project **outside the repository**, asserts the installed copy
+is a real directory rather than a workspace symlink (a symlink would mean the workspace is being
+tested again), resolves and imports the public entry by name through the published export map, bundles
+it with a real bundler, renders a component to markup under React, and typechecks against the shipped
+declarations. It is hermetic: the packages declare no runtime dependencies, and React — the peer a
+consumer is expected to provide — is linked in rather than downloaded.
+
+It is deliberately not a second `check:pack`. Five breakages were used to test it, and `check:pack`
+**passes all five**: an entry that exists but exports nothing, `./styles.css` dropped from `exports`,
+a stylesheet that ships but is empty, a `index.cjs` that throws when loaded, and a declaration dropped
+for an export a consumer imports.
+
 ### Running the browser suite in CI's container (`npm run verify:browser:docker`)
 
 Playwright supports **macOS 14 and later**. A development host below that floor cannot run the
@@ -157,7 +178,7 @@ bundle a `.d.ts`.
 
 ## CI and the local loop
 
-`npm run ci` = `build → check:contract → check:pack → check:contrast → check:style → check:types →
+`npm run ci` = `build → check:contract → check:pack → verify:consumer → check:contrast → check:style → check:types →
 test → check:license → check:docs → check:perf-policy → check:commits → example:build →
 example-trading:build → harness:build → size → verify → verify:example → verify:example-trading →
 verify:browser`, all non-zero-exit. CI (.github/workflows/ci.yml,

@@ -4,6 +4,9 @@
   "private": true,
   "license": "MIT OR Apache-2.0",
   "description": "Trading workspace example — production-grade reference for the screen @trade/ui exists for.",
+  "dependencies": {
+    "@trade/ui": "*"
+  },
   "scripts": {
     "build": "node ../../scripts/build-example-trading.mjs"
   }
