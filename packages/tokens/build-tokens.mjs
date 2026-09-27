@@ -26,6 +26,9 @@ const outDir = resolve(here, 'dist');
 mkdirSync(outDir, { recursive: true });
 
 const t = JSON.parse(readFileSync(source, 'utf8'));
+// The token schema has its own version; the package has `version`. Emitting one as the other put
+// "0.2.0" inside a 0.1.0 package, and nothing asserted anything about version at all (issue #76).
+const pkg = JSON.parse(readFileSync(resolve(here, 'package.json'), 'utf8'));
 const P = t.primitive;
 const kebab = (s) => String(s).replace(/([a-z0-9])([A-Z])/g, '$1-$2').replace(/[_\s]+/g, '-').toLowerCase();
 
@@ -122,7 +125,7 @@ for (const [k, v] of Object.entries(P.motion)) {
 }
 
 const css = `/* @trade/ui — generated from tokens.json. DO NOT EDIT BY HAND. */
-/* project UI v${t.version} · tiers: primitive -> theme role -> component · motion.enabled=${P.motion.enabled} */
+/* project UI v${pkg.version} · token schema ${t.schemaVersion} · tiers: primitive -> theme role -> component · motion.enabled=${P.motion.enabled} */
 
 :root {
   color-scheme: light dark;
@@ -164,7 +167,7 @@ ${themeBlock('dark', '    ')}
 writeFileSync(resolve(outDir, 'tokens.css'), css, 'utf8');
 writeFileSync(
   resolve(outDir, 'tokens.ts'),
-  `// @trade/ui — generated from tokens.json. DO NOT EDIT BY HAND.\nexport const tokens = ${JSON.stringify(t, null, 2)} as const;\nexport type Tokens = typeof tokens;\nexport type ThemeName = keyof typeof tokens.themes;\nexport type ThemeRole = keyof (typeof tokens.themes)['${t.defaultTheme}'];\nexport default tokens;\n`,
+  `// @trade/ui — generated from tokens.json. DO NOT EDIT BY HAND.\nexport const tokens = ${JSON.stringify({ ...t, version: pkg.version }, null, 2)} as const;\nexport type Tokens = typeof tokens;\nexport type ThemeName = keyof typeof tokens.themes;\nexport type ThemeRole = keyof (typeof tokens.themes)['${t.defaultTheme}'];\nexport default tokens;\n`,
   'utf8'
 );
 
