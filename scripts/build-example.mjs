@@ -3,8 +3,9 @@
 
 /** Build the component example app: bundle it (IIFE so it opens from file://) and copy the stylesheets. */
 import { build } from 'esbuild';
-import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -13,9 +14,16 @@ const appDir = resolve(root, 'apps', 'example');
 const out = resolve(appDir, 'dist');
 mkdirSync(out, { recursive: true });
 
-const css = resolve(root, 'packages', 'ui', 'dist', 'ui.css');
-if (!existsSync(css)) {
-  console.error('missing packages/ui/dist/ui.css — run `npm run build` first');
+// Consume the entry the package publishes (`@trade/ui/styles.css`) instead of reaching into
+// packages/ui/dist/ by path: the path is an implementation detail, and resolving the exported subpath
+// is what a consumer does. `scripts/verify-consumer.mjs` proves a stranger can do the same from the
+// packed tarball.
+const require = createRequire(join(appDir, 'package.json'));
+let css;
+try {
+  css = require.resolve('@trade/ui/styles.css');
+} catch {
+  console.error('missing @trade/ui/styles.css — run `npm run build` first');
   process.exit(1);
 }
 copyFileSync(css, resolve(out, 'ui.css'));

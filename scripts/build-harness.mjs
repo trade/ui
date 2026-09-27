@@ -7,6 +7,7 @@
  */
 import { build } from 'esbuild';
 import { readFileSync, writeFileSync, copyFileSync, mkdirSync, existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -16,9 +17,13 @@ const src = resolve(root, 'harness', 'src');
 const out = resolve(root, 'harness', 'dist');
 mkdirSync(out, { recursive: true });
 
-const css = resolve(root, 'packages', 'ui', 'dist', 'ui.css');
-if (!existsSync(css)) {
-  console.error('missing packages/ui/dist/ui.css — run `npm run build` first');
+// The published subpath, not the filesystem path — see build-example.mjs.
+const require = createRequire(import.meta.url);
+let css;
+try {
+  css = require.resolve('@trade/ui/styles.css');
+} catch {
+  console.error('missing @trade/ui/styles.css — run `npm run build` first');
   process.exit(1);
 }
 copyFileSync(css, resolve(out, 'ui.css'));

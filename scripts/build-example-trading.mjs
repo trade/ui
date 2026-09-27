@@ -3,8 +3,9 @@
 
 /** Build the trading example: bundle the app (IIFE) and copy both stylesheets. */
 import { build } from 'esbuild';
-import { copyFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -13,9 +14,13 @@ const app = resolve(root, 'apps', 'example-trading');
 const out = resolve(app, 'dist');
 mkdirSync(out, { recursive: true });
 
-const uiCss = resolve(root, 'packages', 'ui', 'dist', 'ui.css');
-if (!existsSync(uiCss)) {
-  console.error('missing packages/ui/dist/ui.css — run `npm run build` first');
+// The published subpath, not the filesystem path — see build-example.mjs.
+const require = createRequire(join(app, 'package.json'));
+let uiCss;
+try {
+  uiCss = require.resolve('@trade/ui/styles.css');
+} catch {
+  console.error('missing @trade/ui/styles.css — run `npm run build` first');
   process.exit(1);
 }
 copyFileSync(uiCss, resolve(out, 'ui.css'));
