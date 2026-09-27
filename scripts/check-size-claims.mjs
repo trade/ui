@@ -46,8 +46,15 @@ const check = (name, ok, detail) => {
 // still prints the figures, so a breach is reported per entry below rather than as a crash.
 let measured;
 try {
-  const bin = join(root, 'node_modules', '.bin', process.platform === 'win32' ? 'size-limit.cmd' : 'size-limit');
-  const stdout = execFileSync(bin, ['--json'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  // size-limit's CLI entry is a .js file (`"bin": "bin.js"` in its manifest), so node is the
+  // command and the entry point is the script. The `.bin/size-limit` shim — and on win32 its
+  // `.cmd` sibling — cannot be spawned directly: there is no `size-limit` executable there on
+  // Windows, only `size-limit.cmd`, and Node refuses to spawn a `.cmd` without a shell (EINVAL).
+  // So this gate was unrunnable on win32 and passed on Linux CI, which is why it went unnoticed.
+  // `process.execPath` is the same interpreter already running this file, so the invocation is
+  // identical on every platform and stays shell-free — the argument list is fixed literals.
+  const bin = join(root, 'node_modules', 'size-limit', 'bin.js');
+  const stdout = execFileSync(process.execPath, [bin, '--json'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   measured = JSON.parse(stdout);
 } catch (error) {
   try {
