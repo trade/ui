@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import {
   ThemeProvider,
   useTheme,
+  useTicks,
   Button,
   Input,
   Select,
@@ -49,6 +50,42 @@ function makeInstruments(n) {
 }
 
 const ROW_HEIGHT = 23;
+
+/* ── live feed ───────────────────────────────────────────────────────────────
+   A frame loop drifts a strided slice of the book and queues each frame through `useTicks`, which
+   commits at most once per animation frame — a burst of messages costs one render, not one per
+   message. The slice is what keeps it cheap: 512 instruments move per frame, the other 4,488 are
+   shared by reference, and the stride spreads them across the whole book rather than walking it,
+   so whichever window the user is looking at keeps moving. The hook owns the coalescing; this
+   effect owns the data and cancels the loop on unmount. */
+const TICK_WINDOW = 512;
+
+function useLiveBook(seedBook) {
+  const [book, pushBook] = useTicks(seedBook);
+  useEffect(() => {
+    let frame = 0;
+    let cursor = 0;
+    const step = () => {
+      frame = requestAnimationFrame(step);
+      // A queued updater form, so nothing is lost if a frame is missed and the drift always
+      // applies to the freshest book rather than a stale snapshot.
+      pushBook((previous) => {
+        const next = previous.slice();
+        for (let n = 0; n < TICK_WINDOW; n += 1) {
+          const index = (cursor + n * 137) % next.length;
+          const row = next[index];
+          const last = Math.max(0.01, row.last + (Math.random() - 0.5) * 0.06);
+          next[index] = { ...row, last, bid: last - 0.02, ask: last + 0.02, chgPct: (row.chg / last) * 100 };
+        }
+        return next;
+      });
+      cursor = (cursor + TICK_WINDOW) % seedBook.length;
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [pushBook, seedBook]);
+  return book;
+}
 /* Shared account model: the metrics strip and the ticket's "buying power after" must
    agree, and the ticket needs it up front to warn before an order is rejected. */
 const ACCOUNT_BUYING_POWER = 284_120.55;
@@ -450,8 +487,11 @@ function StatusBar({ count }) {
 /* ── app ──────────────────────────────────────────────────────────────────── */
 
 function Workspace() {
-  const instruments = useMemo(() => makeInstruments(5000), []);
-  const [selected, setSelected] = useState(instruments[0]);
+  const seedBook = useMemo(() => makeInstruments(5000), []);
+  const instruments = useLiveBook(seedBook);
+  // Selecting a row loads the ticket with that row as it stood when clicked: the form's inputs
+  // must not move under the user while the book ticks.
+  const [selected, setSelected] = useState(seedBook[0]);
   const [ticketOpen, setTicketOpen] = useState(true);
 
   const totals = useMemo(() => {

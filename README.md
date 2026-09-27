@@ -16,7 +16,7 @@ npm run example:build     # bundles the component example to apps/example/dist
 npm run verify         # 68 checks: CSS health, SSR markup, DOM interactions
 npm run verify:example    # 10 checks: boots the built example in a DOM and drives it
 npm run example-trading:build  # bundles the trading workspace example
-npm run verify:example-trading  # 28 checks: virtualization, ARIA, ticket guard, axe, 2 viewports
+npm run verify:example-trading  # 30 checks: virtualization, live feed, ARIA, ticket guard, axe, 2 viewports
 ```
 
 Open the examples (double-click — plain static files, no server needed):
@@ -37,7 +37,7 @@ ui/
 │     ├─ styles/         one CSS file per area (base, layout, button, forms, table, tabs, feedback, dialog, menu, popover, tooltip)
 │     └─ dist/           index.js · index.cjs · index.d.ts · ui.css · components/*.css
 ├─ apps/                 examples — apps/example (component reference),
-│                        apps/example-trading (production-grade trading workspace)
+│                        apps/example-trading (production-grade trading workspace, live coalesced feed)
 ├─ scripts/              verify.mjs · verify-example.mjs · build-example.mjs
 │                        verify-example-trading.mjs · browser-suite.mjs · sample-screen.mjs
 ├─ CONTRIBUTING.md       the rules of changing this codebase (and their gates)
