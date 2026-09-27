@@ -77,8 +77,13 @@ export const isBetterReading = (current, candidate, { platform, engineName, budg
 // After a combo reads this badly the host itself is suspect for the rest of the run - on a shared
 // runner the whole box thrashes together. A genuine single-engine regression looks the opposite way
 // (the failing engine degrades while the others stay healthy), so this cannot mask one.
+//
+// A cadence lock is deliberately NOT an overload signal. It is decided per combination by
+// needsRetry, and latching it here would make one starved combination lengthen every later one for
+// no benefit: a persistent tick-only regression still fails its own gate, so the run just pays
+// extra retries and backoff.
 export const isOverloadSignal = (r, { droppedRatio, staticP95Ms }) =>
-  Boolean(r) && (r.droppedRatio > droppedRatio || r.staticP95 > staticP95Ms || looksCadenceLocked(r));
+  Boolean(r) && (r.droppedRatio > droppedRatio || r.staticP95 > staticP95Ms);
 
 // The gated verdicts the suite prints. Routing them through here (rather than an inline
 // comparison in the suite) is what lets scripts/check-perf-policy.mjs exercise the 25 ms boundary

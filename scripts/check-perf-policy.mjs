@@ -99,7 +99,7 @@ eq('a lock needs healthy paint (static over budget is not a lock)', looksCadence
 eq('a missing ticking reading is not a lock', looksCadenceLocked({ p95: Number.NaN, staticP95: 16.8 }), false);
 eq('a cadence-locked gated reading retries', retry({ p95: 33.3 }), true);
 eq('a cadence-locked reading does not rescue an informational engine', retry({ p95: 33.3 }, { engineName: 'chromium' }), false);
-eq('a cadence-locked reading marks the host overloaded', overload(reading({ p95: 33.3 })), true);
+eq('a cadence-locked reading is not a suite-wide overload signal', overload(reading({ p95: 33.3 })), false);
 eq('the frame interval is a 60 Hz frame', Math.round(FRAME_MS * 100) / 100, 16.67);
 eq('the cadence tolerance is pinned at 2.5 ms', CADENCE_TOLERANCE_MS, 2.5);
 

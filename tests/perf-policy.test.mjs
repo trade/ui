@@ -91,12 +91,13 @@ test('a cadence lock is healthy paint plus a 30 Hz-locked ticking reading', () =
   assert.equal(FRAME_MS * 2 - CADENCE_TOLERANCE_MS <= 33.3 && 33.3 <= FRAME_MS * 2 + CADENCE_TOLERANCE_MS, true);
 });
 
-test('a cadence lock retries on a gated engine and latches the host as overloaded', () => {
+test('a cadence lock retries per combination without latching the suite as overloaded', () => {
   const gated = { ...perfContext('linux', 'chromium'), hostOverloaded: false };
   const informational = { ...perfContext('linux', 'webkit'), hostOverloaded: false };
   assert.equal(needsRetry({ p95: 33.3, staticP95: 16.8 }, gated), true, 'a starved, gated reading is re-measured');
   assert.equal(needsRetry({ p95: 33.3, staticP95: 16.8 }, informational), false, 'informational engines do not retry');
-  assert.equal(isOverloadSignal({ p95: 33.3, staticP95: 16.8, droppedRatio: 0 }, { droppedRatio: 0.25, staticP95Ms: 40 }), true, 'a lock is an overload signal');
+  // Latching would lengthen every later combination; the lock is handled per combination instead.
+  assert.equal(isOverloadSignal({ p95: 33.3, staticP95: 16.8, droppedRatio: 0 }, { droppedRatio: 0.25, staticP95Ms: 40 }), false, 'a lock is not a suite-wide overload signal');
 });
 
 test('a persistent cadence lock still fails (the retry cannot mask a regression)', () => {
