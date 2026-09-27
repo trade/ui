@@ -111,6 +111,7 @@ After any change: `npm run build && npm run example:build && npm run verify && n
 
 - No virtualizer is shipped — `DataTable` is virtualizer-friendly (`rowCount` keeps ARIA honest) so consumers plug in their own.
 - The examples bundle React into an IIFE for convenience; the library itself depends on nothing and holds a 7 kB min+gzip budget for the full surface (measured figures: [docs/verification.md](docs/verification.md)).
+- **Supported browsers** are a floor stated in [docs/support.md](docs/support.md), derived from the features the stylesheets actually use rather than chosen — including what degrades below it and why.
 
 ## Verification & CI
 
@@ -124,6 +125,7 @@ npm run check:types     # tsc --noEmit over @trade/ui — strict types are a gat
 npm test                # 14 unit tests for the pure modules (node:test; no browser, no deps)
 npm run check:license   # licence headers + manifests agree (MIT OR Apache-2.0)
 npm run check:docs      # links resolve + documented check counts agree with the suites themselves
+npm run check:support   # 3 checks: the browser floor is derived from what the stylesheets use
 npm run check:perf-policy  # 82 checks: the perf-retry rules, the gated verdicts, the pinned knobs
 npm run size            # 20 checks: consumer cost vs the declared sizes, and the docs that quote them
 npm run verify          # 69 checks: CSS health, SSR markup, DOM interactions

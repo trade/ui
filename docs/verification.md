@@ -204,6 +204,8 @@ exit means the work is wrong, not that the command is flaky.
 - Example-level behaviour → `scripts/verify-example.mjs`.
 - New token pair → `check-contrast.mjs` `PAIRS`. New CSS convention → `check-style.mjs`.
 - New package promise → `check-contract.mjs`. Gate policy → `scripts/perf-policy.mjs` + `check-perf-policy.mjs`.
+- New CSS feature that could move the browser floor → a row in `scripts/check-support.mjs` and in
+  [support.md](support.md).
 - Release precondition → `scripts/check-release.mjs` (run at cut time, not in `ci`; procedure in
   [release.md](release.md)).
 

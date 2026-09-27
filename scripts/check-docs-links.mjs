@@ -152,6 +152,7 @@ expectIn(workflow, '.github/workflows/ci.yml', /npm run check:perf-policy/, 'the
 // individually, so a gate that is only added to `npm run ci` never executes on a pull request — which
 // is exactly what happened to the consumer gate before this assertion existed.
 expectIn(workflow, '.github/workflows/ci.yml', /npm run verify:consumer/, 'the consumer gate in the CI build job');
+expectIn(workflow, '.github/workflows/ci.yml', /npm run check:support/, 'the browser-floor gate in the CI build job');
 // The new gate's own total is quoted in README; read it from the gate rather than trusting the prose.
 const policyCount = Number(
   (execSync('node scripts/check-perf-policy.mjs', { cwd: root, encoding: 'utf8' }).match(/perf policy: (\d+)\//) ?? [])[1]
@@ -178,6 +179,7 @@ expectCount(readme, 'README.md', /npm run check:style\s+#\s+(\d+) checks/g, EXPE
 expectCount(readme, 'README.md', /npm run verify:example-trading\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.trading, 'the verify:example-trading row total');
 expectCount(readme, 'README.md', /npm run check:pack\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.pack, 'the check:pack row total');
 expectCount(readme, 'README.md', /npm run check:release\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.release, 'the check:release row total');
+expectCount(readme, 'README.md', /npm run check:support\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.support, 'the check:support row total');
 expectCount(readme, 'README.md', /npm run check:contract\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.contract, 'the check:contract row total');
 expectCount(readme, 'README.md', /npm run verify:consumer\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.consumer, 'the verify:consumer row total');
 expectCount(readme, 'README.md', /npm run size\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.sizes, 'the size row total');
@@ -190,7 +192,7 @@ forbidIn(readme, 'README.md', /belong in CI artifacts/, 'the "screenshots belong
 console.log(
   `docs counts: browser-suite ${compare} compare / ${update} update, verify ${EXPECTED_COUNTS.verify}, `
   + `style ${EXPECTED_COUNTS.style}, trading ${EXPECTED_COUNTS.trading}, pack ${EXPECTED_COUNTS.pack}, `
-  + `size ${EXPECTED_COUNTS.sizes}, consumer ${EXPECTED_COUNTS.consumer}, contract ${EXPECTED_COUNTS.contract}, release ${EXPECTED_COUNTS.release}, perf-policy ${policyCount} — `
+  + `size ${EXPECTED_COUNTS.sizes}, consumer ${EXPECTED_COUNTS.consumer}, contract ${EXPECTED_COUNTS.contract}, support ${EXPECTED_COUNTS.support}, release ${EXPECTED_COUNTS.release}, perf-policy ${policyCount} — `
   + `README, AGENTS.md, CONTRIBUTING.md and docs/verification.md agree; `
   + `stale-name scan covers all ${markdownFiles.length} markdown files`
 );
