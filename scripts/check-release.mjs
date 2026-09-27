@@ -65,20 +65,26 @@ check(
     : 'clean'
 );
 
-// 2. cutting from a branch tags something nobody reviewed
-let head = '';
-let originMain = '';
+// 2. cut from main, not from a branch, and not from behind the remote.
+//    This deliberately does *not* require HEAD to equal origin/main: that would force the push to happen
+//    before the gate, so a failing gate would leave the release version on main with no way back but
+//    another commit. The gate runs before the push instead.
+let branch = '';
+let ahead = '';
+let behind = '';
 try {
-  head = run('git', ['rev-parse', 'HEAD'], { cwd: root }).trim();
-  originMain = run('git', ['rev-parse', 'origin/main'], { cwd: root }).trim();
+  branch = run('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: root }).trim();
+  const counts = run('git', ['rev-list', '--left-right', '--count', 'HEAD...origin/main'], { cwd: root }).trim().split(/\s+/);
+  behind = counts[0];
+  ahead = counts[1];
 } catch (error) {
-  check('HEAD is origin/main', false, String(error.stderr ?? error.message).split('\n')[0]);
+  check('the release is cut from main', false, String(error.stderr ?? error.message).split('\n')[0]);
 }
-if (head || originMain) {
+if (branch || ahead) {
   check(
-    'HEAD is origin/main',
-    head !== '' && head === originMain,
-    head === originMain ? head.slice(0, 9) : `HEAD ${head.slice(0, 9) || 'unknown'} vs origin/main ${originMain.slice(0, 9) || 'unknown'}`
+    'the release is cut from main',
+    (branch === 'main' || branch === 'master') && behind === '0',
+    branch === '' ? 'could not read the branch' : `${branch}, ${ahead} ahead / ${behind} behind origin/main`
   );
 }
 

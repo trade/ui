@@ -27,9 +27,11 @@ git switch main && git pull --ff-only
 
 # 2. move the version in all three manifests. The root manifest counts: the package contract requires
 #    every manifest to declare the same version, and `npm version --workspace` leaves the root behind.
-npm version <version> --no-git-tag-version
-npm version <version> --workspace @trade/tokens --no-git-tag-version
-npm version <version> --workspace @trade/ui --no-git-tag-version
+#    --allow-same-version is for the first release: if the manifests already declare the version being
+#    cut, npm otherwise exits 1 with "Version not changed" and the procedure stops here.
+npm version <version> --allow-same-version --no-git-tag-version
+npm version <version> --allow-same-version --workspace @trade/tokens --no-git-tag-version
+npm version <version> --allow-same-version --workspace @trade/ui --no-git-tag-version
 
 # 3. give the version its changelog section: "## [Unreleased]" keeps its heading, and a
 #    "## [<version>] - YYYY-MM-DD" section goes below it. The gate will not cut without it.
@@ -37,17 +39,17 @@ npm version <version> --workspace @trade/ui --no-git-tag-version
 # 4. everything that can run on a dirty tree
 npm run ci
 
-# 5. commit and push. The gate's next step checks that HEAD *is* origin/main, so the release commit has
-#    to be pushed before the gate runs — not after.
+# 5. commit the bump, but do not push yet
 git add -A && git commit -m "chore(release): v<version>"
-git push origin main
 
-# 6. the preconditions, mechanised: no uncommitted or stray-packaged files, HEAD at origin/main, a
-#    changelog section for the version, neither package private, both contracts, and the version not
-#    already on the registry
+# 6. the preconditions, mechanised: no uncommitted or stray-packaged files, cut from main rather than a
+#    branch, a changelog section for the version, neither package private, both contracts, and the
+#    version not already on the registry. It runs *before* the push on purpose: if it fails, the bump is
+#    still a local commit that can be fixed or dropped, rather than a version already sitting on main.
 npm run check:release
 
-# 7. tag the commit the gate just verified
+# 7. publish the commit the gate verified, then tag it
+git push origin main
 git tag -a v<version> -m "v<version>"
 git push origin v<version>
 
