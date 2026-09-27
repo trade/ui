@@ -154,10 +154,10 @@ for (const dir of PACKAGES) {
   // 6. the npm invocation above actually ran. Without this the whole gate was silently
   //    vacuous on any platform where `npm` is not directly spawnable: the catch above recorded
   //    the spawn error as a per-package FAIL, so the gate still exited 1, but nothing asserted
-  //    that a real tarball had been produced — the failure mode looked like a packaging
-  //    regression when it was a broken command. Now the manifest must carry a plausible file
-  //    count, which only a successful `npm pack` can produce. This is the check that would
-  //    have caught the win32 ENOENT at the point of introduction rather than in a bug report.
+  //    that a real tarball had been produced — the failure read as a packaging regression when
+  //    it was a broken command. A manifest with a plausible file count is only obtainable from
+  //    a successful `npm pack`; the two failure paths above record this same check as failed, so
+  //    "the pack never ran" is never left implicit.
   check(
     `${label}: npm pack produced a real manifest`,
     manifest && Array.isArray(manifest.files) && manifest.files.length > 0,
