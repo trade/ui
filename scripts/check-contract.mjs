@@ -12,6 +12,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { EXPECTED_COUNTS } from './expected-counts.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -55,7 +56,45 @@ for (const f of ['packages/ui/dist/index.js', 'packages/ui/dist/index.cjs', 'pac
   check(`build artifact present: ${f.replace('packages/ui/dist/', '')}`, existsSync(abs), existsSync(abs) ? `${readFileSync(abs).length} bytes` : 'MISSING — run npm run build');
 }
 
+// 7. one version, one meaning (issue #76)
+// The token schema carried `version: 0.2.0` inside packages that declare 0.1.0, and the build emitted
+// it as the package version into both shipped artifacts. Nothing asserted anything about version, in
+// any file, so nothing could notice. The schema key is renamed, the build emits the package version,
+// and the two are held together here.
+const rootPkg = read('package.json');
+const schema = JSON.parse(readFileSync(resolve(root, 'packages/tokens/tokens.json'), 'utf8'));
+const versions = { root: rootPkg.version, ui: ui.version, tokens: tokens.version };
+check(
+  'every manifest declares the same version',
+  new Set(Object.values(versions)).size === 1 && Boolean(ui.version),
+  Object.entries(versions).map(([k, v]) => `${k}=${v}`).join(', ')
+);
+check(
+  'the token schema version is named schemaVersion, not version',
+  typeof schema.schemaVersion === 'string' && !('version' in schema),
+  `schemaVersion=${JSON.stringify(schema.schemaVersion)}, version=${JSON.stringify(schema.version)}`
+);
+const tokensCss = resolve(root, 'packages/tokens/dist/tokens.css');
+const cssHeader = existsSync(tokensCss) ? (readFileSync(tokensCss, 'utf8').split('\n')[1] ?? '').trim() : '';
+check(
+  'the emitted stylesheet names the package version',
+  cssHeader.includes(`v${ui.version}`),
+  cssHeader.slice(0, 96) || 'no header — run npm run build'
+);
+// `"version"` exactly: `"schemaVersion"` has no quote before it, so the two cannot be confused.
+const tokensTs = resolve(root, 'packages/tokens/dist/tokens.ts');
+const moduleVersion = existsSync(tokensTs) ? (readFileSync(tokensTs, 'utf8').match(/"version": "([^"]+)"/) ?? [])[1] : undefined;
+check(
+  'the emitted token module exports the package version',
+  moduleVersion === ui.version,
+  `module says ${moduleVersion ?? 'nothing'}, the manifests say ${ui.version}`
+);
+
 const passed = checks.filter((c) => c.pass).length;
+if (checks.length !== EXPECTED_COUNTS.contract) {
+  console.error(`contract: ran ${checks.length} checks, expected-counts.mjs declares ${EXPECTED_COUNTS.contract}`);
+  process.exit(1);
+}
 console.log(`contract: ${passed}/${checks.length} checks passed`);
 for (const c of checks) console.log(`  ${c.pass ? 'PASS' : 'FAIL'}  ${c.name}${c.pass ? '' : ' -> ' + c.detail}`);
 process.exit(passed === checks.length ? 0 : 1);
