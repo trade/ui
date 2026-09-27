@@ -32,9 +32,9 @@ override a single `--ui-ref-*` and every role that points at it follows.
 
 ## Frozen scales
 
-ADR-001: the scale is owned and versioned in this repo, frozen, and does not track upstream. The
-initial values were derived from Material Design 2 at project start; the derivation is recorded for
-explainability only. Extending a scale is an architecture decision, not a drive-by diff.
+ADR-001: the scale is owned and versioned in this repo, frozen, and does not track any upstream
+specification. The initial values were fixed at project start, calibrated for dense, data-heavy
+screens. Extending a scale is an architecture decision, not a drive-by diff.
 
 **Colour — neutral** (19 steps): `0 #ffffff` through `1000 #000000`, including non-round steps
 (`25`, `35`, `150`, `750`, `850`, `875`) that exist to make the exact role mappings work.

@@ -19,7 +19,7 @@ A working, verified component library. Not yet used by a real application.
 | `@trade/tokens` | primitives → theme roles, compiled to static CSS + typed TS | done |
 | `@trade/ui` | 14 components, static CSS, 3 themes, no animation | done |
 | `apps/example` | watchlist + order ticket component reference | done |
-| `apps/example-trading` | production-grade trading workspace example | done |
+| `apps/example-trading` | production-grade trading workspace example, with a live book coalesced by `useTicks` | done |
 | `harness/` + `scripts/` | self-measuring browser harness, verification suites | done |
 
 **Components:** Button, Input, Select (native `<select>`, plus a listbox variant), Field,

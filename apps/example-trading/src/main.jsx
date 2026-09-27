@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import {
   ThemeProvider,
   useTheme,
+  useTicks,
   Button,
   Input,
   Select,
@@ -31,6 +32,9 @@ function makeInstruments(n) {
     const chg = (rnd() - 0.48) * 9;
     const hasPosition = i % 7 === 0;
     const qty = hasPosition ? (i % 3 === 0 ? -1 : 1) * (100 + Math.floor(rnd() * 40) * 100) : 0;
+    // Same rnd() order as before, so the seeded book is unchanged.
+    const volume = Math.floor(200_000 + rnd() * 48_000_000);
+    const pnl = hasPosition ? (rnd() - 0.45) * 4200 : 0;
     out[i] = {
       id: `${root}${suffix}-${i}`,
       symbol: `${root}${suffix}`,
@@ -40,15 +44,62 @@ function makeInstruments(n) {
       chgPct: (chg / price) * 100,
       bid: price - 0.02,
       ask: price + 0.02,
-      volume: Math.floor(200_000 + rnd() * 48_000_000),
+      volume,
       pos: qty,
-      pnl: hasPosition ? (rnd() - 0.45) * 4200 : 0
+      pnl,
+      // Cost basis, so a live price carries the position's P&L with it: pnl = (last - basis) * pos.
+      basis: hasPosition ? price - pnl / qty : 0
     };
   }
   return out;
 }
 
 const ROW_HEIGHT = 23;
+
+/* ── live feed ───────────────────────────────────────────────────────────────
+   A frame loop drifts a strided slice of the book and queues each frame through `useTicks`, which
+   commits at most once per animation frame — a burst of messages costs one render, not one per
+   message. The slice is what keeps it cheap: 512 instruments move per frame, the other 4,488 are
+   shared by reference, and the stride spreads them across the whole book rather than walking it,
+   so whichever window the user is looking at keeps moving. The hook owns the coalescing; this
+   effect owns the data and cancels the loop on unmount. */
+const TICK_WINDOW = 512;
+
+function useLiveBook(seedBook) {
+  const [book, pushBook] = useTicks(seedBook);
+  useEffect(() => {
+    let frame = 0;
+    let cursor = 0;
+    const step = () => {
+      frame = requestAnimationFrame(step);
+      // A queued updater form, so nothing is lost if a frame is missed and the drift always
+      // applies to the freshest book rather than a stale snapshot.
+      pushBook((previous) => {
+        const next = previous.slice();
+        for (let n = 0; n < TICK_WINDOW; n += 1) {
+          const index = (cursor + n * 137) % next.length;
+          const row = next[index];
+          const last = Math.max(0.01, row.last + (Math.random() - 0.5) * 0.06);
+          next[index] = {
+            ...row,
+            last,
+            bid: last - 0.02,
+            ask: last + 0.02,
+            chgPct: (row.chg / last) * 100,
+            // A live price moves the position with it, so Unreal P&L and the workspace totals
+            // never disagree with the quote on screen.
+            pnl: row.pos === 0 ? 0 : (last - row.basis) * row.pos
+          };
+        }
+        return next;
+      });
+      cursor = (cursor + TICK_WINDOW) % seedBook.length;
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [pushBook, seedBook]);
+  return book;
+}
 /* Shared account model: the metrics strip and the ticket's "buying power after" must
    agree, and the ticket needs it up front to warn before an order is rejected. */
 const ACCOUNT_BUYING_POWER = 284_120.55;
@@ -450,24 +501,32 @@ function StatusBar({ count }) {
 /* ── app ──────────────────────────────────────────────────────────────────── */
 
 function Workspace() {
-  const instruments = useMemo(() => makeInstruments(5000), []);
-  const [selected, setSelected] = useState(instruments[0]);
+  const seedBook = useMemo(() => makeInstruments(5000), []);
+  const instruments = useLiveBook(seedBook);
+  // Selecting a row loads the ticket with that row as it stood when clicked: the form's inputs
+  // must not move under the user while the book ticks.
+  const [selected, setSelected] = useState(seedBook[0]);
   const [ticketOpen, setTicketOpen] = useState(true);
+
+  // Positions are a fixed slice of the book and a tick never adds or removes one, so the per-frame
+  // totals walk the positioned rows only (about a seventh) rather than all 5,000.
+  const positionIndexes = useMemo(
+    () => seedBook.flatMap((row, index) => (row.pos === 0 ? [] : [index])),
+    [seedBook]
+  );
 
   const totals = useMemo(() => {
     let pnl = 0;
     let exposure = 0;
-    let positions = 0;
-    for (const i of instruments) {
-      if (i.pos !== 0) {
-        positions += 1;
-        pnl += i.pnl;
-        exposure += Math.abs(i.pos * i.last);
-      }
+    for (const index of positionIndexes) {
+      const row = instruments[index];
+      pnl += row.pnl;
+      exposure += Math.abs(row.pos * row.last);
     }
+    const positions = positionIndexes.length;
     const netLiq = ACCOUNT_BUYING_POWER + pnl;
     return { pnl, positions, exposure, netLiq, pnlPct: (pnl / netLiq) * 100, buyingPower: ACCOUNT_BUYING_POWER };
-  }, [instruments]);
+  }, [instruments, positionIndexes]);
 
   return (
     <div className="shell">

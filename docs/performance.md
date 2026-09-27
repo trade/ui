@@ -65,9 +65,11 @@ Benchmarks on `window`:
 The inlined self-audit then records structure (rows rendered vs `aria-rowcount`), layout
 overflow, theme switch, static + ticking benchmarks, and axe violations, and POSTs the JSON to
 `/results`. `browser-suite.mjs` runs it in 6 combos (3 engines × 2 viewports), settles 1500 ms,
-re-measures a combo when a reading looks throttled (p95 > 100 ms), when a gated reading is only
-marginally over budget, or when an earlier combo in the same run read catastrophically, keeping the
-better attempt (`scripts/perf-policy.mjs`, checked by `check:perf-policy`). Why 25 ms and not 20, why the retry exists, and the WebKit-port vs real-macOS-WebKit
+re-measures a combo when a reading looks throttled (p95 > 100 ms), when a gated reading is
+cadence-locked to 2x the frame interval (paint healthy but ticking halved to a hard 30 Hz - a
+CPU-starved host, not a slow library) or only marginally over budget, or when an earlier combo in the
+same run read catastrophically, keeping the better attempt (`scripts/perf-policy.mjs`, checked by
+`check:perf-policy`). Why 25 ms and not 20, why the retry exists, and the WebKit-port vs real-macOS-WebKit
 story: [verification.md](verification.md) and [STATUS.md](../STATUS.md).
 
 ## Virtualization contract

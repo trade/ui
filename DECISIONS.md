@@ -7,7 +7,12 @@ reasoning survives without anyone having to reconstruct it. Supersede an entry r
 
 ## ADR-001 — Own the token scale, frozen
 
-**Status:** accepted
+**Status:** accepted — owner-ratified.
+
+**Ratified by the owner.** The visual style is a fixed brief and is not a decision input. The
+maintenance status, naming or provenance of any external design reference is explicitly **out of
+scope** for this project; a retired upstream reference is not an objection and must not be raised as
+one. The style choice is not re-opened on the grounds that an external reference is unmaintained.
 
 **Context.** The library needs a spacing rhythm, depth model and colour roles that suit dense,
 data-heavy screens and survive both light and dark. Those values have to come from somewhere, and the
@@ -18,11 +23,10 @@ consumer's spacing out from under them.
 density steps are frozen and belong to this project; they do not track any upstream specification.
 
 **Origin.** The initial values for the spacing rhythm (4/8/12/16/24/32…), the elevation ladder and the
-density steps were derived at project start from Material Design 2. That upstream specification is no
-longer maintained, and its later revision leans on expressive shape and motion, which conflicts with
-this project's requirement to stay static. The derivation is recorded here only so the numbers are
-explicable; nothing else is inherited. The naming, the roles and the mappings — `--ui-*`, `primary`,
-`surface`, `borderControl`, `rowAlt` — are specific to this project.
+density steps were fixed at project start, calibrated for dense, data-heavy screens that must stay
+static. They belong to this project: the naming, the roles and the mappings — `--ui-*`, `primary`,
+`surface`, `borderControl`, `rowAlt` — are ours, and the scale is ours to extend. No upstream
+specification is tracked, inherited from, or named anywhere in this project.
 
 **Consequences.**
 - No consumer's spacing or colour changes because an upstream specification did.

@@ -39,7 +39,11 @@ await new Promise((r) => server.listen(PORT, '127.0.0.1', r));
 const results = [];
 const check = (name, pass, detail) => results.push({ name, pass, detail });
 
-const browser = await chromium.launch();
+// The live-feed check below reads a frame, so the engine must not throttle an inactive page the
+// way the browser suite already guards against (scripts/browser-suite.mjs, same flags).
+const browser = await chromium.launch({
+  args: ['--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows']
+});
 
 for (const vp of [{ name: 'desktop', width: 1600, height: 900 }, { name: 'narrow', width: 900, height: 700 }]) {
   const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
@@ -81,6 +85,28 @@ for (const vp of [{ name: 'desktop', width: 1600, height: 900 }, { name: 'narrow
   check(`${vp.name}: ARIA row index accounts for the window offset`, Number(m.ariaRowindexFirst) >= 2, `first aria-rowindex=${m.ariaRowindexFirst}`);
   check(`${vp.name}: dense row rhythm`, visibleRows >= 14, `~${visibleRows} rows fit in ${m.wrapClientHeight}px (${rowHeight}px rows)`);
   check(`${vp.name}: base type is 12px, not 14px+`, m.fontSize === '12px', `body font-size=${m.fontSize}`);
+
+  // The book is live: the rAF feed must move prices across frames. The whole body is read, not one
+  // cell, so the check does not depend on a single row's turn in the rotation — and it re-reads in
+  // short steps (early exit on the first change) because a feed touching a fraction of the book
+  // changes the visible window a few times a second, not every frame.
+  const bookBefore = await page.$eval('tbody', (el) => el.innerText);
+  let bookMoved = false;
+  for (let i = 0; i < 12 && !bookMoved; i += 1) {
+    await page.waitForTimeout(250);
+    bookMoved = (await page.$eval('tbody', (el) => el.innerText)) !== bookBefore;
+  }
+  check(`${vp.name}: the book is live (prices move across frames)`, bookMoved, `moved=${bookMoved}`);
+
+  // A live price must carry the position with it: the Day P&L metric aggregates every position, so
+  // it moves as soon as any positioned row ticks. This is the invariant a price-only tick broke.
+  const pnlBefore = await page.$eval('.metrics .metric:nth-child(2) .metric__value', (el) => el.textContent);
+  let pnlMoved = false;
+  for (let i = 0; i < 12 && !pnlMoved; i += 1) {
+    await page.waitForTimeout(250);
+    pnlMoved = (await page.$eval('.metrics .metric:nth-child(2) .metric__value', (el) => el.textContent)) !== pnlBefore;
+  }
+  check(`${vp.name}: live prices move position P&L too`, pnlMoved, `moved=${pnlMoved}`);
 
   // scroll deep into the dataset: the window must move and the header must stay pinned.
   // Reading the DOM in the same evaluate as the scroll would race React's re-render.
