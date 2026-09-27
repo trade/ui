@@ -41,6 +41,14 @@ export const looksCadenceLocked = (r) =>
   Number.isFinite(r.staticP95) &&
   r.staticP95 <= MAX_P95_FRAME_MS &&
   Math.abs(r.p95 - FRAME_MS * 2) <= CADENCE_TOLERANCE_MS;
+
+// Degraded static paint is deliberately NOT a retry trigger (observed: a healthy 16.7 ms ticking reading
+// with a 29-33 ms static one on Firefox, while Chromium read 16.7/16.7). Static degradation is the
+// regression signature this policy relies on - a real regression degrades the static reading too - and
+// because isBetterReading swaps an over-budget gated reading for any in-budget retry, re-measuring it would
+// let one lucky quieter attempt mask a real paint regression. The 25-30 ms slice is already retried by the
+// marginal band, so such a rule would only widen the effective gate from 25 ms to about 36 ms. The
+// operational answer is to gate perf on a pinned container or a dedicated host, not to loosen this one.
 export const perfContext = (platform, engineName) => ({
   platform,
   engineName,
