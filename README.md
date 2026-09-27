@@ -16,7 +16,7 @@ npm run example:build     # bundles the component example to apps/example/dist
 npm run verify         # 68 checks: CSS health, SSR markup, DOM interactions
 npm run verify:example    # 10 checks: boots the built example in a DOM and drives it
 npm run example-trading:build  # bundles the trading workspace example
-npm run verify:example-trading  # 30 checks: virtualization, live feed, ARIA, ticket guard, axe, 2 viewports
+npm run verify:example-trading  # 32 checks: virtualization, live feed + P&L, ARIA, ticket guard, axe, 2 viewports
 ```
 
 Open the examples (double-click — plain static files, no server needed):

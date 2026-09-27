@@ -98,6 +98,16 @@ for (const vp of [{ name: 'desktop', width: 1600, height: 900 }, { name: 'narrow
   }
   check(`${vp.name}: the book is live (prices move across frames)`, bookMoved, `moved=${bookMoved}`);
 
+  // A live price must carry the position with it: the Day P&L metric aggregates every position, so
+  // it moves as soon as any positioned row ticks. This is the invariant a price-only tick broke.
+  const pnlBefore = await page.$eval('.metrics .metric:nth-child(2) .metric__value', (el) => el.textContent);
+  let pnlMoved = false;
+  for (let i = 0; i < 12 && !pnlMoved; i += 1) {
+    await page.waitForTimeout(250);
+    pnlMoved = (await page.$eval('.metrics .metric:nth-child(2) .metric__value', (el) => el.textContent)) !== pnlBefore;
+  }
+  check(`${vp.name}: live prices move position P&L too`, pnlMoved, `moved=${pnlMoved}`);
+
   // scroll deep into the dataset: the window must move and the header must stay pinned.
   // Reading the DOM in the same evaluate as the scroll would race React's re-render.
   await page.evaluate(() => {
