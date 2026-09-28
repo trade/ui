@@ -47,8 +47,10 @@ export const looksCadenceLocked = (r) =>
 // regression signature this policy relies on - a real regression degrades the static reading too - and
 // because isBetterReading swaps an over-budget gated reading for any in-budget retry, re-measuring it would
 // let one lucky quieter attempt mask a real paint regression. The 25-30 ms slice is already retried by the
-// marginal band, so such a rule would only widen the effective gate from 25 ms to about 36 ms. The
-// operational answer is to gate perf on a pinned container or a dedicated host, not to loosen this one.
+// marginal band, so such a rule would not move the pass threshold - staticWithinBudget still compares the
+// retained reading to 25 ms - it would only give more over-budget readings another attempt, and an attempt
+// that landed in budget would be kept. The operational answer is to gate perf on a pinned container or a
+// dedicated host, not to loosen this one.
 export const perfContext = (platform, engineName) => ({
   platform,
   engineName,
