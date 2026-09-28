@@ -163,9 +163,13 @@ if (!Number.isInteger(policyCount)) {
 }
 expectIn(readme, 'README.md', new RegExp(`check:perf-policy\\s*#\\s*${policyCount} checks`), `the check:perf-policy row total (${policyCount} checks)`);
 
-// The remaining quoted counts (issue #31). The totals live in scripts/expected-counts.mjs, each suite
-// asserts its own total against that module on every run, and these doc rows are gated against the
-// same numbers - so a wrong count fails either the suite or this check, never neither.
+// The remaining quoted counts (issue #31). Each count is declared beside its suite in
+// scripts/counts/<key>.mjs and aggregated by scripts/expected-counts.mjs; the suite asserts its own run
+// against its own declaration, and these doc rows are gated against the aggregated value - so a wrong
+// count fails either the suite or this check, never neither.
+//
+// The aggregate is only as complete as its imports, so completeness is asserted below rather than
+// assumed (Rule zero: the colocated-count convention gets its own gate).
 const expectCount = (doc, docName, pattern, expected, what, minMatches = 1) => {
   const found = [...doc.matchAll(pattern)].map((m) => Number(m[1]));
   if (found.length < minMatches) stale.push(`${docName}: ${what} not found (${found.length} of ${minMatches})`);
@@ -188,6 +192,22 @@ expectCount(verification, 'docs/verification.md', /verify\.mjs`[^\n]*?(\d+) libr
 expectCount(verification, 'docs/verification.md', /check-style\.mjs`[^\n]*?(\d+) checks over/g, EXPECTED_COUNTS.style, 'the check:style total');
 expectCount(verification, 'docs/verification.md', /verify-example\.mjs`[^\n]*?(\d+) checks/g, 10, 'the verify:example total');
 forbidIn(readme, 'README.md', /belong in CI artifacts/, 'the "screenshots belong in CI artifacts" claim (contradicts the committed baselines)');
+
+// Every count file must actually be aggregated. A count file nobody imports would let its suite pass
+// on its own declaration while this check never reads the documented total for it - a silent hole, and
+// exactly the failure mode the colocated layout introduces. Verified in the failing direction.
+const countDir = join(root, 'scripts', 'counts');
+const countFiles = readdirSync(countDir).filter((f) => f.endsWith('.mjs'));
+const unaggregated = [];
+for (const file of countFiles) {
+  const mod = await import(`./counts/${file}`);
+  for (const key of Object.keys(mod.EXPECTED_COUNTS ?? {})) {
+    if (!(key in EXPECTED_COUNTS)) unaggregated.push(`${file} -> ${key}`);
+  }
+}
+if (unaggregated.length > 0) {
+  stale.push(`count files not aggregated into expected-counts.mjs: ${unaggregated.join(', ')}`);
+}
 
 console.log(
   `docs counts: browser-suite ${compare} compare / ${update} update, verify ${EXPECTED_COUNTS.verify}, `
