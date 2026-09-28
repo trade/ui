@@ -98,9 +98,14 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
    `baselines/darwin/` had to be regenerated **on the runner** (item 3) instead of reused — and
    `perfGated` gates every non-WebKit engine off macOS, so a Windows job would perf-gate software
    rendering. Exercising win32 in CI therefore needs runner-captured baselines *and* a stated win32
-   perf policy: a deliberate decision this item records instead of implying. If Windows-targeted
-   rendering ever ships, generate `baselines/win32` on `windows-latest` first (the `baselines` job is
-   the pattern) and state the perf policy in the same change.
+   perf policy: a deliberate decision this item records instead of implying.
+
+   If Windows-targeted rendering ever ships, **a distinct runner baseline target comes first**. A
+   desktop Windows host and a `windows-latest` runner both resolve to `win32` through
+   `process.platform`, so regenerating on the runner would overwrite the desktop set that local runs
+   compare against - trading one gate for another. The platform key needs refining (or the runner
+   given its own target) before any generation happens, and the win32 perf policy is stated in the
+   same change.
 7. **Ungated by design** (recorded per Rule zero): commit-message *bodies* (subjects are gated by
    `check:commits`; evidence-in-body is not machine-checkable); inline `style={{ }}` props in app
    JSX (app stylesheets are gated by `check:style`; inline JSX styles are convention only); the

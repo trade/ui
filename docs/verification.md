@@ -197,7 +197,9 @@ Visual comparison is platform-bound: a committed `baselines/<platform>/` set gat
 platform, so `baselines/linux/` gates in the container job, `baselines/darwin/` gates in
 `browser-macos`, and `baselines/win32/` gates a **local** Windows run. CI has no Windows visual job
 because `windows-latest` is a Server SKU while the set was captured on desktop Windows, so the diff
-would measure the OS family rather than the change (STATUS, known issue 6).
+would measure the OS family rather than the change (STATUS, known issue 6). A future Windows CI job
+would also need its **own** baseline target first: a desktop Windows host and a runner both resolve to
+`win32`, so generating on the runner would overwrite the set local runs compare against.
 
 CI (.github/workflows/ci.yml) runs five
 jobs — the pinned Node 22 unless a job says otherwise: **build** (the static checks + dist artifact), **size**, **verification**
