@@ -8,8 +8,8 @@ specific things degrade — none of them silently break, but the list matters an
 
 The floor is not a preference. It is implied by what the library actually uses, and the feature that
 sets it is `:focus-visible`, because it is the only one with **no fallback**: on an engine without it,
-keyboard users get no focus ring at all (issue #39 tracks the pre-15.4 gap). Everything else is either
-older than that floor or has a documented fallback.
+keyboard users get no focus ring at all — below this line is below support (issue #39). Everything
+else is either older than that floor or has a documented fallback.
 
 ## What sets it
 
@@ -27,15 +27,18 @@ decides the floor.
 | flex `gap` | 9 stylesheets | 57 | 52 | 10.1 |
 | `@supports selector()` | the `:dir()` fallback | 83 | 69 | 14.1 |
 | `position: sticky` | scroll containers, table headers | 56 | 32 | 13 |
-| `text-size-adjust` (unprefixed) | `base.css` | 54 | — | — |
+| `text-size-adjust` (with its `-webkit-` form) | `base.css` | 54 | — | — |
 | JS: optional chaining, nullish coalescing | the ES2020 build target | 80 | 74 / 72 | 13.1 |
 | `scrollbar-width` | **`apps/example-trading` only** | 121 | 64 | 18.2 |
 
 Two rows deserve their notes:
 
-- **`text-size-adjust` has no unprefixed implementation in Firefox or Safari.** The declaration in
-  `base.css` is a defensive no-op there, not a dependency. The prefixed form would work, and the CSS
-  authoring gate bans vendor prefixes on purpose — that tension is issue #40.
+- **`text-size-adjust` ships both forms, and the prefix is the working one.** Unprefixed is
+  implemented by Chromium alone; iOS Safari — the platform text autosizing exists for — has only ever
+  implemented `-webkit-text-size-adjust`, and WebKit's bug to unprefix it is still open. `base.css`
+  carries both, with the prefixed line as the second entry in the authoring gate's prefix allowlist
+  ([ADR-006](../DECISIONS.md)); a third entry takes an ADR, not a comment (issue #40). Desktop
+  Firefox implements neither form — unchanged — and Firefox for Android accepts only the prefixed one.
 - **`scrollbar-width` is the example's, not the library's.** It appears only in
   `apps/example-trading/src/screen.css`, so the *example* has a later effective floor for a cosmetic
   scrollbar. The library ships nothing that depends on it.

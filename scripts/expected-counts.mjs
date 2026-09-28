@@ -71,7 +71,7 @@ export const EXPECTED_SIZES = {
   },
   stylesheet: {
     entry: '@trade/ui stylesheet (gzip, all components)',
-    bytes: 3757,
+    bytes: 3761,
     budget: 8000,
     budgetLabel: '8 kB',
     docs: { 'docs/verification.md': 'Stylesheet (all components)', 'STATUS.md': 'Stylesheet' }

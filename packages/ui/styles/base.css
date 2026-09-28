@@ -18,6 +18,9 @@
   color: var(--ui-on-surface);
   background: var(--ui-background);
   -webkit-font-smoothing: antialiased;
+  /* iOS Safari has only ever implemented the -webkit- form — without it this pin is inert on the
+     platform text autosizing exists for. The second allowlist entry (ADR-006). */
+  -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
 

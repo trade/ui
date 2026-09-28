@@ -22,7 +22,11 @@ const root = resolve(here, '..');
 const stylesDir = resolve(root, 'packages', 'ui', 'styles');
 const appsDir = resolve(root, 'apps');
 
-const PREFIX_ALLOWLIST = new Set(['-webkit-font-smoothing']);
+// Every entry is a claim about an engine, and extending the ban takes an ADR (CONTRIBUTING §4) — this
+// list is the only place the prefix ban bends. `-webkit-font-smoothing` is the original sanctioned
+// entry; `-webkit-text-size-adjust` is ADR-006: iOS Safari implements only the prefixed form, so
+// without it the anti-autosizing pin in base.css is inert on the platform it exists for.
+const PREFIX_ALLOWLIST = new Set(['-webkit-font-smoothing', '-webkit-text-size-adjust']);
 
 /**
  * Return `css` with every `@media (hover: hover) { ... }` block removed, brace-aware, so a rule
@@ -141,7 +145,7 @@ function checkFile(checks, file, css, { namespaced }) {
 
   // 8. no engine-specific prefixes beyond the allowlist
   check(
-    `${file}: no vendor prefixes (allowlist: -webkit-font-smoothing)`,
+    `${file}: no vendor prefixes (allowlist: ${[...PREFIX_ALLOWLIST].join(', ')})`,
     [...new Set([...css.matchAll(/-(?:webkit|moz|ms|o)-[\w-]+/g)].map((m) => m[0]))].filter((p) => !PREFIX_ALLOWLIST.has(p))
   );
 
@@ -162,9 +166,13 @@ function checkFile(checks, file, css, { namespaced }) {
 }
 
 const checks = [];
+// Every stylesheet as scanned — comments already stripped, the same text the checks see — so the
+// allowlist check below cannot be satisfied by a mention inside a comment.
+const scannedCss = [];
 
 for (const file of readdirSync(stylesDir).filter((f) => f.endsWith('.css'))) {
   const css = readFileSync(resolve(stylesDir, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  scannedCss.push(css);
   checkFile(checks, file, css, { namespaced: true });
 }
 
@@ -179,8 +187,19 @@ if (existsSync(appsDir)) {
 }
 for (const { name, path } of appSheets) {
   const css = readFileSync(path, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  scannedCss.push(css);
   checkFile(checks, name, css, { namespaced: false });
 }
+
+// 11. an allowlist entry nobody uses is an exception nobody needs, and a list of former exceptions is
+//     exactly how a ban rots. Each entry is a claim that an engine needs the prefix; if nothing
+//     exercises the claim, the claim is no longer true. Rule zero applied to the allowlist itself.
+const deadEntries = [...PREFIX_ALLOWLIST].filter((prefix) => !scannedCss.some((css) => css.includes(prefix)));
+checks.push({
+  name: `prefix allowlist has no dead entries (${[...PREFIX_ALLOWLIST].join(', ')})`,
+  pass: deadEntries.length === 0,
+  detail: deadEntries.length ? `${deadEntries.join(', ')} — remove the entry, or restore what used it` : 'every entry is exercised'
+});
 
 if (checks.length !== EXPECTED_COUNTS.style) {
   console.error(
@@ -190,6 +209,6 @@ if (checks.length !== EXPECTED_COUNTS.style) {
   process.exit(1);
 }
 const failed = checks.filter((c) => !c.pass);
-console.log(`style contract: ${checks.length - failed.length}/${checks.length} checks passed (${readdirSync(stylesDir).filter((f) => f.endsWith('.css')).length} library + ${appSheets.length} app stylesheets)`);
+console.log(`style contract: ${checks.length - failed.length}/${checks.length} checks passed (${readdirSync(stylesDir).filter((f) => f.endsWith('.css')).length} library + ${appSheets.length} app stylesheets, + 1 allowlist check)`);
 for (const c of checks) console.log(`  ${c.pass ? 'PASS' : 'FAIL'}  ${c.name}${c.pass ? '' : ' -> ' + c.detail}`);
 process.exit(failed.length ? 1 : 0);

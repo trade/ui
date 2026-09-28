@@ -126,3 +126,38 @@ content is made deterministic rather than hidden or excluded.
   a baseline ingredient.
 - `--print-counts` and the end-of-run check-count assertion keep the suite's totals the single
   source of truth for documented numbers.
+
+---
+
+## ADR-006 — `-webkit-text-size-adjust` ships alongside the unprefixed property
+
+**Status:** accepted
+
+**Context.** The authoring contract bans vendor prefixes and requires an ADR entry — not a comment —
+for an exception. The base sheet also pins text autosizing with `text-size-adjust: 100%`. Per
+mdn/browser-compat-data and the engines' own sources, the unprefixed property is implemented by
+Chromium alone (Chrome 54+, Edge 79+); iOS Safari — the platform text autosizing exists for — has
+only ever implemented `-webkit-text-size-adjust` (since iOS 1), and WebKit's bug to unprefix it is
+still open; desktop Firefox implements neither form, and Firefox for Android accepts only the
+prefixed one. So the pin was inert on exactly the platform it exists for (issue #40).
+
+**Decision.** `base.css` ships both forms:
+
+```css
+-webkit-text-size-adjust: 100%;
+text-size-adjust: 100%;
+```
+
+`-webkit-text-size-adjust` becomes the second entry in the style gate's prefix allowlist. A third
+exception still requires an ADR entry.
+
+**Consequences.**
+- The pin takes effect on iOS and is unchanged everywhere else: Chromium uses the unprefixed form it
+  already used, desktop Firefox ignores both (as before), and an engine that understands both reads
+  the same value twice.
+- The value stays `100%`, not `none`: the two are equivalent for text inflation, and `none` carried a
+  legacy hazard of inhibiting user zoom.
+- The allowlist is now mechanically honest: `check-style` fails when any entry is unused, so an
+  exception cannot outlive its reason. Before this, nothing checked the list in either direction.
+- The ban is unchanged for every other prefix. The gate matches whole property names, so a lookalike
+  (`-webkit-text-size-adjust-…`) still fails.

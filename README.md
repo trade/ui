@@ -120,7 +120,7 @@ npm run check:contract  # 16 checks: zero deps, peer-only React, exports map, ar
 npm run check:pack      # 11 checks: the real tarballs — entry points resolve, terms ship, nothing leaks
 npm run verify:consumer  # 16 checks: the real tarballs, installed into a project outside the repo
 npm run check:contrast  # 69 colour pairs across 3 themes must meet the contrast contract
-npm run check:style     # 141 checks: the CSS authoring contract (tokens-only, logical, motionless, guarded :hover)
+npm run check:style     # 142 checks: the CSS authoring contract (tokens-only, logical, motionless, guarded :hover, no dead prefix exceptions)
 npm run check:types     # tsc --noEmit over @trade/ui — strict types are a gate, not a suggestion
 npm test                # 14 unit tests for the pure modules (node:test; no browser, no deps)
 npm run check:license   # licence headers + manifests agree (MIT OR Apache-2.0)

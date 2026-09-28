@@ -59,8 +59,11 @@ Ten checks per library stylesheet, nine per app stylesheet, in `scripts/check-st
 6. **No `!important`** — ever. Specificity is kept flat by design.
 7. **font-size only via tokens or `inherit`** — the type scale is frozen (ADR-001).
 8. **Classes are namespaced `.ui-*`** — every authored class starts with `ui-`.
-9. **No vendor prefixes** beyond the single allowlist entry `-webkit-font-smoothing` in
-   `base.css`.
+9. **No vendor prefixes** beyond the allowlist, which has two entries, both in `base.css`:
+   `-webkit-font-smoothing`, and `-webkit-text-size-adjust` — iOS Safari has only ever implemented the
+   prefixed form, so without it the anti-autosizing pin is inert on the platform it exists for
+   ([ADR-006](../DECISIONS.md)). An unused entry fails the suite, and a third exception takes an ADR
+   entry, not a comment.
 
 `base.css` additionally carries the kill-switch `.ui-root, .ui-root * { transition: none;
 animation: none; }` — so even a future slip is inert at runtime.
