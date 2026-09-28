@@ -14,7 +14,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { JSDOM } from 'jsdom';
-import { EXPECTED_COUNTS } from './expected-counts.mjs';
+import { EXPECTED_COUNTS } from './counts/verify.mjs';
 
 // React must be imported dynamically, AFTER this assignment. React ships `act` only in its
 // development build and Node picks the entry point from NODE_ENV at import time, so a shell
@@ -860,7 +860,7 @@ const report = {
 };
 if (results.length !== EXPECTED_COUNTS.verify) {
   console.error(
-    `verify: ${results.length} checks ran but scripts/expected-counts.mjs declares ${EXPECTED_COUNTS.verify}. `
+    `verify: ${results.length} checks ran but scripts/counts/verify.mjs declares ${EXPECTED_COUNTS.verify}. `
     + 'Update that number and the docs it feeds in the same change, then run check:docs.'
   );
   process.exit(1);

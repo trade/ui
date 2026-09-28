@@ -15,7 +15,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { EXPECTED_COUNTS } from './expected-counts.mjs';
+import { EXPECTED_COUNTS } from './counts/style.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -184,7 +184,7 @@ for (const { name, path } of appSheets) {
 
 if (checks.length !== EXPECTED_COUNTS.style) {
   console.error(
-    `style contract: ${checks.length} checks ran but scripts/expected-counts.mjs declares ${EXPECTED_COUNTS.style}. `
+    `style contract: ${checks.length} checks ran but scripts/counts/style.mjs declares ${EXPECTED_COUNTS.style}. `
     + 'Update that number and the docs it feeds in the same change, then run check:docs.'
   );
   process.exit(1);

@@ -26,7 +26,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { EXPECTED_COUNTS } from './expected-counts.mjs';
+import { EXPECTED_COUNTS } from './counts/support.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DOC = 'docs/support.md';
@@ -121,7 +121,7 @@ check(
 
 const failed = checks.filter((c) => !c.ok);
 if (checks.length !== EXPECTED_COUNTS.support) {
-  console.error(`support: ran ${checks.length} checks, expected-counts.mjs declares ${EXPECTED_COUNTS.support}`);
+  console.error(`support: ran ${checks.length} checks, scripts/counts/support.mjs declares ${EXPECTED_COUNTS.support}`);
   process.exit(1);
 }
 if (failed.length > 0) {

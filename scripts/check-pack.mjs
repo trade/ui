@@ -22,7 +22,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { EXPECTED_COUNTS } from './expected-counts.mjs';
+import { EXPECTED_COUNTS } from './counts/pack.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES = ['packages/ui', 'packages/tokens'];
@@ -174,7 +174,7 @@ for (const c of checks) console.log(`  ${c.pass ? 'PASS' : 'FAIL'}  ${c.name}${c
 // check:docs noticed — one gate deep, after the fact.
 if (checks.length !== EXPECTED_COUNTS.pack) {
   console.error(
-    `check:pack: ${checks.length} checks ran but scripts/expected-counts.mjs declares ${EXPECTED_COUNTS.pack}. ` +
+    `check:pack: ${checks.length} checks ran but scripts/counts/pack.mjs declares ${EXPECTED_COUNTS.pack}. ` +
       'Update that number and the docs it feeds in the same change, then run check:docs.'
   );
   process.exit(1);

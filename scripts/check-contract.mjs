@@ -12,7 +12,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { EXPECTED_COUNTS } from './expected-counts.mjs';
+import { EXPECTED_COUNTS } from './counts/contract.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -92,7 +92,7 @@ check(
 
 const passed = checks.filter((c) => c.pass).length;
 if (checks.length !== EXPECTED_COUNTS.contract) {
-  console.error(`contract: ran ${checks.length} checks, expected-counts.mjs declares ${EXPECTED_COUNTS.contract}`);
+  console.error(`contract: ran ${checks.length} checks, scripts/counts/contract.mjs declares ${EXPECTED_COUNTS.contract}`);
   process.exit(1);
 }
 console.log(`contract: ${passed}/${checks.length} checks passed`);

@@ -34,7 +34,7 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { EXPECTED_COUNTS } from './expected-counts.mjs';
+import { EXPECTED_COUNTS } from './counts/consumer.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES = [
@@ -423,7 +423,7 @@ export const element = <Button>Save</Button>;
 
 const failed = checks.filter((c) => !c.ok);
 if (checks.length !== EXPECTED_COUNTS.consumer) {
-  console.error(`consumer contract: ran ${checks.length} checks, expected-counts.mjs declares ${EXPECTED_COUNTS.consumer}`);
+  console.error(`consumer contract: ran ${checks.length} checks, scripts/counts/consumer.mjs declares ${EXPECTED_COUNTS.consumer}`);
   process.exit(1);
 }
 if (failed.length > 0) {
