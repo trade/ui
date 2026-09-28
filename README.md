@@ -144,10 +144,12 @@ npm run ci              # contract + build + demo + harness + size + every suite
 Every suite exits non-zero on failure, so they work as gates. **Releasing** follows
 [docs/release.md](docs/release.md): `npm run check:release` proves the preconditions and a human
 supplies the credentials — no script in this repository holds a token or calls `npm publish`.
-GitHub Actions runs four jobs
-(`.github/workflows/ci.yml`): `build`, `size`, `verify` on Linux, and `browser-macos` to measure the
-real macOS WebKit engine — plus a `baselines` job on manual dispatch that regenerates the linux
-baseline set in the verify container (see Visual baselines). Reports land in `verification/` and
+GitHub Actions runs five jobs
+(`.github/workflows/ci.yml`): `build`, `size`, `verify` on Linux, `browser-macos` to measure the real
+macOS WebKit engine, and `cross-platform` — a matrix that runs the platform-sensitive gates on Windows
+and on the declared-but-untested Node line. A `baselines` job and its macOS twin regenerate the
+committed baseline sets on manual dispatch, in the exact environment the visual gate compares in (see
+Visual baselines). Superseded runs on the same ref are cancelled. Reports land in `verification/` and
 are uploaded as CI artifacts.
 
 ### Measurement reliability
