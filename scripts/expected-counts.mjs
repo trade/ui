@@ -1,25 +1,40 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// The documented figures the suites and the docs are both held to, in one place.
+// The count aggregate, plus the measured sizes, in one read-point.
 //
-// Each suite asserts its own total against this module on every run, so adding or removing a check
-// without updating the number fails that suite in CI. `scripts/check-docs-links.mjs` reads the same
-// module to keep README and docs/verification.md honest against it.
+// **A count is not declared here.** Each suite owns its total in `scripts/counts/<key>.mjs`, beside the
+// checks it counts, so adding or removing a check edits exactly one file — the suite's own — and never
+// this one. That matters under concurrency: four PRs in one afternoon each needed a hand edit to a
+// single shared literal here, and the resulting rebases were pure friction (one sat conflicting for
+// eleven hours).
 //
-// Only the browser suite can compute its total structurally (checks per combo x engines x viewports),
-// so it keeps `--print-counts`; these are declarations, each enforced by the suite that owns it.
-// Before this, only the browser suite's totals were gated and three docs drifted: verify 39 vs 69,
-// check:style 97 vs 128, verify:example-trading 26 vs 28 (issue #31).
+// This module aggregates those declarations so the docs check and the prose keep one read-point, and
+// each suite still asserts its own run against its own declaration — a check added without bumping the
+// number still fails, it just fails in the file that changed. The import structure is the gate: a
+// missing count file fails to resolve, and a stray one is simply not aggregated.
+//
+// The browser suite stays different: it computes its total structurally (checks per combo x engines x
+// viewports) and answers `--print-counts` instead.
+import { EXPECTED_COUNTS as contract } from './counts/contract.mjs';
+import { EXPECTED_COUNTS as style } from './counts/style.mjs';
+import { EXPECTED_COUNTS as verify } from './counts/verify.mjs';
+import { EXPECTED_COUNTS as trading } from './counts/trading.mjs';
+import { EXPECTED_COUNTS as pack } from './counts/pack.mjs';
+import { EXPECTED_COUNTS as release } from './counts/release.mjs';
+import { EXPECTED_COUNTS as support } from './counts/support.mjs';
+import { EXPECTED_COUNTS as consumer } from './counts/consumer.mjs';
+import { EXPECTED_COUNTS as sizes } from './counts/sizes.mjs';
+
 export const EXPECTED_COUNTS = {
-  verify: 69,
-  style: 141,
-  trading: 32,
-  pack: 11,
-  contract: 16,
-  support: 3,
-  release: 7,
-  sizes: 20,
-  consumer: 16
+  ...contract,
+  ...style,
+  ...verify,
+  ...trading,
+  ...pack,
+  ...release,
+  ...support,
+  ...consumer,
+  ...sizes
 };
 
 // The measured sizes, declared once. `scripts/check-size-claims.mjs` re-measures them on every run and

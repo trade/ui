@@ -19,7 +19,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { EXPECTED_COUNTS } from './expected-counts.mjs';
+import { EXPECTED_COUNTS } from './counts/release.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES = ['@trade/ui', '@trade/tokens'];
@@ -143,7 +143,7 @@ check(
 
 const failed = checks.filter((c) => !c.ok);
 if (checks.length !== EXPECTED_COUNTS.release) {
-  console.error(`\nrelease: ran ${checks.length} checks, expected-counts.mjs declares ${EXPECTED_COUNTS.release}`);
+  console.error(`\nrelease: ran ${checks.length} checks, scripts/counts/release.mjs declares ${EXPECTED_COUNTS.release}`);
   process.exit(1);
 }
 if (failed.length > 0) {

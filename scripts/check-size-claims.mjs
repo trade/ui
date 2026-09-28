@@ -20,7 +20,8 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { EXPECTED_COUNTS, EXPECTED_SIZES, formatSize } from './expected-counts.mjs';
+import { EXPECTED_COUNTS } from './counts/sizes.mjs';
+import { EXPECTED_SIZES, formatSize } from './expected-counts.mjs';
 
 const TOLERANCE = 0.01; // 1% of the declared size — a real drift, not a byte of minifier noise
 const root = fileURLToPath(new URL('..', import.meta.url)); // fileURLToPath, not .pathname: a checkout path with a space would otherwise break the lookup
@@ -115,7 +116,7 @@ for (const [key, claim] of entries) {
 
 const failed = checks.filter((c) => !c.ok).length;
 if (checks.length !== EXPECTED_COUNTS.sizes) {
-  console.error(`size claims: ran ${checks.length} checks, expected-counts.mjs declares ${EXPECTED_COUNTS.sizes}`);
+  console.error(`size claims: ran ${checks.length} checks, scripts/counts/sizes.mjs declares ${EXPECTED_COUNTS.sizes}`);
   process.exit(1);
 }
 if (failed > 0) {
