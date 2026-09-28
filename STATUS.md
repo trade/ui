@@ -89,9 +89,23 @@ Individual: `npm run check:contract` · `check:contrast` · `verify` · `verify:
    the original fix on a pre-#24 fork, was closed 2026-09-21 as superseded: its scripts/docs
    are byte-identical on main, its component deletions would regress #24, and its unique
    content — the 8 `baseline gate: *` verify checks — ships with #25.
-6. **`baselines/win32/` is committed but never exercised in CI.** No Windows job generates or
-   compares against it; the linux and macOS jobs gate; win32 does not. Either add a
-   Windows job or mark win32 as legacy.
+6. ~~**`baselines/win32/` is committed but never exercised in CI.**~~ **Resolved 2026-09-28 — win32 is
+   a local gate, and now says so.** The set gates every `verify:browser` run on a Windows host
+   (`resolveBaselinePlatform` selects `baselines/win32` there and the PNGs are present), which is the
+   platform it was captured on. CI cannot run that comparison meaningfully, for two independent
+   reasons: a GitHub `windows-latest` runner is a **Server** SKU rather than the desktop Windows the
+   set came from, so a visual diff would measure the OS family and not the change — the same reason
+   `baselines/darwin/` had to be regenerated **on the runner** (item 3) instead of reused — and
+   `perfGated` gates every non-WebKit engine off macOS, so a Windows job would perf-gate software
+   rendering. Exercising win32 in CI therefore needs runner-captured baselines *and* a stated win32
+   perf policy: a deliberate decision this item records instead of implying.
+
+   If Windows-targeted rendering ever ships, **a distinct runner baseline target comes first**. A
+   desktop Windows host and a `windows-latest` runner both resolve to `win32` through
+   `process.platform`, so regenerating on the runner would overwrite the desktop set that local runs
+   compare against - trading one gate for another. The platform key needs refining (or the runner
+   given its own target) before any generation happens, and the win32 perf policy is stated in the
+   same change.
 7. **Ungated by design** (recorded per Rule zero): commit-message *bodies* (subjects are gated by
    `check:commits`; evidence-in-body is not machine-checkable); inline `style={{ }}` props in app
    JSX (app stylesheets are gated by `check:style`; inline JSX styles are convention only); the
