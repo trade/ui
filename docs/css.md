@@ -34,8 +34,9 @@ picked up with zero build edits unless cascade order matters. Each file is also 
 
 ## The authoring contract
 
-Ten checks per library stylesheet, nine per app stylesheet, in `scripts/check-style.mjs` (scope: hand-written
-`packages/ui/styles/*.css` only — generated output is excluded):
+The checks below run on every library stylesheet, and — except for the `.ui-*` namespacing rule, which
+is library-only — on every app stylesheet, in `scripts/check-style.mjs` (hand-written CSS only;
+generated output is excluded), plus one suite-level check that keeps the prefix allowlist honest:
 
 1. **No raw colour literals** — no hex, `rgb()`/`hsl()`, `white`/`black`. Colour only via
    `var(--ui-*)`.
@@ -59,11 +60,11 @@ Ten checks per library stylesheet, nine per app stylesheet, in `scripts/check-st
 6. **No `!important`** — ever. Specificity is kept flat by design.
 7. **font-size only via tokens or `inherit`** — the type scale is frozen (ADR-001).
 8. **Classes are namespaced `.ui-*`** — every authored class starts with `ui-`.
-9. **No vendor prefixes** beyond the allowlist, which has two entries, both in `base.css`:
+9. **No vendor prefixes** beyond the allowlist, which has two entries, both **scoped to `base.css`**:
    `-webkit-font-smoothing`, and `-webkit-text-size-adjust` — iOS Safari has only ever implemented the
    prefixed form, so without it the anti-autosizing pin is inert on the platform it exists for
-   ([ADR-006](../DECISIONS.md)). An unused entry fails the suite, and a third exception takes an ADR
-   entry, not a comment.
+   ([ADR-006](../DECISIONS.md)). The gate rejects either prefix outside `base.css`, and an entry that
+   goes undeclared fails the suite; a third exception takes an ADR entry, not a comment.
 
 `base.css` additionally carries the kill-switch `.ui-root, .ui-root * { transition: none;
 animation: none; }` — so even a future slip is inert at runtime.

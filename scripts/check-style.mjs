@@ -143,10 +143,15 @@ function checkFile(checks, file, css, { namespaced }) {
     );
   }
 
-  // 8. no engine-specific prefixes beyond the allowlist
+  // 8. no engine-specific prefixes beyond the allowlist — and the allowlist is scoped: both entries
+  //    are claims about declarations in base.css specifically, so an allowlisted prefix anywhere else
+  //    is rejected. CONTRIBUTING §4 and docs/css.md have always said "in base.css"; now the gate says
+  //    it too (Greptile, PR #89).
   check(
-    `${file}: no vendor prefixes (allowlist: ${[...PREFIX_ALLOWLIST].join(', ')})`,
-    [...new Set([...css.matchAll(/-(?:webkit|moz|ms|o)-[\w-]+/g)].map((m) => m[0]))].filter((p) => !PREFIX_ALLOWLIST.has(p))
+    `${file}: no vendor prefixes beyond ${[...PREFIX_ALLOWLIST].join(', ')} (base.css only)`,
+    [...new Set([...css.matchAll(/-(?:webkit|moz|ms|o)-[\w-]+/g)].map((m) => m[0]))].filter(
+      (prefix) => !(PREFIX_ALLOWLIST.has(prefix) && file === 'base.css')
+    )
   );
 
   // 9. pointer states are guarded: `:hover` sticks after a tap on touch devices, so hover-only
@@ -166,13 +171,15 @@ function checkFile(checks, file, css, { namespaced }) {
 }
 
 const checks = [];
-// Every stylesheet as scanned — comments already stripped, the same text the checks see — so the
-// allowlist check below cannot be satisfied by a mention inside a comment.
-const scannedCss = [];
+// Declared property names per stylesheet, parsed from declarations rather than raw text: a mention in
+// a selector or a string value must not stand in for the declaration an allowlist entry sanctions
+// (Greptile, PR #89). Comments are already stripped by the time these are parsed.
+const declaredProps = new Map();
+const parseProps = (css) => new Set([...css.matchAll(/([-\w]+)\s*:\s*([^;{}]+);/g)].map((m) => m[1]));
 
 for (const file of readdirSync(stylesDir).filter((f) => f.endsWith('.css'))) {
   const css = readFileSync(resolve(stylesDir, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  scannedCss.push(css);
+  declaredProps.set(file, parseProps(css));
   checkFile(checks, file, css, { namespaced: true });
 }
 
@@ -187,18 +194,19 @@ if (existsSync(appsDir)) {
 }
 for (const { name, path } of appSheets) {
   const css = readFileSync(path, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  scannedCss.push(css);
+  declaredProps.set(name, parseProps(css));
   checkFile(checks, name, css, { namespaced: false });
 }
 
-// 11. an allowlist entry nobody uses is an exception nobody needs, and a list of former exceptions is
-//     exactly how a ban rots. Each entry is a claim that an engine needs the prefix; if nothing
-//     exercises the claim, the claim is no longer true. Rule zero applied to the allowlist itself.
-const deadEntries = [...PREFIX_ALLOWLIST].filter((prefix) => !scannedCss.some((css) => css.includes(prefix)));
+// 11. an allowlist entry nobody declares in base.css is an exception nobody needs, and a list of
+//     former exceptions is exactly how a ban rots. Each entry is a claim about a *declaration*; if
+//     the declaration is gone, the claim is no longer true. Rule zero applied to the allowlist itself.
+const baseProps = declaredProps.get('base.css') ?? new Set();
+const deadEntries = [...PREFIX_ALLOWLIST].filter((prefix) => !baseProps.has(prefix));
 checks.push({
-  name: `prefix allowlist has no dead entries (${[...PREFIX_ALLOWLIST].join(', ')})`,
+  name: `prefix allowlist entries are declared in base.css (${[...PREFIX_ALLOWLIST].join(', ')})`,
   pass: deadEntries.length === 0,
-  detail: deadEntries.length ? `${deadEntries.join(', ')} — remove the entry, or restore what used it` : 'every entry is exercised'
+  detail: deadEntries.length ? `${deadEntries.join(', ')} — remove the entry, or restore its declaration in base.css` : 'every entry is declared in base.css'
 });
 
 if (checks.length !== EXPECTED_COUNTS.style) {

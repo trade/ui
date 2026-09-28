@@ -135,8 +135,8 @@ system per theme — before any browser runs. See [design-tokens.md](design-toke
 
 The CSS authoring contract — raw values, physical direction, z-index, shadows, motion,
 `!important`, font-size, namespacing, vendor prefixes. Enumerated in [css.md](css.md). One suite-level
-check keeps the prefix allowlist honest: every entry must be exercised, so an exception cannot outlive
-its reason (ADR-006).
+check keeps the prefix allowlist honest: every entry must be declared in `base.css`, so an exception
+can neither outlive its reason nor drift to another sheet (ADR-006).
 
 ### `tests/*.test.mjs` — `npm test` (node:test, no dependencies)
 

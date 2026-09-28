@@ -157,7 +157,8 @@ exception still requires an ADR entry.
   the same value twice.
 - The value stays `100%`, not `none`: the two are equivalent for text inflation, and `none` carried a
   legacy hazard of inhibiting user zoom.
-- The allowlist is now mechanically honest: `check-style` fails when any entry is unused, so an
-  exception cannot outlive its reason. Before this, nothing checked the list in either direction.
+- The allowlist is now mechanically honest: `check-style` fails when any entry is undeclared in
+  `base.css` or declared outside it, so an exception can neither outlive its reason nor drift to
+  another sheet. Before this change, nothing checked the list in either direction.
 - The ban is unchanged for every other prefix. The gate matches whole property names, so a lookalike
   (`-webkit-text-size-adjust-…`) still fails.
