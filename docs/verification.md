@@ -191,8 +191,8 @@ bundle a `.d.ts`.
 `npm run ci` = `build → check:contract → check:pack → verify:consumer → check:contrast → check:style → check:types →
 test → check:license → check:docs → check:perf-policy → check:commits → example:build →
 example-trading:build → harness:build → size → verify → verify:example → verify:example-trading →
-verify:browser`, all non-zero-exit. CI (.github/workflows/ci.yml,
-Node 22) runs five jobs: **build** (the static checks + dist artifact), **size**, **verification**
+verify:browser`, all non-zero-exit. CI (.github/workflows/ci.yml) runs five
+jobs — the pinned Node 22 unless a job says otherwise: **build** (the static checks + dist artifact), **size**, **verification**
 (verify + both examples + all three browser engines; uploads `verification/` evidence even on failure),
 **browser-macos** (real WebKit perf gating), and **cross-platform** — a matrix over
 `windows-latest`/Node 22 and `ubuntu-latest`/Node 24 that runs the platform-sensitive gates where they

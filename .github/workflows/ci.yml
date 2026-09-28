@@ -14,11 +14,16 @@ on:
 permissions:
   contents: read
 
-# One run per ref. A force-push during review otherwise leaves two full 3-engine browser suites
-# competing for the same minutes, and only the newest one can be acted on.
+# One run per ref, per event. A force-push during review otherwise leaves two full 3-engine browser
+# suites competing for the same minutes, and only the newest one can be acted on.
+#
+# The event name is part of the group because a dispatch run is not repeatable: it is the only way to
+# regenerate the committed baseline sets, and a push landing while it works would cancel it and destroy
+# artifacts that run alone could produce. Dispatch runs therefore neither cancel nor are cancelled by
+# the push/PR runs on the same ref.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 # The project has independent gates, so they run as separate jobs:
 #   build  — the package must compile and emit declarations
@@ -282,10 +287,12 @@ jobs:
           # environment-specific (the linux one needs the digest-pinned image) and keep their own jobs.
           - os: windows-latest
             node: '22.22.2'
-          # The declared engines range is wider than any other job runs. `^24.15.0` is a promise to
-          # consumers, so the untested line is verified here.
+          # The declared engines range is wider than any other job runs, and it is a promise to
+          # consumers, so the untested line is verified here - pinned to the declared MINIMUM
+          # (`^24.15.0`), because the floor is the boundary a consumer on the oldest supported patch
+          # hits. `24.x` would drift upward over time and quietly stop testing it.
           - os: ubuntu-latest
-            node: '24.x'
+            node: '24.15.0'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -320,12 +327,7 @@ jobs:
       - name: Bundle budgets
         run: npm run size
 
-      - name: Upload failure evidence
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: cross-platform-${{ matrix.os }}-${{ matrix.node }}
-          path: verification
-          retention-days: 14
-          if-no-files-found: ignore
+      # No artifact upload here: these gates print their evidence to the job log and write nothing to
+      # `verification/` (that directory belongs to the browser suites, which have their own jobs).
+      # Uploading a directory nobody writes to would report success while producing nothing.
 
