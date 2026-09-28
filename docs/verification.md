@@ -192,10 +192,15 @@ bundle a `.d.ts`.
 test → check:license → check:docs → check:perf-policy → check:commits → example:build →
 example-trading:build → harness:build → size → verify → verify:example → verify:example-trading →
 verify:browser`, all non-zero-exit. CI (.github/workflows/ci.yml,
-Node 22) runs four jobs: **build** (the static checks + dist artifact), **size**, **verification**
+Node 22) runs five jobs: **build** (the static checks + dist artifact), **size**, **verification**
 (verify + both examples + all three browser engines; uploads `verification/` evidence even on failure),
-**browser-macos** (real WebKit perf gating). Every command exits non-zero on failure; a non-zero
-exit means the work is wrong, not that the command is flaky.
+**browser-macos** (real WebKit perf gating), and **cross-platform** — a matrix over
+`windows-latest`/Node 22 and `ubuntu-latest`/Node 24 that runs the platform-sensitive gates where they
+had never run before (three spawn defects once hid on Windows behind a green Linux CI). A **baselines**
+job and its macOS twin regenerate the committed baseline sets on manual dispatch. Superseded runs on the
+same ref are cancelled, and every job carries a `timeout-minutes` so a hung step cannot burn the
+six-hour default. Every command exits non-zero on failure; a non-zero exit means the work is wrong, not
+that the command is flaky.
 
 ## Adding checks
 
