@@ -22,7 +22,11 @@ const root = resolve(here, '..');
 const stylesDir = resolve(root, 'packages', 'ui', 'styles');
 const appsDir = resolve(root, 'apps');
 
-const PREFIX_ALLOWLIST = new Set(['-webkit-font-smoothing']);
+// Every entry is a claim about an engine, and extending the ban takes an ADR (CONTRIBUTING §4) — this
+// list is the only place the prefix ban bends. `-webkit-font-smoothing` is the original sanctioned
+// entry; `-webkit-text-size-adjust` is ADR-006: iOS Safari implements only the prefixed form, so
+// without it the anti-autosizing pin in base.css is inert on the platform it exists for.
+const PREFIX_ALLOWLIST = new Set(['-webkit-font-smoothing', '-webkit-text-size-adjust']);
 
 /**
  * Return `css` with every `@media (hover: hover) { ... }` block removed, brace-aware, so a rule
@@ -139,10 +143,15 @@ function checkFile(checks, file, css, { namespaced }) {
     );
   }
 
-  // 8. no engine-specific prefixes beyond the allowlist
+  // 8. no engine-specific prefixes beyond the allowlist — and the allowlist is scoped: both entries
+  //    are claims about declarations in base.css specifically, so an allowlisted prefix anywhere else
+  //    is rejected. CONTRIBUTING §4 and docs/css.md have always said "in base.css"; now the gate says
+  //    it too (Greptile, PR #89).
   check(
-    `${file}: no vendor prefixes (allowlist: -webkit-font-smoothing)`,
-    [...new Set([...css.matchAll(/-(?:webkit|moz|ms|o)-[\w-]+/g)].map((m) => m[0]))].filter((p) => !PREFIX_ALLOWLIST.has(p))
+    `${file}: no vendor prefixes beyond ${[...PREFIX_ALLOWLIST].join(', ')} (base.css only)`,
+    [...new Set([...css.matchAll(/-(?:webkit|moz|ms|o)-[\w-]+/g)].map((m) => m[0]))].filter(
+      (prefix) => !(PREFIX_ALLOWLIST.has(prefix) && file === 'base.css')
+    )
   );
 
   // 9. pointer states are guarded: `:hover` sticks after a tap on touch devices, so hover-only
@@ -162,9 +171,15 @@ function checkFile(checks, file, css, { namespaced }) {
 }
 
 const checks = [];
+// Declared property names per stylesheet, parsed from declarations rather than raw text: a mention in
+// a selector or a string value must not stand in for the declaration an allowlist entry sanctions
+// (Greptile, PR #89). Comments are already stripped by the time these are parsed.
+const declaredProps = new Map();
+const parseProps = (css) => new Set([...css.matchAll(/([-\w]+)\s*:\s*([^;{}]+);/g)].map((m) => m[1]));
 
 for (const file of readdirSync(stylesDir).filter((f) => f.endsWith('.css'))) {
   const css = readFileSync(resolve(stylesDir, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  declaredProps.set(file, parseProps(css));
   checkFile(checks, file, css, { namespaced: true });
 }
 
@@ -179,8 +194,20 @@ if (existsSync(appsDir)) {
 }
 for (const { name, path } of appSheets) {
   const css = readFileSync(path, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  declaredProps.set(name, parseProps(css));
   checkFile(checks, name, css, { namespaced: false });
 }
+
+// 11. an allowlist entry nobody declares in base.css is an exception nobody needs, and a list of
+//     former exceptions is exactly how a ban rots. Each entry is a claim about a *declaration*; if
+//     the declaration is gone, the claim is no longer true. Rule zero applied to the allowlist itself.
+const baseProps = declaredProps.get('base.css') ?? new Set();
+const deadEntries = [...PREFIX_ALLOWLIST].filter((prefix) => !baseProps.has(prefix));
+checks.push({
+  name: `prefix allowlist entries are declared in base.css (${[...PREFIX_ALLOWLIST].join(', ')})`,
+  pass: deadEntries.length === 0,
+  detail: deadEntries.length ? `${deadEntries.join(', ')} — remove the entry, or restore its declaration in base.css` : 'every entry is declared in base.css'
+});
 
 if (checks.length !== EXPECTED_COUNTS.style) {
   console.error(
@@ -190,6 +217,6 @@ if (checks.length !== EXPECTED_COUNTS.style) {
   process.exit(1);
 }
 const failed = checks.filter((c) => !c.pass);
-console.log(`style contract: ${checks.length - failed.length}/${checks.length} checks passed (${readdirSync(stylesDir).filter((f) => f.endsWith('.css')).length} library + ${appSheets.length} app stylesheets)`);
+console.log(`style contract: ${checks.length - failed.length}/${checks.length} checks passed (${readdirSync(stylesDir).filter((f) => f.endsWith('.css')).length} library + ${appSheets.length} app stylesheets, + 1 allowlist check)`);
 for (const c of checks) console.log(`  ${c.pass ? 'PASS' : 'FAIL'}  ${c.name}${c.pass ? '' : ' -> ' + c.detail}`);
 process.exit(failed.length ? 1 : 0);

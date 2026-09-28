@@ -24,9 +24,16 @@ The first release. Not yet published to the registry.
   dark and high-contrast themes, and density scales (`1 / 0.75 / 0.625`).
 - **Logical-properties CSS**: direction is declared with the `dir` attribute and layout follows it, so
   RTL is a document attribute rather than a second stylesheet.
-- **A verification suite**: 69 library checks, 141 CSS checks, 90 browser checks across Chromium,
+- **A verification suite**: 69 library checks, 142 CSS checks, 90 browser checks across Chromium,
   Firefox and WebKit × desktop and mobile, a packaging contract, a consumer contract, a licence
   contract, 69/69 contrast pairs, a perf-retry policy, and a size gate that measures consumer cost.
+
+### Fixed
+
+- `text-size-adjust` now ships the `-webkit-` form alongside the unprefixed one: iOS Safari has only
+  ever implemented the prefixed property, so the pin against text autosizing was inert on the one
+  platform it exists for. The prefix allowlist is a gated claim now — an unused entry fails the style
+  suite (ADR-006, issue #40).
 
 ### Known limitations
 

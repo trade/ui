@@ -104,8 +104,9 @@ gates all three (real WebKit on macOS; the Playwright port's perf numbers are in
 README § Measurement reliability).
 
 - Logical properties over physical (§1.5) — this is what makes RTL a non-project.
-- No vendor prefixes. The single sanctioned exception is `-webkit-font-smoothing` in `base.css`.
-  Adding another requires an ADR entry, not a comment.
+- No vendor prefixes. Two sanctioned exceptions, both in `base.css`: `-webkit-font-smoothing`, and
+  `-webkit-text-size-adjust` (ADR-006). Adding another requires an ADR entry, not a comment — and the
+  style suite fails if either entry goes unused or appears outside `base.css`.
 - `color-scheme` is emitted per applied theme so native widgets (select arrows, scrollbars) match
   the theme's polarity. Never hand-write it; it is generated.
 - Numeric data cells use `--ui-font-numeric` with `tabular-nums` so ticking prices never reflow.
