@@ -137,7 +137,15 @@ const registryTroubles = [];
 const pushTrouble = (message) => { if (!registryTroubles.includes(message)) registryTroubles.push(message); };
 for (const name of PACKAGES) {
   const registry = manifests[name].publishConfig?.registry ?? '';
-  if (registry.includes('npm.pkg.github.com')) {
+  // Exact hostname, not a substring — `includes('npm.pkg.github.com')` also matches
+  // `https://example.com/npm.pkg.github.com/...` (CodeQL js/incomplete-url-substring-sanitization).
+  let githubRegistry = false;
+  try {
+    githubRegistry = new URL(registry).hostname === 'npm.pkg.github.com';
+  } catch {
+    githubRegistry = false;
+  }
+  if (githubRegistry) {
     try {
       run(npmCommand, npmArgs(['whoami', '--registry', registry]), npmOptions(root));
     } catch (error) {
