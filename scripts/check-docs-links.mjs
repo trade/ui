@@ -143,6 +143,7 @@ expectIn(verification, 'docs/verification.md', /perf-policy\.mjs/, 'the perf-pol
 // The consumer gate is described where the other suites are; a gate nobody documents is a gate the
 // next contributor deletes. Rule zero applies to the doc as much as to the chain.
 expectIn(verification, 'docs/verification.md', /verify-consumer\.mjs/, 'the consumer gate section');
+expectIn(verification, 'docs/verification.md', /verify-consumer-trading\.mjs/, 'the trading dogfood section');
 expectIn(performanceDoc, 'docs/performance.md', /perf-policy\.mjs/, 'the perf-policy module');
 expectIn(pkg, 'package.json', /"check:perf-policy":/, 'the check:perf-policy script');
 expectIn(pkg, 'package.json', /check:perf-policy && npm run check:commits/, 'check:perf-policy wired into the ci chain');
@@ -151,7 +152,21 @@ expectIn(workflow, '.github/workflows/ci.yml', /npm run check:perf-policy/, 'the
 // Rule zero for a workflow: the npm chain is not what CI runs. GitHub Actions runs these steps
 // individually, so a gate that is only added to `npm run ci` never executes on a pull request — which
 // is exactly what happened to the consumer gate before this assertion existed.
-expectIn(workflow, '.github/workflows/ci.yml', /npm run verify:consumer/, 'the consumer gate in the CI build job');
+// The consumer-family gates must appear as STEPS in both jobs that exercise platform-sensitive
+// behavior, and as complete commands: `verify:consumer` is a prefix of `verify:consumer:trading`,
+// so a substring match can be satisfied by the wrong gate, and a whole-file search cannot see a
+// step removed from just one of the two jobs (#94 review).
+const jobSection = (name) => {
+  const match = workflow.match(new RegExp(`\\n  ${name}:\\n([\\s\\S]*?)(?=\\n  [a-z][a-z0-9-]*:\\n|$)`));
+  return match ? match[1] : '';
+};
+for (const job of ['build', 'cross-platform']) {
+  for (const command of ['npm run verify:consumer', 'npm run verify:consumer:trading']) {
+    if (!jobSection(job).includes(`run: ${command}\n`)) {
+      stale.push(`.github/workflows/ci.yml: the ${job} job is missing the "${command}" step`);
+    }
+  }
+}
 expectIn(workflow, '.github/workflows/ci.yml', /npm run check:support/, 'the browser-floor gate in the CI build job');
 // The new gate's own total is quoted in README; read it from the gate rather than trusting the prose.
 const policyCount = Number(
@@ -186,6 +201,7 @@ expectCount(readme, 'README.md', /npm run check:release\s+#\s+(\d+) checks/g, EX
 expectCount(readme, 'README.md', /npm run check:support\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.support, 'the check:support row total');
 expectCount(readme, 'README.md', /npm run check:contract\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.contract, 'the check:contract row total');
 expectCount(readme, 'README.md', /npm run verify:consumer\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.consumer, 'the verify:consumer row total');
+expectCount(readme, 'README.md', /npm run verify:consumer:trading\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.consumerTrading, 'the verify:consumer:trading row total');
 expectCount(readme, 'README.md', /npm run size\s+#\s+(\d+) checks/g, EXPECTED_COUNTS.sizes, 'the size row total');
 expectCount(verification, 'docs/verification.md', /check-size-claims\.mjs`[^\n]*?(\d+) checks/g, EXPECTED_COUNTS.sizes, 'the size-claims total');
 expectCount(verification, 'docs/verification.md', /verify\.mjs`[^\n]*?(\d+) library checks/g, EXPECTED_COUNTS.verify, 'the verify total');
@@ -227,7 +243,7 @@ if (unaggregated.length > 0) {
 console.log(
   `docs counts: browser-suite ${compare} compare / ${update} update, verify ${EXPECTED_COUNTS.verify}, `
   + `style ${EXPECTED_COUNTS.style}, trading ${EXPECTED_COUNTS.trading}, pack ${EXPECTED_COUNTS.pack}, `
-  + `size ${EXPECTED_COUNTS.sizes}, consumer ${EXPECTED_COUNTS.consumer}, contract ${EXPECTED_COUNTS.contract}, support ${EXPECTED_COUNTS.support}, release ${EXPECTED_COUNTS.release}, tests ${testTotal}, perf-policy ${policyCount} — `
+  + `size ${EXPECTED_COUNTS.sizes}, consumer ${EXPECTED_COUNTS.consumer}, consumer-trading ${EXPECTED_COUNTS.consumerTrading}, contract ${EXPECTED_COUNTS.contract}, support ${EXPECTED_COUNTS.support}, release ${EXPECTED_COUNTS.release}, tests ${testTotal}, perf-policy ${policyCount} — `
   + `README, AGENTS.md, CONTRIBUTING.md and docs/verification.md agree; `
   + `stale-name scan covers all ${markdownFiles.length} markdown files`
 );

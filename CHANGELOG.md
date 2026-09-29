@@ -9,7 +9,11 @@ precondition of publishing, not a courtesy.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- **Trading dogfood gate** — `npm run verify:consumer:trading` rebuilds `apps/example-trading` from
+  the packed tarball, outside the repository: the last same-author gap in the verification suite (12
+  checks, its own step in the `build` and `cross-platform` jobs).
 
 ## [0.1.0] — unreleased
 

@@ -134,6 +134,7 @@ After any change: `npm run build && npm run example:build && npm run verify && n
 npm run check:contract  # 16 checks: zero deps, peer-only React, exports map, artifacts, one version
 npm run check:pack      # 11 checks: the real tarballs — entry points resolve, terms ship, nothing leaks
 npm run verify:consumer  # 16 checks: the real tarballs, installed into a project outside the repo
+npm run verify:consumer:trading  # 12 checks: the trading example rebuilt from the packed tarball
 npm run check:contrast  # 69 colour pairs across 3 themes must meet the contrast contract
 npm run check:style     # 142 checks: the CSS authoring contract (tokens-only, logical, motionless, guarded :hover, no dead prefix exceptions)
 npm run check:types     # tsc --noEmit over @trade/ui — strict types are a gate, not a suggestion
@@ -152,7 +153,7 @@ npm run verify:browser:docker  # the same suite inside CI's pinned image (hosts 
 
 npm run check:release   # 7 checks: the release preconditions — run at cut time, not part of ci
 
-npm run all             # build + contract + pack + consumer + unit tests + builds + every suite
+npm run all             # build + contract + pack + consumer + trading dogfood + unit tests + builds + every suite
 npm run ci              # all of the above, plus the static gates (contrast, style, types, licence,
                         # docs, support, policy, commits) and size
 ```

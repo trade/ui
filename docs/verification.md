@@ -94,6 +94,26 @@ It is deliberately not a second `check:pack`. Five breakages were used to test i
 a stylesheet that ships but is empty, a `index.cjs` that throws when loaded, and a declaration dropped
 for an export a consumer imports.
 
+### `scripts/verify-consumer-trading.mjs` — `npm run verify:consumer:trading`
+
+The trading dogfood — 12 checks. `verify:consumer` proves the tarball works with a minimal probe,
+but the deepest consumer in this repository is `apps/example-trading`, and inside the monorepo it
+resolves `@trade/ui` through the hoisted workspace symlink: the app and the library are written by
+the same author. This gate closes that gap — it packs `@trade/ui` for real, installs the tarball
+into a project **outside the repository**, and rebuilds the trading example from it, with
+resolution forced through what a stranger would install.
+
+It asserts the installed copy is a real directory rather than a workspace link, resolves
+`@trade/ui/styles.css` through the installed copy (fail if it lands anywhere else), bundles the
+screen with the same settings the real build uses, and checks that the bundle carries the screen
+and the library with nothing left external for the browser. Hermetic in the same way as
+`verify:consumer`: the package has no runtime dependencies, and React is linked in rather than
+downloaded.
+
+Four breakages were used to test it in the failing direction: a missing build artifact, an empty
+`ui.css` inside the packed tree, `./styles.css` dropped from the export map, and a syntax error in
+the screen source — each fails the gate.
+
 ### Running the browser suite in CI's container (`npm run verify:browser:docker`)
 
 Playwright supports **macOS 14 and later**. A development host below that floor cannot run the
@@ -190,7 +210,7 @@ bundle a `.d.ts`.
 
 ## CI and the local loop
 
-`npm run ci` = `build → check:contract → check:pack → verify:consumer → check:contrast → check:style → check:types →
+`npm run ci` = `build → check:contract → check:pack → verify:consumer → verify:consumer:trading → check:contrast → check:style → check:types →
 test → check:license → check:docs → check:perf-policy → check:commits → example:build →
 example-trading:build → harness:build → size → verify → verify:example → verify:example-trading →
 verify:browser`, all non-zero-exit.
