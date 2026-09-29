@@ -152,8 +152,21 @@ expectIn(workflow, '.github/workflows/ci.yml', /npm run check:perf-policy/, 'the
 // Rule zero for a workflow: the npm chain is not what CI runs. GitHub Actions runs these steps
 // individually, so a gate that is only added to `npm run ci` never executes on a pull request — which
 // is exactly what happened to the consumer gate before this assertion existed.
-expectIn(workflow, '.github/workflows/ci.yml', /npm run verify:consumer/, 'the consumer gate in the CI build job');
-expectIn(workflow, '.github/workflows/ci.yml', /npm run verify:consumer:trading/, 'the trading dogfood gate in the CI build job');
+// The consumer-family gates must appear as STEPS in both jobs that exercise platform-sensitive
+// behavior, and as complete commands: `verify:consumer` is a prefix of `verify:consumer:trading`,
+// so a substring match can be satisfied by the wrong gate, and a whole-file search cannot see a
+// step removed from just one of the two jobs (#94 review).
+const jobSection = (name) => {
+  const match = workflow.match(new RegExp(`\\n  ${name}:\\n([\\s\\S]*?)(?=\\n  [a-z][a-z0-9-]*:\\n|$)`));
+  return match ? match[1] : '';
+};
+for (const job of ['build', 'cross-platform']) {
+  for (const command of ['npm run verify:consumer', 'npm run verify:consumer:trading']) {
+    if (!jobSection(job).includes(`run: ${command}\n`)) {
+      stale.push(`.github/workflows/ci.yml: the ${job} job is missing the "${command}" step`);
+    }
+  }
+}
 expectIn(workflow, '.github/workflows/ci.yml', /npm run check:support/, 'the browser-floor gate in the CI build job');
 // The new gate's own total is quoted in README; read it from the gate rather than trusting the prose.
 const policyCount = Number(
