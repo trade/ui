@@ -28,6 +28,12 @@ The first release. Not yet published to the registry.
   Firefox and WebKit × desktop and mobile, a packaging contract, a consumer contract, a licence
   contract, 69/69 contrast pairs, a perf-retry policy, and a size gate that measures consumer cost.
 
+### Changed
+
+- **Publishing route**: releases publish to **GitHub Packages** under the org scope (`@trade`) —
+  `@trade` is not available on public npm, and GitHub keeps the name and ties publishing to the
+  organisation. Consumer setup (`.npmrc` scope + classic token) is in the README.
+
 ### Fixed
 
 - `text-size-adjust` now ships the `-webkit-` form alongside the unprefixed one: iOS Safari has only
