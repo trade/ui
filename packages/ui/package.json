@@ -38,5 +38,8 @@
     "url": "git+https://github.com/trade/ui.git",
     "directory": "packages/ui"
   },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "license": "MIT OR Apache-2.0"
 }

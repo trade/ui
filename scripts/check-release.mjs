@@ -48,6 +48,7 @@ console.log('release preconditions\n');
 
 const ui = read('packages/ui/package.json');
 const tokens = read('packages/tokens/package.json');
+const manifests = { '@trade/ui': ui, '@trade/tokens': tokens };
 const version = ui.version;
 
 // 1. the tag points at a commit, so uncommitted work is work that does not ship. Untracked files are
@@ -125,23 +126,50 @@ for (const [label, script] of [['the packaging contract passes (check:pack)', 'c
   check(label, ok, detail.slice(0, 96));
 }
 
-// 7. npm rejects republishing a version, after the tag and the changelog have been written
+// 7. npm rejects republishing a version, after the tag and the changelog have been written.
+//    Probe the registry each package will actually publish to (publishConfig.registry — GitHub
+//    Packages in this repository), not npm's default: the gate must ask the same server
+//    `npm publish` will. GitHub Packages answers unauthenticated lookups with the same 404 it
+//    returns for packages that do not exist, so without credentials a 404 cannot be trusted —
+//    the release procedure logs in first (docs/release.md) and this check fails closed without one.
 const already = [];
-let registryTrouble = '';
+const registryTroubles = [];
+const pushTrouble = (message) => { if (!registryTroubles.includes(message)) registryTroubles.push(message); };
 for (const name of PACKAGES) {
+  const registry = manifests[name].publishConfig?.registry ?? '';
+  // Exact hostname, not a substring — `includes('npm.pkg.github.com')` also matches
+  // `https://example.com/npm.pkg.github.com/...` (CodeQL js/incomplete-url-substring-sanitization).
+  let githubRegistry = false;
   try {
-    const out = run(npmCommand, npmArgs(['view', `${name}@${version}`, 'version']), npmOptions(root)).trim();
+    githubRegistry = new URL(registry).hostname === 'npm.pkg.github.com';
+  } catch {
+    githubRegistry = false;
+  }
+  if (githubRegistry) {
+    try {
+      run(npmCommand, npmArgs(['whoami', '--registry', registry]), npmOptions(root));
+    } catch (error) {
+      const text = String(error.stderr ?? error.message);
+      pushTrouble(/ENEEDAUTH|E401|E403|need auth|logged in|unauthor/i.test(text)
+        ? `not logged in to ${registry} — unauthenticated lookups return the same 404 as "not found": npm login --scope=@trade --auth-type=legacy --registry=${registry}`
+        : `${name}: ${text.split('\n').find((l) => l.trim()) ?? 'unknown error'}`);
+      continue;
+    }
+  }
+  const args = ['view', `${name}@${version}`, 'version', ...(registry ? ['--registry', registry] : [])];
+  try {
+    const out = run(npmCommand, npmArgs(args), npmOptions(root)).trim();
     if (out) already.push(`${name}@${out}`);
   } catch (error) {
     const text = String(error.stderr ?? error.message);
     // 404 is the answer we want: the version does not exist yet.
-    if (!/E404|404 Not Found/.test(text)) registryTrouble = `${name}: ${text.split('\n').find((l) => l.trim()) ?? 'unknown error'}`;
+    if (!/E404|404 Not Found/.test(text)) pushTrouble(`${name}: ${text.split('\n').find((l) => l.trim()) ?? 'unknown error'}`);
   }
 }
 check(
   `neither package already publishes ${version}`,
-  already.length === 0 && registryTrouble === '',
-  already.length ? `already published: ${already.join(', ')}` : registryTrouble ? `could not reach the registry — ${registryTrouble}` : `${PACKAGES.length} packages checked`
+  already.length === 0 && registryTroubles.length === 0,
+  already.length ? `already published: ${already.join(', ')}` : registryTroubles.length ? `could not verify the registry — ${registryTroubles.join(' · ')}` : `${PACKAGES.length} packages checked`
 );
 
 const failed = checks.filter((c) => !c.ok);

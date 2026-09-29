@@ -63,6 +63,21 @@ import { setThemeAttribute } from '@trade/ui';
 setThemeAttribute('dark');   // writes data-theme on <html>; zero React renders
 ```
 
+### Installing
+
+The packages publish to GitHub Packages under the org scope, and GitHub Packages has no anonymous
+installs — every consumer authenticates with a **classic** personal access token (`read:packages`;
+fine-grained tokens are not supported for this registry):
+
+```ini
+# .npmrc
+@trade:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}
+```
+
+Then `npm install @trade/ui @trade/tokens`. Inside GitHub Actions workflows of the same organisation,
+the built-in `GITHUB_TOKEN` works when the package grants the repository read access.
+
 ---
 
 ## Architecture decisions implemented

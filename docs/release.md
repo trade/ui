@@ -10,13 +10,21 @@ human supplies the credentials.** No script in this repository holds a token or 
 
 ## Before you start
 
-Two facts that only you can establish:
+Three facts that only you can establish:
 
-1. **You can publish to the scope.** `@trade/ui` and `@trade/tokens` must belong to your npm
-   organisation or account. A scope you do not own fails at `npm publish` with a 403, after the tag and
-   changelog have been written.
-2. **You know where they go** — public npm, or a private registry. The procedure below is the public
-   registry; the gate is identical either way.
+1. **You can publish to the scope.** The packages publish to **GitHub Packages** under the org scope
+   (`@trade`) — the `@trade` name on public npm belongs to another account. You need write access to
+   the `trade` GitHub organisation and a **classic** personal access token with `write:packages`
+   (fine-grained tokens are not supported for this registry). Publishing without the right scope or
+   credentials fails at `npm publish`, after the tag and changelog have been written.
+2. **You are logged in — before the gate, not after it.**
+   `npm login --scope=@trade --auth-type=legacy --registry=https://npm.pkg.github.com` (username: your
+   GitHub username; password: the classic token). `check:release` probes this registry, and GitHub
+   answers unauthenticated lookups with the same 404 it returns for packages that do not exist —
+   without a login the check cannot verify anything and fails closed.
+3. **You know how it becomes visible.** A first publish starts **private**; visibility (private,
+   internal, or public) is set in the package's GitHub settings, not by an npm flag. Installers
+   authenticate either way — GitHub Packages has no anonymous installs.
 
 ## The procedure
 
@@ -53,10 +61,11 @@ git push origin main
 git tag -a v<version> -m "v<version>"
 git push origin v<version>
 
-# 8. publish, in dependency order. --access public is required: a scoped package publishes as
-#    restricted by default, so without it the release either fails or is invisible to consumers.
-npm publish --workspace @trade/tokens --access public
-npm publish --workspace @trade/ui --access public
+# 8. publish, in dependency order. There is no --access flag on this registry: visibility lives in
+#    the package's GitHub settings, and a first publish starts private (widen it there afterwards
+#    if it should be).
+npm publish --workspace @trade/tokens
+npm publish --workspace @trade/ui
 ```
 
 Replace `<version>` everywhere, including the tag names: a procedure that hardcodes `v0.1.0` either
@@ -78,18 +87,19 @@ branch. Its CI-checkable parts are covered by `npm run ci` itself.
 | Neither package is `private` | a `private: true` manifest silently cannot be published |
 | The packaging contract passes (`check:pack`) | the tarball is the release artifact — reused rather than restated here |
 | The package contract passes (`check-contract`) | zero runtime dependencies, peer-only React, and one version across manifests and the build |
-| The version is not already published | npm rejects republishing a version; better to find out here than after tagging |
+| The version is not already published (on GitHub Packages — needs the login from "Before you start") | npm rejects republishing a version; better to find out here than after tagging |
 
 ## After publishing
 
-- Verify from outside, as a consumer rather than as the author:
-  `npm view @trade/ui version` and `npm view @trade/tokens version` must both answer with the version
-  you just cut.
+- Verify from outside, as a consumer rather than as the author: `npm view @trade/ui version
+  --registry=https://npm.pkg.github.com` and the same for `@trade/tokens` must both answer with the
+  version you just cut (or read the version off the Packages tab of the `trade` organisation).
 - The strongest available check is already in the suite: `npm run verify:consumer` installs the *packed
   tarball* into a project outside the repository and uses it. It is the closest thing to a stranger's
   first `npm install`.
-- If the release was wrong, `npm deprecate @trade/ui@x.y.z "reason"` is the withdrawal mechanism. Do not
-  unpublish: it breaks every lockfile that resolved the version in the window before it was removed.
+- If the release was wrong: prefer a follow-up patch. A version can be deleted from the package's
+  settings on GitHub, but a deleted version breaks every lockfile that resolved it in the window
+  before it was removed — treat deletion as a last resort, not a recovery tool.
 
 ## Versioning
 
