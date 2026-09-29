@@ -191,6 +191,21 @@ expectCount(verification, 'docs/verification.md', /check-size-claims\.mjs`[^\n]*
 expectCount(verification, 'docs/verification.md', /verify\.mjs`[^\n]*?(\d+) library checks/g, EXPECTED_COUNTS.verify, 'the verify total');
 expectCount(verification, 'docs/verification.md', /check-style\.mjs`[^\n]*?(\d+) checks over/g, EXPECTED_COUNTS.style, 'the check:style total');
 expectCount(verification, 'docs/verification.md', /verify-example\.mjs`[^\n]*?(\d+) checks/g, 10, 'the verify:example total');
+
+// The unit-test total is a documented number too, and it had rotted exactly as predicted: the README
+// said 14 while the runner reports 17, because nothing watched it (found 2026-09-29 by a drift audit).
+// Counted from the runner itself, like every other total here — TAP is its machine format.
+let testTotal;
+try {
+  testTotal = Number((execSync('node --test --test-reporter=tap', { cwd: root, encoding: 'utf8' }).match(/^# tests (\d+)/m) ?? [])[1]);
+} catch {
+  // a failing suite exits non-zero; the guard below turns that into a clear message, not a stack trace
+}
+if (!Number.isInteger(testTotal)) {
+  console.error('docs counts: could not read the unit-test total from node --test --test-reporter=tap');
+  process.exit(1);
+}
+expectCount(readme, 'README.md', /npm test\s+#\s+(\d+) unit tests/g, testTotal, 'the unit-test total');
 forbidIn(readme, 'README.md', /belong in CI artifacts/, 'the "screenshots belong in CI artifacts" claim (contradicts the committed baselines)');
 
 // Every count file must actually be aggregated. A count file nobody imports would let its suite pass
@@ -212,7 +227,7 @@ if (unaggregated.length > 0) {
 console.log(
   `docs counts: browser-suite ${compare} compare / ${update} update, verify ${EXPECTED_COUNTS.verify}, `
   + `style ${EXPECTED_COUNTS.style}, trading ${EXPECTED_COUNTS.trading}, pack ${EXPECTED_COUNTS.pack}, `
-  + `size ${EXPECTED_COUNTS.sizes}, consumer ${EXPECTED_COUNTS.consumer}, contract ${EXPECTED_COUNTS.contract}, support ${EXPECTED_COUNTS.support}, release ${EXPECTED_COUNTS.release}, perf-policy ${policyCount} — `
+  + `size ${EXPECTED_COUNTS.sizes}, consumer ${EXPECTED_COUNTS.consumer}, contract ${EXPECTED_COUNTS.contract}, support ${EXPECTED_COUNTS.support}, release ${EXPECTED_COUNTS.release}, tests ${testTotal}, perf-policy ${policyCount} — `
   + `README, AGENTS.md, CONTRIBUTING.md and docs/verification.md agree; `
   + `stale-name scan covers all ${markdownFiles.length} markdown files`
 );

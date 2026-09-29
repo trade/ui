@@ -122,7 +122,7 @@ npm run verify:consumer  # 16 checks: the real tarballs, installed into a projec
 npm run check:contrast  # 69 colour pairs across 3 themes must meet the contrast contract
 npm run check:style     # 142 checks: the CSS authoring contract (tokens-only, logical, motionless, guarded :hover, no dead prefix exceptions)
 npm run check:types     # tsc --noEmit over @trade/ui — strict types are a gate, not a suggestion
-npm test                # 14 unit tests for the pure modules (node:test; no browser, no deps)
+npm test                # 17 unit tests for the pure modules (node:test; no browser, no deps)
 npm run check:license   # licence headers + manifests agree (MIT OR Apache-2.0)
 npm run check:docs      # links resolve + documented check counts agree with the suites themselves
 npm run check:support   # 3 checks: the browser floor is derived from what the stylesheets use
@@ -137,8 +137,9 @@ npm run verify:browser:docker  # the same suite inside CI's pinned image (hosts 
 
 npm run check:release   # 7 checks: the release preconditions — run at cut time, not part of ci
 
-npm run all             # build + contract + unit tests + demo + harness + the verification suites
-npm run ci              # contract + build + demo + harness + size + every suite
+npm run all             # build + contract + pack + consumer + unit tests + builds + every suite
+npm run ci              # all of the above, plus the static gates (contrast, style, types, licence,
+                        # docs, support, policy, commits) and size
 ```
 
 Every suite exits non-zero on failure, so they work as gates. **Releasing** follows
