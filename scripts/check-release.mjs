@@ -74,9 +74,12 @@ let ahead = '';
 let behind = '';
 try {
   branch = run('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: root }).trim();
+  // --left-right counts the first operand's side first: with `HEAD...origin/main`, column 0 is how
+  // far HEAD is ahead of origin/main, column 1 is how far it is behind. Reading them the other way
+  // round rejected the very state this gate exists for — main with the bump commit unpushed.
   const counts = run('git', ['rev-list', '--left-right', '--count', 'HEAD...origin/main'], { cwd: root }).trim().split(/\s+/);
-  behind = counts[0];
-  ahead = counts[1];
+  ahead = counts[0];
+  behind = counts[1];
 } catch (error) {
   check('the release is cut from main', false, String(error.stderr ?? error.message).split('\n')[0]);
 }
