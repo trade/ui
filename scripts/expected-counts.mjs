@@ -22,6 +22,7 @@ import { EXPECTED_COUNTS as trading } from './counts/trading.mjs';
 import { EXPECTED_COUNTS as pack } from './counts/pack.mjs';
 import { EXPECTED_COUNTS as release } from './counts/release.mjs';
 import { EXPECTED_COUNTS as consumer } from './counts/consumer.mjs';
+import { EXPECTED_COUNTS as consumerTrading } from './counts/consumer-trading.mjs';
 import { EXPECTED_COUNTS as support } from './counts/support.mjs';
 import { EXPECTED_COUNTS as sizes } from './counts/sizes.mjs';
 
@@ -33,6 +34,7 @@ export const EXPECTED_COUNTS = {
   ...pack,
   ...release,
   ...consumer,
+  ...consumerTrading,
   ...support,
   ...sizes
 };

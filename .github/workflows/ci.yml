@@ -57,6 +57,8 @@ jobs:
       # it a gate: the workflow runs commands individually and never invokes `npm run ci`.
       - name: Install the packed tarballs into a project outside the repo and use them
         run: npm run verify:consumer
+      - name: Rebuild the trading example from the packed tarball
+        run: npm run verify:consumer:trading
 
       - name: Enforce the token contrast contract across every theme
         run: node scripts/check-contrast.mjs
@@ -310,6 +312,8 @@ jobs:
         run: npm run check:pack
       - name: Install the packed tarballs outside the repo and use them
         run: npm run verify:consumer
+      - name: Rebuild the trading example from the packed tarball
+        run: npm run verify:consumer:trading
       - name: CSS authoring contract
         run: npm run check:style
       - name: Typecheck (strict, no emit)
