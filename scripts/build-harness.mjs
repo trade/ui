@@ -100,7 +100,24 @@ const html = `<!DOCTYPE html>
       };
 
       window.addEventListener('load', function () {
-        setTimeout(run, 700);
+        // Wait for the app's readiness signal instead of a fixed delay. A fixed
+        // timer races React's initial commit under CPU pressure and reads
+        // pre-mount state (data-theme still unset, buttons not yet in the DOM).
+        // Poll until the app is ready; a hard cap keeps a hung mount from
+        // blocking forever — the suite's own audit timeout then surfaces it.
+        var waited = 0;
+        var MAX_WAIT_MS = 30000;
+        (function waitForApp() {
+          if (window.__appReady === true || waited >= MAX_WAIT_MS) {
+            if (waited >= MAX_WAIT_MS && window.__appReady !== true) {
+              push('[harness] WARNING: app never signalled __appReady within ' + MAX_WAIT_MS + 'ms — auditing anyway');
+            }
+            run();
+            return;
+          }
+          waited += 50;
+          setTimeout(waitForApp, 50);
+        })();
       });
 
       async function run() {
