@@ -111,6 +111,15 @@ function App() {
   const full = useRef(makeRows(5000));
   const [mode, setMode] = useState('live');
 
+  // Readiness signal for the harness audit. Effects run bottom-up, so by the
+  // time this (the root component's effect) runs, ThemeProvider has already
+  // written data-theme and the #to-dark / #to-light buttons are in the DOM.
+  // The audit waits for this instead of a fixed timer, so it never reads
+  // pre-mount state when the initial commit is slow under CPU pressure.
+  useEffect(() => {
+    window.__appReady = true;
+  }, []);
+
   return (
     <ThemeProvider theme="light">
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: '16px' }}>
